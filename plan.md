@@ -52,7 +52,7 @@ Set up the monorepo, language, lint, test, and build tooling. End state: an empt
 - `pnpm install` succeeds.
 - `pnpm -r ls --depth=-1` lists all seven packages.
 
-### Step 0.2 — TypeScript baseline
+### Step ✅ 0.2 — TypeScript baseline
 **Goal.** Strict TypeScript shared across packages with project references.
 **Inputs.** Step 0.1.
 **Outputs.**

@@ -1,0 +1,12 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/backend-core" },
+    { "path": "./packages/backend-inmemory" },
+    { "path": "./packages/backend-local-indexeddb" },
+    { "path": "./packages/backend-google" },
+    { "path": "./packages/backend-microsoft" },
+    { "path": "./packages/design-system" },
+    { "path": "./packages/app" }
+  ]
+}
