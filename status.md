@@ -4,20 +4,21 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 ## Current activity
 
-**Phase:** Planning.
+**Phase:** Implementation (just switched).
 
-**Last completed:** `plan.md` is complete — all 12 phases (0–11) detailed with steps, goals, inputs, outputs, and done-when checklists.
+**Last completed:** plan complete; cleaned up Step 5.7 (manual order is local-only via a `taskOrder` IDB store, not part of the canonical `Task`).
 
-**Next:** user review of the full plan. After review and any revisions, switch from planning mode to implementation, starting at Step 0.1.
+**Next:** Step 0.1 — pnpm workspace bootstrap. **Blocked** on Node.js not being installed in the dev environment.
 
 ## Pending external actions (user)
 
-- **GitHub Pages** must be enabled on the repository before Step 0.7's `deploy.yml` will succeed. Workflow source: GitHub Actions; deploy target: `gh-pages` branch (or "GitHub Actions" source — to be finalized in Step 0.7).
-- `design-input.md` has uncommitted edits (Session continuity section + later tweaks). Commit when convenient — `plan.md` references it.
+- **Decision needed**: how should Node.js be installed on this WSL Ubuntu environment? Options offered to the user — see "Open questions / blockers" below.
+- **GitHub Pages** must be enabled on the repository before Step 0.7's `deploy.yml` will succeed (deferred until Step 0.7).
+- `design-input.md` had uncommitted edits as of the last planning session — confirm they have been committed.
 
 ## Open questions / blockers
 
-None.
+- **Blocker**: no Node.js, no version manager (nvm/fnm/volta), no corepack on this machine. Step 0.1 needs Node + pnpm. Decision pending from user on install method.
 
 ## How to resume
 
