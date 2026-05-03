@@ -8,3 +8,16 @@ playwright-report
 test-results
 coverage
 .turbo
+
+# Local tool config
+.claude/
+.vscode/
+.idea/
+
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.*
