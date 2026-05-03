@@ -145,20 +145,16 @@ Depends on Phase 0.
 - Type compiles.
 - Unit test: a sample `Task` literal type-checks; assignments to wrong-shaped objects fail to compile (verified by `expectTypeOf`).
 
-### Step 1.2 — BackendAdapter interface
+### Step ✅ 1.2 — BackendAdapter interface
 **Goal.** Define the operations every backend must implement.
 **Inputs.** `design-input.md` (Backend → adapter operations); Step 1.1.
 **Outputs.**
-- `packages/backend-core/src/adapter.ts` exporting:
-  - `type Cursor = string`
-  - `interface ChangeSet { upserts: Task[]; deletes: TaskId[]; cursor: Cursor; }`
-  - `interface BackendCapabilities { dueTime: boolean; priority: boolean; recurrence: boolean; }`
-  - `interface BackendDescriptor { id: BackendId; displayName: string; capabilities: BackendCapabilities; }`
-  - `interface BackendAdapter { describe(): BackendDescriptor; list(quadrant?: Quadrant): Promise<Task[]>; get(id: TaskId): Promise<Task | undefined>; create(task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task>; update(id: TaskId, patch: Partial<Task>): Promise<Task>; delete(id: TaskId): Promise<void>; changesSince(cursor?: Cursor): Promise<ChangeSet>; }`
-- JSDoc on every method explaining contract: idempotency, error shapes, concurrency expectations.
+- `packages/backend-core/src/adapter.ts` exporting `Cursor`, `ChangeSet`, `BackendCapabilities`, `BackendDescriptor`, `TaskDraft`, `TaskPatch`, and `BackendAdapter`.
+- JSDoc on every method covering concurrency (last-write-wins per field), idempotency (`delete` idempotent; `update` not idempotent in `updatedAt` but stable in state), and error semantics (`Error` subclasses allowed; base contract doesn't mandate specific types).
 **Done when.**
 - Compiles, passes lint.
 - Each method documented.
+**Note.** Two small deviations from the originally-sketched signatures, both tightening design: (a) `create` takes `TaskDraft = Omit<Task, 'id' | 'backendId' | 'createdAt' | 'updatedAt'>` so callers don't repeat the adapter's own `backendId`; (b) `update` takes `TaskPatch = Partial<Omit<Task, 'id' | 'backendId' | 'createdAt' | 'updatedAt'>>` so callers cannot patch immutable identity / timestamp fields. `list` and `changesSince` return `readonly` arrays.
 
 ### Step 1.3 — Adapter contract test suite
 **Goal.** A parameterized test suite that runs against any `BackendAdapter` implementation, used by every adapter package.

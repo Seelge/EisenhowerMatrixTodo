@@ -6,9 +6,9 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 1.1 — Canonical Task type. `packages/backend-core/src/task.ts` exports branded `TaskId` and `BackendId`, the `Quadrant` / `Priority` / `TaskStatus` literal unions, ISO date/time aliases, and the `Task` interface. Re-exported from package index. Type test in `test/task.test.ts` uses `expectTypeOf` to assert the `Task` shape, that branded ids are not assignable from bare strings, and that enum-like fields are constrained to their literal unions. 11 tests pass; lint/format/typecheck clean.
+**Last completed:** Step 1.2 — `BackendAdapter` interface. `packages/backend-core/src/adapter.ts` exports `Cursor`, `ChangeSet`, `BackendCapabilities`, `BackendDescriptor`, `TaskDraft`, `TaskPatch`, `BackendAdapter`. Method-level JSDoc covers concurrency (last-write-wins per field on `update`), idempotency (`delete` is idempotent; `update` advances `updatedAt` even when stable), and error semantics. Re-exported from package index. Lint, format:check, typecheck, test all clean (11 tests).
 
-**Next:** Step 1.2 — `BackendAdapter` interface (operations: list, get, create, update, delete, changesSince) plus `Cursor`, `ChangeSet`, `BackendCapabilities`, `BackendDescriptor`.
+**Next:** Step 1.3 — Adapter contract test suite (`packages/backend-core/src/contract-tests.ts` exporting `runAdapterContract(name, factory)`).
 
 ## Environment notes
 
@@ -18,8 +18,7 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 ## Pending external actions (user)
 
-- **GitHub Pages**: enable GitHub Pages for this repository under Settings → Pages, source = "GitHub Actions". The committed `.github/workflows/deploy.yml` will fail until this is enabled. (`VITE_BASE_PATH` is set in the workflow from the repo name, so the URL will be `https://<user>.github.io/EisenhowerMatrixTodo/`.)
-- `design-input.md` is now committed (the small guardrail edit from last planning session was bundled into the step 0.1 commit; not strictly clean diff hygiene but the change is intentional and small).
+None outstanding. (Pages live at `https://seelge.github.io/EisenhowerMatrixTodo/`. CI and Deploy workflows confirmed green; Node 24 opt-in env added so the deprecation warning is gone.)
 
 ## Open questions / blockers
 

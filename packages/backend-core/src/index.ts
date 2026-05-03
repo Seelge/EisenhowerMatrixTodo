@@ -1,4 +1,13 @@
 export type {
+  BackendAdapter,
+  BackendCapabilities,
+  BackendDescriptor,
+  ChangeSet,
+  Cursor,
+  TaskDraft,
+  TaskPatch,
+} from './adapter.ts';
+export type {
   BackendId,
   IsoDate,
   IsoDateTime,
