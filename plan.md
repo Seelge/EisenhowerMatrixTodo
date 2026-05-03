@@ -206,7 +206,7 @@ Depends on Phase 0.
 - Types compile.
 - Diagram present.
 
-### Step 1.6 — Design tokens
+### Step ✅ 1.6 — Design tokens
 **Goal.** Typed tokens (colors, spacing, motion, type, glow) consumable by the design system.
 **Inputs.** `design-input.md` (UI Design → palette, M3 behaviors).
 **Outputs.**
