@@ -6,9 +6,15 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 1.4 — Conflict resolution contract. `packages/backend-core/src/conflict.ts` exports `DifferingField` (= `keyof Task` minus immutable identity/timestamp fields), `ConflictRecord` (`local`, `remote`, `differingFields`), and `ConflictResolver` (async callback returning `'local' | 'remote'`). Re-exported as types from package index. Doc covers the whole-record-not-field-merge resolution model, async-for-prompting rationale, and headless-test usage. All checks clean (13 tests).
+**Last completed:** Step 1.5 — Sync engine contract & cache schema.
 
-**Next:** Step 1.5 — Sync engine contract (`SyncEngine`) and IndexedDB cache schema (`tasks`, `outbox`, `cursors` stores) in `packages/backend-core/src/sync.ts` and `cache-schema.ts`.
+`packages/backend-core/src/cache-schema.ts` (types only, no IDB code yet): `TaskRecord` (Task + composite `key`), `OutboxRecord` ({seq, op, backendId, taskId, payload, attempts, lastAttemptAt, lastError}), `CursorRecord` ({backendId, cursor, updatedAt}), `STORE_NAMES` const, `taskKey()` helper. ASCII data-flow diagram embedded as the file header doc. Planned indexes documented inline.
+
+`packages/backend-core/src/sync.ts`: `SyncEngine` interface with `enqueueWrite` (overloaded — Task for create/update, TaskRef for delete), `flush(backendId?)` returning `FlushResult`, `pull(backendId)` returning `PullResult` with new cursor, `setConflictResolver`. JSDoc covers retention semantics (failures stay queued), conflict policy (one resolver invocation per conflicting task; throw if no resolver registered when needed).
+
+All checks clean (13 tests).
+
+**Next:** Step 1.6 — Design tokens (typed token objects + CSS custom properties + preview HTML) in `packages/design-system`.
 
 ## Environment notes
 
