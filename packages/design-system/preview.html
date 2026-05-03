@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Design tokens — preview</title>
+    <link rel="stylesheet" href="src/tokens.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: var(--space-xl);
+        background: var(--color-bg);
+        color: var(--color-text-primary);
+        font-family: var(--font-family-sans);
+        font-size: var(--font-size-md);
+        line-height: var(--line-height-normal);
+      }
+      h1 {
+        font-size: var(--font-size-display);
+        margin-bottom: var(--space-lg);
+      }
+      h2 {
+        font-size: var(--font-size-xl);
+        margin-top: var(--space-2xl);
+        color: var(--color-text-secondary);
+        border-bottom: 1px solid var(--color-surface-elevated);
+        padding-bottom: var(--space-xs);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: var(--space-md);
+      }
+      .swatch {
+        background: var(--color-surface);
+        padding: var(--space-md);
+        border-radius: var(--radius-md);
+      }
+      .swatch .chip {
+        height: 64px;
+        border-radius: var(--radius-sm);
+        margin-bottom: var(--space-sm);
+        border: 1px solid var(--color-surface-elevated);
+      }
+      .swatch .name {
+        font-weight: var(--font-weight-medium);
+      }
+      .swatch .value {
+        color: var(--color-text-secondary);
+        font-family: var(--font-family-mono);
+        font-size: var(--font-size-sm);
+      }
+      .glow {
+        background: var(--color-surface);
+        padding: var(--space-lg);
+        border-radius: var(--radius-md);
+        text-align: center;
+      }
+      .glow .box {
+        height: 64px;
+        border-radius: var(--radius-md);
+      }
+      .glow.q1 .box {
+        box-shadow: var(--glow-q1);
+        background: var(--color-q1);
+      }
+      .glow.q2 .box {
+        box-shadow: var(--glow-q2);
+        background: var(--color-q2);
+      }
+      .glow.q3 .box {
+        box-shadow: var(--glow-q3);
+        background: var(--color-q3);
+      }
+      .glow.q4 .box {
+        box-shadow: var(--glow-q4);
+        background: var(--color-q4);
+      }
+      .glow.accent .box {
+        box-shadow: var(--glow-accent);
+        background: var(--color-accent);
+      }
+      .scale-row {
+        display: flex;
+        align-items: end;
+        gap: var(--space-sm);
+        margin-bottom: var(--space-md);
+      }
+      .scale-cell {
+        background: var(--color-surface);
+        padding: var(--space-sm);
+        border-radius: var(--radius-sm);
+        font-family: var(--font-family-mono);
+        font-size: var(--font-size-xs);
+      }
+      .type-row {
+        margin-bottom: var(--space-sm);
+        background: var(--color-surface);
+        padding: var(--space-md);
+        border-radius: var(--radius-md);
+      }
+      .type-label {
+        color: var(--color-text-secondary);
+        font-family: var(--font-family-mono);
+        font-size: var(--font-size-xs);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Design tokens — preview</h1>
+
+    <h2>Color</h2>
+    <div class="grid" id="colors"></div>
+
+    <h2>Glow</h2>
+    <div class="grid" id="glows">
+      <div class="glow q1">
+        <div class="box"></div>
+        q1
+      </div>
+      <div class="glow q2">
+        <div class="box"></div>
+        q2
+      </div>
+      <div class="glow q3">
+        <div class="box"></div>
+        q3
+      </div>
+      <div class="glow q4">
+        <div class="box"></div>
+        q4
+      </div>
+      <div class="glow accent">
+        <div class="box"></div>
+        accent
+      </div>
+    </div>
+
+    <h2>Space</h2>
+    <div class="scale-row" id="spaces"></div>
+
+    <h2>Radius</h2>
+    <div class="grid" id="radii"></div>
+
+    <h2>Type scale</h2>
+    <div id="types"></div>
+
+    <h2>Motion durations</h2>
+    <div class="grid" id="motions"></div>
+
+    <script type="module">
+      const cs = getComputedStyle(document.documentElement);
+      const swatch = (cls, value) =>
+        `<div class="swatch"><div class="chip" style="background:${value}"></div><div class="name">${cls}</div><div class="value">${value}</div></div>`;
+
+      const colorVars = [
+        'bg',
+        'surface',
+        'surface-elevated',
+        'text-primary',
+        'text-secondary',
+        'accent',
+        'q1',
+        'q2',
+        'q3',
+        'q4',
+        'error',
+      ];
+      document.getElementById('colors').innerHTML = colorVars
+        .map((c) => swatch('--color-' + c, cs.getPropertyValue('--color-' + c).trim()))
+        .join('');
+
+      const spaceVars = ['xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl'];
+      document.getElementById('spaces').innerHTML = spaceVars
+        .map((s) => {
+          const v = cs.getPropertyValue('--space-' + s).trim();
+          return `<div class="scale-cell" style="width:${v};height:${v};display:flex;align-items:end;justify-content:center;background:var(--color-accent);color:var(--color-bg)">${s}<br>${v}</div>`;
+        })
+        .join('');
+
+      const radiusVars = ['sm', 'md', 'lg', 'pill'];
+      document.getElementById('radii').innerHTML = radiusVars
+        .map((r) => {
+          const v = cs.getPropertyValue('--radius-' + r).trim();
+          return `<div class="swatch"><div class="chip" style="background:var(--color-accent);border-radius:${v}"></div><div class="name">--radius-${r}</div><div class="value">${v}</div></div>`;
+        })
+        .join('');
+
+      const sizeVars = ['xs', 'sm', 'md', 'lg', 'xl', 'display'];
+      document.getElementById('types').innerHTML = sizeVars
+        .map((s) => {
+          const v = cs.getPropertyValue('--font-size-' + s).trim();
+          return `<div class="type-row"><div class="type-label">--font-size-${s} (${v})</div><div style="font-size:${v}">The quick brown fox jumps</div></div>`;
+        })
+        .join('');
+
+      const motionVars = ['short', 'medium', 'long'];
+      document.getElementById('motions').innerHTML = motionVars
+        .map((m) => {
+          const v = cs.getPropertyValue('--motion-duration-' + m).trim();
+          return `<div class="swatch"><div class="chip" style="background:var(--color-accent)"></div><div class="name">--motion-duration-${m}</div><div class="value">${v}</div></div>`;
+        })
+        .join('');
+    </script>
+  </body>
+</html>

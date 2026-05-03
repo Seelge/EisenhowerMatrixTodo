@@ -6,15 +6,21 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 1.5 — Sync engine contract & cache schema.
+**Last completed:** Step 1.6 — Design tokens.
 
-`packages/backend-core/src/cache-schema.ts` (types only, no IDB code yet): `TaskRecord` (Task + composite `key`), `OutboxRecord` ({seq, op, backendId, taskId, payload, attempts, lastAttemptAt, lastError}), `CursorRecord` ({backendId, cursor, updatedAt}), `STORE_NAMES` const, `taskKey()` helper. ASCII data-flow diagram embedded as the file header doc. Planned indexes documented inline.
+`packages/design-system/src/tokens.ts`: typed `tokens` object with `color` (bg, surface, surface-elevated, text-primary/secondary, accent, q1-q4, error), `space` (xs–3xl), `radius` (sm/md/lg/pill), `font` (family sans+mono, size scale, weights, line heights), `motion` (duration short/medium/long, easing standard/emphasized/decelerated/accelerated), `glow` (q1-q4 + accent — outer halo + inner shadow), `layer` (z-index ladder).
 
-`packages/backend-core/src/sync.ts`: `SyncEngine` interface with `enqueueWrite` (overloaded — Task for create/update, TaskRef for delete), `flush(backendId?)` returning `FlushResult`, `pull(backendId)` returning `PullResult` with new cursor, `setConflictResolver`. JSDoc covers retention semantics (failures stay queued), conflict policy (one resolver invocation per conflicting task; throw if no resolver registered when needed).
+`packages/design-system/src/tokens.css`: CSS custom properties mirroring the TS values; `color-scheme: dark` and a `prefers-reduced-motion: reduce` override that zeroes out durations.
 
-All checks clean (13 tests).
+`packages/design-system/src/types.ts`: re-exports the token-derived types (`ColorToken`, `SpaceToken`, etc.).
 
-**Next:** Step 1.6 — Design tokens (typed token objects + CSS custom properties + preview HTML) in `packages/design-system`.
+`packages/design-system/preview.html`: standalone preview page that loads `tokens.css` and renders swatches for color, glow, space, radius, type scale, and motion. Open in a browser to visually verify (manual).
+
+`test/tokens.test.ts`: asserts palette format, every quadrant has a matching glow with the right RGB, monotonic space and motion scales.
+
+17 tests pass; all checks clean.
+
+**Next:** Step 1.7 — Route + view-state contract in `packages/app/src/routes/contract.ts`. Closes Phase 1.
 
 ## Environment notes
 
