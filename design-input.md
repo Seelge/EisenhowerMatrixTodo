@@ -1,129 +1,60 @@
 # Design input
+
 This design document contains the design input for the application.
 
 The design input is intended for the prompt to create the initial implementation plan.
 
+*Naming convention: `view1`, `view2`, `view3`, `view4` refer to the four views of the app. "First release" / "later release" refers to product milestones (avoiding `v1` / `v2` to prevent confusion with view names).*
+
 ## Backend
-- The backend should be configurable with a generic interface such that we can switch between backend storages
-- Intended backend storages: in-memory for testing, Goolge Tasks API, Microsoft To-Do API
-- For each backend storage we need to know how to store the required information, e.g. due date, priority, etc. and how to map these between the backends
 
-## Technology
-- A web app which is usable in Chrome on both Android and Windows. Ignore compatibility with Linux and Apple for now.
-- The web app should be installable on Android
-- Distribution is manual installation only
+- The backend is configurable via a generic adapter interface so we can switch between storages.
+- User-facing backends: **local (IndexedDB)**, **Google Tasks API**, **Microsoft To-Do API**.
+- An additional **in-memory** adapter exists as a test fixture only (contract reference for unit tests). It is not exposed in the UI.
+- Adapter operations every backend must implement: `list(quadrant?)`, `get(id)`, `create(task)`, `update(id, patch)`, `delete(id)`, `changesSince(cursor)` (for sync).
+- **Quadrant storage** for backends with no native concept: one list per quadrant (Google Tasks: 4 task lists; Microsoft To-Do: 4 lists). Cross-quadrant move = delete + recreate. Tradeoff accepted: clean UX in the native apps, at the cost of regenerating IDs on move.
+- **Unsupported fields** (priority on Google Tasks, due time on Google Tasks, etc.): encoded into `notes` by the adapter and decoded again on read by the same adapter, so the canonical model round-trips losslessly through any backend.
+- **Multi-backend behavior**: each task is associated with exactly one backend. Editing a task lets the user pick a target backend; on migration the task is created in the target and, on success, deleted from the source. (Same model as calendar apps choosing a target calendar per event.)
+- **Conflict resolution** when an external client modified a task we also modified: prompt the user with a side-by-side diff and let them pick the local or remote whole record.
+- **Authentication**: OAuth 2.0 PKCE in-browser. Refresh tokens stored in IndexedDB (origin-isolated). Single account per backend.
+- **Offline behavior**: local-first. Writes commit to IndexedDB immediately and queue for sync; reads are served from local cache; sync replays on focus / online events.
 
-## UI Design
-- Minimal futuristic design. Dark background, glowing borders.
-- UI design should follow the Google recommendations for Android apps
+### Canonical task model and field mapping
 
-### View 1 Eisenhower matrix
-- There should be a view with all four quadrants of the Eisenhower matrix
-- When zoomed out, moving to-dos between the Eisenhower matrix quadrants should be a simple drag and drop action
-
-### View 2 Quadrant
-- Each quadrant should use a different colored border
-- When zoomed in, moving between quadrants should be a touch swipe or mouse drag and move
-- When zoomed in, the border of the current quadrant should be visible. Also the edges of the neighboring quadrants should be visible.
-- When zoomed in, moving to-dos between the quadrants should be a drag and drop on the visible edge of the neighboring quadrant. The current quadrant should stay focussed.
-
-### Transition between View 1 Eisenhower matrix and View 2 Quadrant
-- It should be possible to switch between looking at the full Eisenhower matrix or a single quadrant
-- Switching between the Eisenhower matrix and focussing on a single quadrant should be like zooming in to a quadrant or out to the matrix. The animation snaps to either zoomed in or zoomed out, nothing in between
-- To zoom in/out, the user should use the touch pinch gesture or mouse wheel
-
-### View 3 Task focus
-- Tapping or clicking on a task should focus the task.
-- Moving a due date of a task to today or tomorrow should be a 1-tap/click action each
-- All fields should be editable
-- Skip sub-tasks for now
-
-### View 4 Options
-- There should be an options screen with potential sub-screens, e.g. to configure the backend
-
-## Planning instruction
-- You are the expert, create the plan on how to implement
-- Implementation should consider that we want to switch and sync between different backend storages, and we need to know how to map to each interface, but we initially start to implement just one: the in memory backend for testing
-- Prepare such that different parts (e.g. UI design, frontend, backend) can be implemented using different agents with potentially different models. Propose a model suitable to the task
-
-## Open questions & proposed decisions
-*Editing guide: `[x]` marks the proposed default. To accept it, do nothing. To pick a different answer, move `[x]` to that bullet. Delete bullets you don't want. Replace any line with your own answer. Keep one option per question.*
-
-### Backend interface
-**Q1. Which operations must every backend adapter implement?**
-- [x] `list(quadrant?)`, `get(id)`, `create(task)`, `update(id, patch)`, `delete(id)`, plus `changesSince(cursor)` for sync
-- [ ] Minimal: just CRUD + `list` — sync diffing done at app layer
-- [ ] Add `subscribe(callback)` for push-capable backends (Google/MS don't support; would no-op)
-
-**Q2. How is the Eisenhower quadrant stored on backends with no native concept?**
-- [x] One list per quadrant (Google Tasks: 4 task lists; MS To-Do: 4 lists). Cross-quadrant move = delete+recreate; clean UX in native apps.
-- [ ] Single list, quadrant as tag/category (MS To-Do has categories; Google Tasks doesn't — needs a fallback)
-- [ ] Single list, quadrant encoded in `notes` via marker like `[Q1]`
-- [ ] Local mapping table keyed by remote ID (lost if browser storage cleared)
-
-**Q3. Canonical task model + field mapping** (delete rows you don't want; edit mappings):
-
-| Field | Canonical | Google Tasks | MS To-Do |
+| Field | Canonical | Google Tasks | Microsoft To-Do |
 |---|---|---|---|
 | id | string | `id` | `id` |
 | title | string (required) | `title` | `title` |
 | notes | markdown string | `notes` (plain) | `body.content` |
 | due date | ISO date | `due` (date only) | `dueDateTime` |
-| due time | ISO time, optional | not supported → store in notes | `dueDateTime` |
-| priority | none/low/normal/high | not supported → store in notes | `importance` |
-| quadrant | Q1–Q4 | encoded via list (Q2) | encoded via list (Q2) |
-| status | open/done | `status` | `status` |
+| due time | ISO time, optional | not supported → encoded in `notes` | `dueDateTime` |
+| priority | none / low / normal / high | not supported → encoded in `notes` | `importance` |
+| quadrant | Q1–Q4 | encoded via list (one list per quadrant) | encoded via list (one list per quadrant) |
+| status | open / done | `status` | `status` |
 | completedAt | ISO datetime | `completed` | `completedDateTime` |
-| recurrence | RRULE string | not supported (drop, warn) | `recurrence` |
 | createdAt | ISO datetime | `updated` only | `createdDateTime` |
 | updatedAt | ISO datetime | `updated` | `lastModifiedDateTime` |
 
-**Q3a. Behavior for fields the active backend can't represent:**
-- [x] Silently store; show a small info hint in View 3 ("Won't sync to Google Tasks")
-- [ ] Block the user from setting unsupported fields
-- [ ] Warn on every save
+*Recurrence is not in the first release; when introduced, follow-up tasks are materialized at completion time (Google Tasks has no native recurrence).*
 
-**Q4. Multi-backend behavior:**
-- [x] One *active* backend at a time. Switching copies data into the new backend on first connect; new backend then becomes the source of truth.
-- [ ] Live mirroring across two backends (much more complex)
-- [ ] Switch without migration — old data stays put, new backend starts empty
+## Technology
 
-**Q5. Conflict resolution when an external client edited the same task:**
-- [x] Last-write-wins by `updatedAt`, per field where possible, whole-record otherwise
-- [ ] Always prefer remote
-- [ ] Always prefer local
-- [ ] Prompt user
+- A web app, usable in Chrome on Android and Windows. Compatibility with Linux and Apple is out of scope.
+- Installable on Android as a **PWA** (manifest, service worker, offline support, icons 192 / 512 + maskable).
+- Distribution is manual installation only. Site served over HTTPS from **GitHub Pages**.
+  - *Action for the user: enable GitHub Pages on the target repo when we are ready to publish. The plan will specify the source branch / folder.*
+- **Framework / tooling** (committed): TypeScript everywhere; **React 18 + Vite** for the app; **Zustand** for app state; **TanStack Query** for server cache and sync orchestration; **dnd-kit** for accessible drag-and-drop (touch + mouse + keyboard); **Framer Motion** for animation; **Vitest + Playwright** for testing; **pnpm workspaces** for the monorepo. The planning step may revise on documented justification (maintainability and ease of adding features later are the deciding criteria).
 
-**Q6. Authentication & token storage:**
-- [x] OAuth 2.0 PKCE in-browser; refresh tokens in IndexedDB (origin-isolated). Single account per backend.
-- [ ] Server-side token broker (more secure refresh, but adds infra)
-- [ ] Multi-account per backend (defer to v2)
+## UI Design
 
-**Q7. Offline behavior:**
-- [x] Local-first: writes go to IndexedDB immediately, sync queue replays on reconnect; reads served from local cache; background sync on focus/online events.
-- [ ] Online-only — disable UI when offline
-- [ ] Read-only offline — queue writes but no optimistic UI
+- Minimal futuristic design. Dark background, glowing borders. Dark mode only in the first release; light mode later.
+- UI follows **Material 3 behaviors** (touch targets ≥ 48 dp, ripple, motion durations, type scale) but overrides the M3 color system with the palette below. No MUI / M3 component library.
+- **Accessibility**: WCAG 2.2 AA contrast, full keyboard navigation, drag-and-drop has a keyboard alternative ("move to" menu), `prefers-reduced-motion: reduce` replaces zoom morph with instant cuts, ARIA labels on all icon-only controls.
+- **Internationalization**: user-facing strings wrapped in an `i18n` helper from day one. English only in the first release.
 
-### Technology
-**Q8. Distribution mechanics** (you've stated manual install only):
-- [x] PWA installable from Chrome's "Install app" prompt; site served over HTTPS from a static host (Cloudflare Pages / GitHub Pages / Netlify).
-- [ ] Self-host on your own server
-- [ ] No install — bookmark only, full-screen via display-mode
+### Color palette
 
-**Q9. Framework / tooling:**
-- [x] React 18 + TypeScript + Vite. Routing: React Router. State: Zustand + TanStack Query (server cache). Drag/drop: dnd-kit. Animation: Framer Motion. Testing: Vitest + Playwright.
-- [ ] Svelte/SvelteKit + TypeScript
-- [ ] SolidJS + TypeScript
-- [ ] Vanilla TS + Lit
-
-### UI design
-**Q10. Theme:**
-- [x] Dark mode only in v1 (matches "futuristic" brief). Light mode later.
-- [ ] Both modes from start
-- [ ] Follow system theme
-
-**Q11. Color palette** (edit hex values freely):
-- Background: `#0A0E14` (near-black, slight blue cast)
+- Background: `#0A0E14`
 - Surface: `#121821`
 - Text primary: `#E6EDF3`; secondary: `#8B96A5`
 - Accent (focus, active): `#7DF9FF` electric cyan
@@ -132,128 +63,127 @@ The design input is intended for the prompt to create the initial implementation
 - Q3 Delegate (urgent, not important): `#FFD166` amber glow
 - Q4 Delete (neither): `#8B96A5` muted gray glow
 
-**Q12. Material 3 interpretation:** [x] Use M3 *behaviors* (touch targets ≥48dp, ripple, motion durations, type scale) but override colors with the palette above. No MUI/M3 component library — too heavy to "futurize".
+### view1 — Eisenhower matrix
 
-**Q13. Quadrant labels in UI:**
-- [x] Short verbs: "Do" / "Schedule" / "Delegate" / "Delete" with axis labels ("Important ↑", "Urgent →") on V1
-- [ ] Verbose: "Important & Urgent", etc.
-- [ ] Numeric Q1–Q4 only
+- Shows all four quadrants.
+- Quadrants are labeled with the short verbs **Do** / **Schedule** / **Delegate** / **Delete**. Faint axis labels ("Important ↑", "Urgent →") on the outer edges; hidden in view2.
+- Each task card displays title, full due date, priority, and tags.
+- Each quadrant cell scrolls vertically and independently.
+- **Default sort within a quadrant**: manual (drag-to-reorder), with due date as the secondary order when no manual order is set. A "reset to secondary order" action is available.
+- Drag-and-drop moves tasks between quadrants.
+- A floating "+" button (bottom-right) opens a quick composer; the user picks the quadrant from a 2 × 2 mini-matrix.
 
-**Q14. Accessibility commitments:** [x] WCAG 2.2 AA contrast, full keyboard navigation, drag-drop has keyboard alternative (move-to menu), `prefers-reduced-motion` disables zoom morph, ARIA labels for all icons.
+### view2 — Quadrant
 
-### View 1 — Eisenhower matrix
-**Q15. Per-task render in zoomed-out cards:**
-- [x] Title (1 line, ellipsis) + due-date chip if within 7 days + priority dot
-- [ ] Title only
-- [ ] Title + full due date + priority + tags
+- Each quadrant uses a different colored border (see palette).
+- The current quadrant's border is fully visible; ~24 px strips on each shared edge represent the neighboring quadrants and light up during a drag.
+- Move tasks between quadrants by dragging onto a visible neighbor edge; the current quadrant stays focused.
+- Move between quadrants (changing focus) by touch swipe or mouse drag.
+- A FAB (bottom-right) adds a task into the focused quadrant.
+- **Empty quadrant**: rendered as normal with an "empty" note in muted grey (no illustration).
 
-**Q16. Overflow within a quadrant when zoomed out:**
-- [x] Vertical scroll inside each quadrant cell (independent per quadrant)
-- [ ] First N tasks then "+M more" — no scroll until zoomed in
-- [ ] Auto-shrink card density
+### Transition between view1 and view2
 
-**Q17. Default sort within a quadrant:** [x] Manual (drag to reorder), with due-date as secondary when no manual order is set.
+- Switching between view1 and view2 is a zoom; the animation snaps to one of the two states with nothing in between.
+- **Touch**: pinch zooms in/out. Pinch-in from view1 zooms into the quadrant under the pinch midpoint at gesture start. Pinch-out from view2 returns to view1 with the previously-focused quadrant briefly highlighted.
+- **Mouse**: plain wheel scrolls within the focused quadrant; **`Ctrl + wheel`** toggles zoom.
+- **Keyboard**: `Esc` zooms out from view2 (or closes view3); `Enter` on a focused quadrant zooms in; arrow keys move focus between quadrants; `+` / `-` zoom.
 
-**Q18. Adding a task from V1:** [x] Floating "+" button (bottom-right) opens a quick composer; user picks quadrant from a 2×2 mini-matrix.
+### view3 — Task focus
 
-**Q19. Quadrant axis labels visibility:** [x] Faint labels on outer edges of the matrix in V1; hidden in V2.
+- Tapping or clicking a task opens view3.
+- **Presentation**: bottom sheet on mobile, ~480 px right-side panel on desktop. Does not fully obscure the underlying matrix.
+- **All fields editable**: title, notes (markdown), due date, due time (optional), priority, quadrant, status, target backend. Fields the active backend can't represent natively are kept (encoded in notes by the adapter) and flagged with an info icon in this view.
+- Subtasks: skipped for now.
+- Recurrence: deferred to a later release.
+- **Quadrant change**: small 2 × 2 picker with the current quadrant highlighted.
+- **Due-date editing**: native date picker + quick-pick row "Today" / "Tomorrow" / "This weekend" / "Next week" / "No date". Today and Tomorrow are 1-tap each.
+- **Complete**: instant toggle. **Delete**: trash icon with a 5-second undo snackbar; no modal confirmation.
+- Closing view3 returns to whichever view (view1 or view2) was visible when it opened.
 
-### View 2 — Quadrant
-**Q20. Visible neighbor edge for cross-quadrant drag:**
-- [x] ~24px strip on each shared edge that lights up during a drag; drop on strip moves task to that neighbor
-- [ ] Wider strip (~48px) always visible (more obvious, eats screen space)
-- [ ] Edges only visible during drag
+### view4 — Options
 
-**Q21. Pinch-out from V2 returns to:** [x] V1 with the previously-focused quadrant briefly highlighted.
+Top-level groups:
 
-**Q22. Add-task affordance in V2:** [x] FAB bottom-right; new task lands in the focused quadrant.
+1. **Backends** — connect / disconnect, default backend for new tasks, sync status
+2. **Account** — connected identity per backend, sign out
+3. **Appearance** — theme (locked to dark in the first release), per-quadrant color overrides
+4. **Defaults** — default quadrant for new tasks, default sort
+5. **Data** — export JSON, import JSON, clear local cache
+6. **About** — version, build, source link
 
-**Q23. Empty-quadrant state:** [x] Minimal centered illustration + 1-line description of the quadrant's purpose ("Important and urgent — do these first").
+### First-run flow
 
-### Transition (zoom)
-**Q24. Mouse-wheel behavior:**
-- [x] Plain wheel scrolls within the focused quadrant; **Ctrl+wheel** zooms between V1 ↔ V2
-- [ ] Plain wheel zooms (no in-quadrant scroll — risky for long lists)
-- [ ] No wheel zoom — only buttons/keyboard
+- Start in the **local (IndexedDB) backend**, prepopulated with three sample tasks so the UI is immediately usable.
+- A dismissible banner suggests connecting Google Tasks or Microsoft To-Do.
 
-**Q25. Pinch-in from V1 — which quadrant gets focus:** [x] The one under the pinch midpoint at gesture start.
+### Cross-cutting UX
 
-**Q26. Keyboard shortcuts:** [x] `Esc` zooms out to V1 from V2, or closes V3. `Enter` on a focused quadrant zooms in. Arrow keys navigate quadrants. `+`/`-` zoom.
+- Reminders / notifications are deferred — the first release ships without them.
+- **Time zones**: dates are stored with the user's local zone offset at creation and displayed in the user's current local zone. No multi-zone awareness in the first release.
+- **Loading / error / empty states** are part of the design system: skeleton loaders for lists, inline error banner with retry for failed sync, standardized empty-state pattern.
+- **Telemetry**: none in the first release.
 
-**Q27. Reduced motion:** [x] `prefers-reduced-motion: reduce` replaces animations with instant cuts (no morph).
+## Planning instruction
 
-### View 3 — Task focus
-**Q28. Presentation:**
-- [x] Bottom sheet on mobile, side panel (~480px right) on desktop. Doesn't fully obscure the matrix.
-- [ ] Full-screen modal everywhere
-- [ ] Inline expand within the quadrant
+- You are the expert; create the implementation plan.
+- Implement only the **local (IndexedDB) backend** first. The adapter interface, the field mapping table, and the conflict-resolution UX must be designed up-front so the Google Tasks and Microsoft To-Do adapters can be added later without churn.
+- Prepare the plan so different parts (UI design system, app shell, view1 / view2 + zoom, view3, view4, backend adapters, sync engine) can be implemented by separate agents.
+- **Project layout**: pnpm-workspace monorepo with packages
+  - `app` — UI shell, views, routing
+  - `backend-core` — adapter interface, canonical model, sync engine, conflict UI hooks
+  - `backend-local-indexeddb` — first-release backend
+  - `backend-inmemory` — test fixture, not shipped to users
+  - `backend-google` — later
+  - `backend-microsoft` — later
+  - `design-system` — tokens, primitives
+- **Inter-slice contracts** that must be defined before parallel work starts:
+  - `BackendAdapter` TypeScript interface + canonical `Task` type (owned by `backend-core`)
+  - Design tokens file: colors, spacing, motion durations, type scale (owned by `design-system`)
+  - Route + view-state contract: how view1 / view2 / view3 / view4 are reachable, URL params (owned by `app` shell)
+- Each slice's plan must include a **"done when"** checklist: tests passing, contracts honored, accessibility checks passed, manual demo script.
+- **Testing strategy**: unit tests for backend adapters using `backend-inmemory` as the contract reference; component tests via Testing Library; Playwright end-to-end covering create → drag between quadrants → focus → set due → complete; plus a PWA install + offline scenario.
+- **Suggested model assignments per slice** (the planner can adjust):
+  - Planning and orchestration: **Opus**
+  - Design system / UI primitives: **Sonnet**
+  - Backend adapters and sync engine: **Sonnet**
+  - view1 / view2 / drag-and-drop / zoom transitions: **Sonnet**
+  - view3 / view4 / forms: **Sonnet**
+  - Tests + CI scaffolding: **Haiku**
 
-**Q29. Editable field set** (all editable per your note — confirm which fields exist): [x] title, notes (markdown), due date, due time (optional), priority, quadrant, status, recurrence. Backend-unsupported fields show an info icon.
+## Session continuity
 
-**Q30. Arbitrary-date entry beyond Today/Tomorrow:** [x] Native date picker + quick-pick row: "Today", "Tomorrow", "This weekend", "Next week", "No date".
+Both planning and implementation must be broken into small, resumable steps so a session can be stopped and resumed (e.g. after running out of tokens) without losing progress. Treat the conversation as ephemeral and the repo as the source of truth.
 
-**Q31. Quadrant change from V3:** [x] Yes — small 2×2 picker with current quadrant highlighted.
+### Planning is iterative and persisted to disk
 
-**Q32. Delete & complete actions:**
-- [x] Complete: instant toggle. Delete: trash icon with 5s undo snackbar — no modal confirm.
-- [ ] Both require confirm
-- [ ] No undo, hard delete
+- Write the plan to `plan.md` at the repo root. Build it up incrementally rather than producing it in one pass.
+- Structure: numbered phases, each with numbered steps. Every step records: **goal**, **inputs** (files / contracts to read first), **outputs** (files / changes produced), and a verifiable **done-when** checklist.
+- Commit `plan.md` after each phase is drafted so a fresh session can resume by reading it.
+- Sequence the inter-slice contracts (`BackendAdapter`, design tokens, route / view-state) first, before any slice that depends on them.
 
-**Q33. Recurring tasks in v1:**
-- [x] Yes, basic: daily / weekly / monthly / custom RRULE. Drops on push to Google Tasks (user warned).
-- [ ] Defer to v2 (simpler backend mapping)
+### Implementation steps are small and committed
 
-**Q34. Closing V3 returns to:** [x] The view visible when V3 was opened (V1 or V2).
+- Each step in `plan.md` is sized to fit comfortably in a single session: roughly one feature, contract, or file group at a time.
+- After each step:
+  1. Run the step's done-when checks.
+  2. Make one commit per step, with a message naming the step number (e.g. `step 2.3: define BackendAdapter interface`).
+  3. Update `plan.md` to mark the step done and record any decisions or deviations.
+- Long-running side effects (dependency installs, scaffolding) belong in their own dedicated step so a session that fails partway can be cleanly restarted.
 
-### View 4 — Options
-**Q35. Top-level option groups:** [x]
-1. Backends — connect/disconnect, switch active, sync status
-2. Account — connected identity, sign out
-3. Appearance — theme (locked to dark in v1), per-quadrant color overrides
-4. Defaults — default quadrant for new tasks, default sort
-5. Data — export JSON, import JSON, clear local cache
-6. About — version, build, source link
+### Status file for cross-session handoff
 
-**Q36. First-run flow:**
-- [x] Start in in-memory backend with 3 sample tasks; banner suggests "Connect Google or Microsoft to keep your tasks".
-- [ ] Force backend selection before any UI is shown
-- [ ] Empty state + onboarding modal
+- Maintain `status.md` at the repo root with: the **last completed step**, the **next step about to begin**, and any **open questions or blockers**.
+- Update `status.md` at the start and end of every session.
+- A fresh session must be able to resume by reading only: `design-input.md` + `plan.md` + `status.md` + `git log` + the current file tree.
 
-### Cross-cutting
-**Q37. Reminders / notifications:**
-- [x] Defer to v2. v1 ships without notifications.
-- [ ] v1 includes Web Notifications for due-today tasks (requires permission UX + service-worker scheduling)
+### Session start / end protocol
 
-**Q38. Time zones:** [x] Store dates with user's local zone offset on creation; display in the user's current local zone. No multi-zone awareness in v1.
+- **At session start**: read `design-input.md`, `plan.md`, `status.md`, and run `git log --oneline -20` and `git status`. Confirm the next step before writing any code.
+- **At session end** (or when context is getting tight): commit any in-flight work (use a `wip step N: ...` prefix if the step isn't complete), update `status.md` with the partial state and what to pick up next, and stop.
 
-**Q39. Loading / error / empty states:** [x] Standardized: skeleton loaders for lists, inline error banner with retry for failed sync, illustrated empty states. Defined as design-system primitives.
+### Guardrails
 
-**Q40. Telemetry:**
-- [x] None in v1
-- [ ] Anonymous error reporting only (Sentry)
-- [ ] Anonymous usage analytics + errors
-
-**Q41. Internationalization:**
-- [x] English only at v1, but wrap user-facing strings in an `i18n` helper from day one
-- [ ] Multi-locale at v1 (specify which)
-
-**Q42. Testing strategy:** [x] Unit tests for backend adapters (in-memory backend doubles as the contract reference); component tests via Testing Library; Playwright e2e covering: create → drag between quadrants → focus → set due → complete; plus a PWA install + offline scenario.
-
-**Q43. Project layout:**
-- [x] Single Vite app. Folders: `src/app/` (UI), `src/backends/{inmemory,google,microsoft}/`, `src/core/` (canonical model + adapter interface), `src/design/` (tokens, primitives).
-- [ ] pnpm-workspace monorepo: `app`, `backend-core`, `backend-inmemory`, `backend-google`, `backend-microsoft`, `design-system` (better isolation, more overhead)
-
-### Planning instructions
-**Q44. Inter-slice contracts to define before parallel work starts:**
-- [x] `BackendAdapter` TS interface + canonical `Task` type — owned by core slice
-- [x] Design-tokens file (colors, spacing, motion durations, type scale) — owned by design slice
-- [x] Route + view-state contract (V1/V2/V3/V4 reachability, URL params) — owned by app-shell slice
-
-**Q45. Acceptance criteria per slice:** [x] Each slice's plan includes a "done when" checklist: tests passing, contracts honored, a11y checks passed, manual demo script.
-
-**Q46. Suggested model assignments per slice** (edit freely):
-- Design system / UI primitives: **Sonnet** (visual + structural, lots of iteration)
-- Backend adapters & sync engine: **Opus** (correctness, mapping edge cases, conflicts)
-- V1 / V2 / drag-and-drop / zoom transitions: **Opus** (gesture math, animation correctness)
-- V3 / V4 / forms: **Sonnet** (more mechanical)
-- Tests + CI scaffolding: **Haiku** (template-heavy, fast)
+- Never rely on what was said earlier in the conversation. If a decision matters, it lives in `design-input.md` (input), `plan.md` (the plan), or `status.md` (the state) — or it does not exist.
+- If a step grows too large mid-session, split it: stop, commit progress as `wip step N`, update `status.md`, and continue in the next session.
+- Keep diffs scoped to the active step. Do not bundle step N + step N + 1 work into one commit.
