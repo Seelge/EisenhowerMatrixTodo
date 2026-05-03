@@ -129,7 +129,7 @@ Per `design-input.md`, contracts must be defined before parallel work starts. Af
 
 Depends on Phase 0.
 
-### Step 1.1 — Canonical Task type
+### Step ✅ 1.1 — Canonical Task type
 **Goal.** Define the canonical task model in `backend-core` matching the field mapping table.
 **Inputs.** `design-input.md` (Backend → field mapping table).
 **Outputs.**
