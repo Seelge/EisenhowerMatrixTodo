@@ -185,5 +185,5 @@ Both planning and implementation must be broken into small, resumable steps so a
 ### Guardrails
 
 - Never rely on what was said earlier in the conversation. If a decision matters, it lives in `design-input.md` (input), `plan.md` (the plan), or `status.md` (the state) — or it does not exist.
-- If a step grows too large mid-session, split it: stop, commit progress as `wip step N`, update `status.md`, and continue in the next session.
+- If a step grows larger than expected mid-session, keep going — do not artificially split it across sessions. The commit + `status.md` discipline is a safety net for when a session is forced to end (token exhaustion, interruption), not a reason to stop early.
 - Keep diffs scoped to the active step. Do not bundle step N + step N + 1 work into one commit.

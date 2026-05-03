@@ -40,7 +40,7 @@ Phases 5/6, 8/9 are independent of each other once Phase 4 is done — good para
 
 Set up the monorepo, language, lint, test, and build tooling. End state: an empty PWA shell that builds, passes an empty test suite, and lints clean.
 
-### Step 0.1 — pnpm workspace bootstrap
+### Step ✅ 0.1 — pnpm workspace bootstrap
 **Goal.** A pnpm workspace exists with one directory per planned package; `pnpm install` succeeds.
 **Inputs.** `design-input.md` (Planning instruction → project layout).
 **Outputs.**

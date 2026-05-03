@@ -4,21 +4,26 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 ## Current activity
 
-**Phase:** Implementation (just switched).
+**Phase:** Implementation.
 
-**Last completed:** plan complete; cleaned up Step 5.7 (manual order is local-only via a `taskOrder` IDB store, not part of the canonical `Task`).
+**Last completed:** Step 0.1 — pnpm workspace bootstrap. Root + 7 packages (`@emt/app`, `@emt/backend-core`, `@emt/backend-local-indexeddb`, `@emt/backend-inmemory`, `@emt/backend-google`, `@emt/backend-microsoft`, `@emt/design-system`). `pnpm install` and `pnpm -r ls --depth=-1` both green.
 
-**Next:** Step 0.1 — pnpm workspace bootstrap. **Blocked** on Node.js not being installed in the dev environment.
+**Next:** Step 0.2 — TypeScript baseline (strict shared `tsconfig.base.json` + per-package `tsconfig.json` with project references; root `typecheck` script).
+
+## Environment notes
+
+- Node 24.15.0 installed via fnm (binary at `~/.local/bin/fnm`, manager dir `~/.local/share/fnm`). fnm init appended to `~/.zshrc` and `~/.bashrc` so future shells pick it up automatically.
+- pnpm 10.33.2 activated via Corepack and pinned in root `package.json` `packageManager`.
+- Repo pins Node major in `.node-version` (`24`).
 
 ## Pending external actions (user)
 
-- **Decision needed**: how should Node.js be installed on this WSL Ubuntu environment? Options offered to the user — see "Open questions / blockers" below.
 - **GitHub Pages** must be enabled on the repository before Step 0.7's `deploy.yml` will succeed (deferred until Step 0.7).
 - `design-input.md` had uncommitted edits as of the last planning session — confirm they have been committed.
 
 ## Open questions / blockers
 
-- **Blocker**: no Node.js, no version manager (nvm/fnm/volta), no corepack on this machine. Step 0.1 needs Node + pnpm. Decision pending from user on install method.
+None.
 
 ## How to resume
 

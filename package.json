@@ -1,0 +1,10 @@
+{
+  "name": "eisenhower-matrix-todo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@10.33.2"
+}

@@ -1,0 +1,23 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .: {}
+
+  packages/app: {}
+
+  packages/backend-core: {}
+
+  packages/backend-google: {}
+
+  packages/backend-inmemory: {}
+
+  packages/backend-local-indexeddb: {}
+
+  packages/backend-microsoft: {}
+
+  packages/design-system: {}
