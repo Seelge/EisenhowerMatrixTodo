@@ -6,9 +6,9 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 0.1 — pnpm workspace bootstrap. Root + 7 packages (`@emt/app`, `@emt/backend-core`, `@emt/backend-local-indexeddb`, `@emt/backend-inmemory`, `@emt/backend-google`, `@emt/backend-microsoft`, `@emt/design-system`). `pnpm install` and `pnpm -r ls --depth=-1` both green.
+**Last completed:** Step 0.2 — TypeScript baseline. Strict `tsconfig.base.json`, root `tsconfig.json` listing all 7 packages as project references, per-package `tsconfig.json` extending base with cross-package references where applicable. Each package has a placeholder `src/index.ts`. Root `typecheck` script runs `tsc -b`; clean.
 
-**Next:** Step 0.2 — TypeScript baseline (strict shared `tsconfig.base.json` + per-package `tsconfig.json` with project references; root `typecheck` script).
+**Next:** Step 0.3 — ESLint + Prettier (flat config with `@typescript-eslint`, React/hooks/jsx-a11y for app+design-system, import plugin; root `lint`, `format`, `format:check` scripts).
 
 ## Environment notes
 
