@@ -14,7 +14,9 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:unit": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "e2e": "pnpm --filter @emt/app exec playwright test",
+    "e2e:install": "PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64 pnpm --filter @emt/app exec playwright install chromium"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

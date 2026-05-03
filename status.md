@@ -6,9 +6,9 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 0.4 — Vitest setup. Vitest 4 with workspace projects: root `vitest.config.ts` discovers `packages/*/vitest.config.ts`. Each of the 7 packages has its own minimal vitest config (named project) and a `test/smoke.test.ts`. Scripts `test` (= `vitest run`), `test:unit` (alias), `test:watch`. All 7 smoke tests pass; lint, format:check, typecheck still clean.
+**Last completed:** Step 0.5 — Playwright skeleton. `@playwright/test@1.59.1` installed in `@emt/app`, `playwright.config.ts` (Chromium-only, baseURL `http://localhost:4173`), `e2e/smoke.spec.ts` with a server-less assertion. Root scripts `e2e` and `e2e:install`. Two deviations from plan documented inline as Notes on the step: (a) replaced the `.gitkeep` with a real smoke test because Playwright has no pass-with-no-tests mode; (b) `e2e:install` carries `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64` because Playwright doesn't prebuild for ubuntu26.04 (this WSL env). All checks (lint, format:check, typecheck, test, e2e) green.
 
-**Next:** Step 0.5 — Playwright skeleton in `packages/app` (config, empty `e2e/` dir, root `e2e` and `e2e:install` scripts).
+**Next:** Step 0.6 — CI workflow (`.github/workflows/ci.yml` running install + lint + typecheck + test).
 
 ## Environment notes
 
