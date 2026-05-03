@@ -18,6 +18,7 @@
     "vite-plugin-pwa": "^1.2.0"
   },
   "dependencies": {
+    "@emt/backend-core": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   }

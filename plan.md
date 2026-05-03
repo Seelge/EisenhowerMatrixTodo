@@ -218,7 +218,7 @@ Depends on Phase 0.
 - Compiles.
 - `preview.html` opened in a browser shows all tokens with their values (manual visual check).
 
-### Step 1.7 — Route + view-state contract
+### Step ✅ 1.7 — Route + view-state contract
 **Goal.** URL shape and the in-memory view-state model coordinating views, zoom, focused quadrant, focused task.
 **Inputs.** `design-input.md` (view sections, transitions); Step 1.1.
 **Outputs.**

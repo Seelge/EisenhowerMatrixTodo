@@ -6,21 +6,21 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 1.6 — Design tokens.
+**Last completed:** Step 1.7 — Route + view-state contract. **Phase 1 complete.**
 
-`packages/design-system/src/tokens.ts`: typed `tokens` object with `color` (bg, surface, surface-elevated, text-primary/secondary, accent, q1-q4, error), `space` (xs–3xl), `radius` (sm/md/lg/pill), `font` (family sans+mono, size scale, weights, line heights), `motion` (duration short/medium/long, easing standard/emphasized/decelerated/accelerated), `glow` (q1-q4 + accent — outer halo + inner shadow), `layer` (z-index ladder).
+`packages/app/src/routes/contract.ts`: `Zoom` (`'matrix' | 'quadrant'`), `ViewState` (zoom, focusedQuadrant?, focusedTaskId?, openedFromZoom?), `defaultViewState`, `parseUrl(url)` and `serializeUrl(state)`. Routes handled: `/`, `/q/:Q1..Q4`, with `?task=` and `?from=` overlay params. `/options/*` and unknown paths degrade to the default matrix state — view4 has its own router.
 
-`packages/design-system/src/tokens.css`: CSS custom properties mirroring the TS values; `color-scheme: dark` and a `prefers-reduced-motion: reduce` override that zeroes out durations.
+Plumbing for cross-package imports landed in this step too:
+- `@emt/backend-core/package.json` gained `main`/`types`/`exports` pointing to `dist/`, plus a `files: ["dist"]` whitelist.
+- `@emt/app` now declares `@emt/backend-core: workspace:*` as a dependency.
 
-`packages/design-system/src/types.ts`: re-exports the token-derived types (`ColorToken`, `SpaceToken`, etc.).
+`packages/app/test/routes-contract.test.ts`: round-trips 20 randomized states; asserts each route shape; degrades-gracefully cases (unknown quadrant, `/options/*`, malformed); serializer omits `from` when no task is set.
 
-`packages/design-system/preview.html`: standalone preview page that loads `tokens.css` and renders swatches for color, glow, space, radius, type scale, and motion. Open in a browser to visually verify (manual).
+30 tests pass; all checks clean.
 
-`test/tokens.test.ts`: asserts palette format, every quadrant has a matching glow with the right RGB, monotonic space and motion scales.
+**Phase 1 done.** All inter-slice contracts are in place: canonical Task, BackendAdapter, contract test suite, conflict resolver, sync engine + cache schema, design tokens, route + view-state. Phases 2 / 3 / parts of 4 can now proceed in parallel.
 
-17 tests pass; all checks clean.
-
-**Next:** Step 1.7 — Route + view-state contract in `packages/app/src/routes/contract.ts`. Closes Phase 1.
+**Next:** Phase 2, Step 2.1 — In-memory adapter (reference implementation; runs the contract test suite).
 
 ## Environment notes
 
