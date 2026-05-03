@@ -47,6 +47,9 @@ importers:
 
   packages/app:
     dependencies:
+      '@emt/backend-core':
+        specifier: workspace:*
+        version: link:../backend-core
       react:
         specifier: ^18.3.1
         version: 18.3.1
