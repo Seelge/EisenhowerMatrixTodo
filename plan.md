@@ -95,7 +95,7 @@ Set up the monorepo, language, lint, test, and build tooling. End state: an empt
 **Note.** Original plan said `e2e/.gitkeep` and `pnpm e2e` exits 0 with "no tests found", but Playwright exits 1 on no-tests with no flag to override. Replaced the placeholder with a real one-line smoke test that asserts `1 + 1 === 2` without needing a running server.
 **Note.** Browser install required `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64` because Playwright 1.59.1 does not have prebuilt browsers for ubuntu26.04 (which is the dev environment). The ubuntu24.04 build is ABI-compatible. Override baked into the `e2e:install` script.
 
-### Step 0.6 — CI workflow
+### Step ✅ 0.6 — CI workflow
 **Goal.** GitHub Actions runs lint + typecheck + unit tests on PRs and `main`.
 **Inputs.** Steps 0.3, 0.2, 0.4.
 **Outputs.**
