@@ -6,9 +6,9 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 0.2 — TypeScript baseline. Strict `tsconfig.base.json`, root `tsconfig.json` listing all 7 packages as project references, per-package `tsconfig.json` extending base with cross-package references where applicable. Each package has a placeholder `src/index.ts`. Root `typecheck` script runs `tsc -b`; clean.
+**Last completed:** Step 0.3 — ESLint + Prettier. Flat config in `eslint.config.js` with typescript-eslint, eslint-plugin-import-x (used in place of the older `eslint-plugin-import` because flat-config support is more reliable), React + react-hooks + jsx-a11y scoped to `packages/app` and `packages/design-system`, eslint-config-prettier last. Prettier configured (singleQuote, trailingComma all, printWidth 100). `*.md` is in `.prettierignore` so authored docs (`design-input.md`, `plan.md`, `status.md`, `README.md`) are not reformatted. Root scripts `lint`, `format`, `format:check`. `pnpm lint --max-warnings 0` and `pnpm format:check` both clean.
 
-**Next:** Step 0.3 — ESLint + Prettier (flat config with `@typescript-eslint`, React/hooks/jsx-a11y for app+design-system, import plugin; root `lint`, `format`, `format:check` scripts).
+**Next:** Step 0.4 — Vitest setup (workspace-level config, smoke test per package, root `test` script).
 
 ## Environment notes
 

@@ -62,7 +62,7 @@ Set up the monorepo, language, lint, test, and build tooling. End state: an empt
 **Done when.**
 - `pnpm typecheck` returns clean.
 
-### Step 0.3 — ESLint + Prettier
+### Step ✅ 0.3 — ESLint + Prettier
 **Goal.** Lint and format consistent across packages.
 **Inputs.** Step 0.2.
 **Outputs.**
