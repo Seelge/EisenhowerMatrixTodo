@@ -477,16 +477,15 @@ The full-matrix view. Depends on Phase 4 (router, queries, theme) and Phase 3.
 **Done when.** Keyboard-only test: focus card → activate menu → choose target → assertion task moved.
 
 ### Step 5.7 — Sort: manual with due-date secondary + reset
-**Goal.** Per-quadrant manual order, persisted; when a task has no manual rank, sort by due date (nulls last). "Reset to secondary" action clears manual ranks for the current quadrant.
+**Goal.** Per-quadrant manual order, persisted locally. When a task has no manual rank, sort by due date (nulls last). "Reset to secondary" action clears manual ranks for the current quadrant.
 **Outputs.**
-- Add `manualRank?: number` to `Task` (Step 1.1) — actually stored adapter-side (out of the canonical model? **Decision required:** keep manual order in the adapter via a special field, or maintain it in a separate IDB store keyed by `(backendId, taskId)` so it's local-only.)
-- **Default decision:** local-only via a `taskOrder` IDB store (manual order is a UI concern, not a sync concern). Document in this step.
-- Sort util in `packages/app/src/views/matrix/sort.ts` + unit tests.
-- `Reset to secondary order` button in the cell header.
+- New `taskOrder` IDB store keyed by `(backendId, taskId)` with a `rank: number` field. Manual order is a UI concern, not synced — kept out of the canonical `Task` model.
+- `packages/app/src/views/matrix/sort.ts` + unit tests for the manual-with-fallback ordering.
+- "Reset to secondary order" action in each cell header.
 **Done when.**
-- Reorder via drag (Step 5.5 extended) updates manual ranks.
-- Reset clears ranks; cards fall back to due-date order.
-- Persists across reloads.
+- Reorder via drag (Step 5.5 extended) writes ranks.
+- Reset clears ranks for the current quadrant; cards fall back to due-date order.
+- Order persists across reloads.
 
 ### Step 5.8 — FAB + quick composer
 **Goal.** Bottom-right FAB opens a quick composer (title + 2 × 2 mini-picker); creates a task via `useCreateTask` in the chosen quadrant.
