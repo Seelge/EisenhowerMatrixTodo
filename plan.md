@@ -72,7 +72,7 @@ Set up the monorepo, language, lint, test, and build tooling. End state: an empt
 **Done when.**
 - `pnpm lint` and `pnpm format:check` clean on the empty repo.
 
-### Step 0.4 — Vitest setup
+### Step ✅ 0.4 — Vitest setup
 **Goal.** Unit tests run via Vitest at workspace level.
 **Inputs.** Step 0.2.
 **Outputs.**
