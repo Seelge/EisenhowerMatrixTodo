@@ -438,42 +438,337 @@ Depends on Phases 1, 2, 3.
 
 ## Phase 5 — view1: Eisenhower matrix
 
-*Stub — to be detailed in next planning increment.*
+The full-matrix view. Depends on Phase 4 (router, queries, theme) and Phase 3.
 
-Top-line: 2 × 2 grid of quadrant cells; per-task card shows title + due + priority + tags; independent vertical scroll per cell; manual sort with due-date secondary + reset; drag-and-drop between quadrants via dnd-kit (with keyboard "move to" alternative); FAB + quick composer with mini 2 × 2 picker; faint axis labels on outer edges.
+### Step 5.1 — Matrix layout shell
+**Goal.** 2 × 2 grid with quadrant headers ("Do / Schedule / Delegate / Delete") and faint axis labels ("Important ↑", "Urgent →") on the outer edges. Each cell renders the colored glow border from Step 3.2.
+**Outputs.** `packages/app/src/views/matrix/MatrixView.tsx`, `MatrixCell.tsx`.
+**Done when.** Snapshot test: empty matrix renders all four cells with correct labels and palette.
+
+### Step 5.2 — Task card
+**Goal.** Card showing title, full due date, priority dot, tags. Click/tap opens view3.
+**Inputs.** Step 1.1 (`Task`).
+**Outputs.** `packages/app/src/views/matrix/TaskCard.tsx` + tests.
+**Done when.** Component test renders all field permutations (no due, all priorities, multiple tags, long titles → ellipsis after 1 line).
+
+### Step 5.3 — Per-cell task list
+**Goal.** Each cell loads tasks for its quadrant via `useTasks(quadrant)`; renders cards in sort order from Step 5.7.
+**Outputs.** `MatrixCell.tsx` updated; integrates with TanStack Query.
+**Done when.** Tasks created via the Phase 4 debug page appear in their respective cells without reload.
+
+### Step 5.4 — Independent vertical scroll per cell
+**Goal.** Each cell has its own scroll viewport; matrix container does not scroll.
+**Outputs.** Updated CSS in `MatrixCell.tsx`.
+**Done when.** Two cells with > viewport-height tasks scroll independently. Scrollbars styled to match the dark theme.
+
+### Step 5.5 — Drag-and-drop between quadrants
+**Goal.** Drag a card from one cell into another using dnd-kit; on drop, `useUpdateTask` patches `quadrant`.
+**Inputs.** Step 4.3, dnd-kit.
+**Outputs.** `MatrixView.tsx` becomes a `DndContext`; `MatrixCell` uses `useDroppable`; `TaskCard` uses `useDraggable`.
+**Done when.**
+- Mouse drag works on desktop.
+- Touch drag works on Android.
+- Visual drop indicator on the receiving cell.
+- Optimistic update + rollback on adapter error.
+
+### Step 5.6 — Keyboard alternative ("Move to")
+**Goal.** Each task card has a focusable kebab menu offering "Move to → Q1/Q2/Q3/Q4" (excluding current). Required for a11y commitment.
+**Outputs.** `TaskCardMenu.tsx`.
+**Done when.** Keyboard-only test: focus card → activate menu → choose target → assertion task moved.
+
+### Step 5.7 — Sort: manual with due-date secondary + reset
+**Goal.** Per-quadrant manual order, persisted; when a task has no manual rank, sort by due date (nulls last). "Reset to secondary" action clears manual ranks for the current quadrant.
+**Outputs.**
+- Add `manualRank?: number` to `Task` (Step 1.1) — actually stored adapter-side (out of the canonical model? **Decision required:** keep manual order in the adapter via a special field, or maintain it in a separate IDB store keyed by `(backendId, taskId)` so it's local-only.)
+- **Default decision:** local-only via a `taskOrder` IDB store (manual order is a UI concern, not a sync concern). Document in this step.
+- Sort util in `packages/app/src/views/matrix/sort.ts` + unit tests.
+- `Reset to secondary order` button in the cell header.
+**Done when.**
+- Reorder via drag (Step 5.5 extended) updates manual ranks.
+- Reset clears ranks; cards fall back to due-date order.
+- Persists across reloads.
+
+### Step 5.8 — FAB + quick composer
+**Goal.** Bottom-right FAB opens a quick composer (title + 2 × 2 mini-picker); creates a task via `useCreateTask` in the chosen quadrant.
+**Outputs.** `QuickComposer.tsx` (uses Step 3.4 Sheet on mobile, popover on desktop).
+**Done when.**
+- Empty title disabled.
+- Esc / outside click cancels.
+- Created task appears optimistically in the chosen cell.
+
+**Phase 5 exit:** matrix is fully functional — view, sort, create, move, focus.
+
+---
 
 ## Phase 6 — view2: Quadrant
 
-*Stub — to be detailed in next planning increment.*
+Single-quadrant view. Depends on Phase 4 and Phase 3.
 
-Top-line: focused-quadrant layout with colored glow border; ~24 px neighbor-edge strips that light up during a drag and accept drops; touch-swipe / mouse-drag to change focused quadrant; FAB adds task into focused quadrant; empty quadrant rendered as normal with muted-grey "empty" note.
+### Step 6.1 — Quadrant layout
+**Goal.** Render the focused quadrant fullscreen with its colored glow border; ~24 px strips along each edge representing the three neighbors (using their colors at reduced opacity).
+**Outputs.** `packages/app/src/views/quadrant/QuadrantView.tsx`, `NeighborEdge.tsx`.
+**Done when.** Visual test for each focused quadrant; neighbor strips are present on the correct edges.
+
+### Step 6.2 — Drop-on-edge to move
+**Goal.** Dragging a task onto a neighbor edge moves it to that quadrant. The current quadrant stays focused after drop.
+**Outputs.** `NeighborEdge.tsx` becomes a `useDroppable`; same dnd-kit context as Step 5.5.
+**Done when.**
+- During a drag, the targeted edge brightens (uses Step 3.2 glow).
+- Drop moves the task and removes it from the current view.
+
+### Step 6.3 — Touch swipe to change focus
+**Goal.** Horizontal/vertical swipe (when not on a draggable card) switches focused quadrant.
+**Outputs.** Pointer/touch handler at `QuadrantView` root.
+**Done when.**
+- Swipe left/right/up/down navigates to the geometrically-adjacent quadrant (left/right swap urgent axis, up/down swap importance axis).
+- Swipe is rate-limited and respects `prefers-reduced-motion` (instant snap).
+
+### Step 6.4 — Mouse drag-at-edge to change focus
+**Goal.** Click-and-drag from the background (not on a card) translates focus the same way as a swipe.
+**Outputs.** Same handler as 6.3, mouse code path.
+**Done when.** Tests for both swipe and mouse drag pass.
+
+### Step 6.5 — FAB in view2
+**Goal.** FAB creates a task in the currently focused quadrant (no quadrant picker shown).
+**Outputs.** Reuse `QuickComposer` (Step 5.8) without the mini-matrix.
+**Done when.** New task appears in the focused quadrant immediately.
+
+### Step 6.6 — Empty state
+**Goal.** Empty focused quadrant renders normally with the muted-grey "empty" note from Step 3.8 (no illustration).
+**Outputs.** Branch in `QuadrantView` rendering `<EmptyNote>` when the list is empty.
+**Done when.** Visual test: empty Q3 renders the note centered, neighbor strips still present.
+
+**Phase 6 exit:** quadrant view is fully functional — view, swipe, drag-to-edge, create.
+
+---
 
 ## Phase 7 — Zoom transition (view1 ↔ view2)
 
-*Stub — to be detailed in next planning increment.*
+Glue the two views with the snap-zoom animation and input bindings.
 
-Top-line: snap animation between matrix and quadrant; touch pinch (in: midpoint quadrant; out: previously-focused quadrant briefly highlighted); mouse `Ctrl + wheel` toggles zoom while plain wheel scrolls within the quadrant; keyboard Esc / Enter / arrows / `+` / `-`; `prefers-reduced-motion` replaces the morph with instant cuts.
+Depends on Phases 5 and 6.
+
+### Step 7.1 — Snap morph animation
+**Goal.** Animate from matrix to single quadrant (and back) by scaling the layout — single CSS transform, no per-card layout shift. The animation snaps; nothing in between.
+**Outputs.** `packages/app/src/views/zoom/ZoomController.tsx`. Uses Framer Motion `layout` + a shared layout id between `MatrixCell` and `QuadrantView`.
+**Done when.**
+- Toggling zoom via the view-state store animates 200–250 ms with M3 easing.
+- No layout shift on cards mid-animation.
+
+### Step 7.2 — Touch pinch
+**Goal.** Pinch-in from view1 zooms into the quadrant under the pinch midpoint at gesture start. Pinch-out from view2 returns to view1 with a 600 ms highlight on the previously-focused quadrant.
+**Outputs.** Pointer event handler at the matrix root using two-pointer detection (no third-party library; the math is small).
+**Done when.**
+- Pinch-in test (synthetic pointer events) targets the correct quadrant from each midpoint.
+- Pinch-out test confirms highlight appears and decays.
+
+### Step 7.3 — Mouse wheel
+**Goal.** `Ctrl + wheel` toggles zoom; plain wheel scrolls within the focused element (cell or quadrant).
+**Outputs.** Wheel handler in `ZoomController`. Direction: wheel-up = zoom in, wheel-down = zoom out.
+**Done when.**
+- Plain-wheel scrolling inside a cell is unaffected.
+- `Ctrl + wheel-up` on view1 zooms into the cell under the cursor.
+- `Ctrl + wheel-down` on view2 returns to view1.
+
+### Step 7.4 — Keyboard
+**Goal.** `Esc` zooms out from view2 (or closes view3 if open); `Enter` on a focused matrix cell zooms in; arrow keys move focus between cells; `+` / `-` zoom.
+**Outputs.** Global keyboard handler at the app shell, dispatching to view-state.
+**Done when.** Keyboard-only e2e: navigate to Q2 → Enter → land in view2/Q2; Esc returns to view1.
+
+### Step 7.5 — Reduced-motion path
+**Goal.** When `prefers-reduced-motion: reduce`, all zoom animations are instant cuts (no morph).
+**Outputs.** `ZoomController` reads `useReducedMotion` (Step 3.9) and skips the Framer Motion transition.
+**Done when.** Test in both modes covers the same state transitions; only the animation duration differs.
+
+**Phase 7 exit:** view1 ↔ view2 navigation feels seamless across input types.
+
+---
 
 ## Phase 8 — view3: Task focus
 
-*Stub — to be detailed in next planning increment.*
+Task editor. Depends on Phase 4 and Phase 3.
 
-Top-line: bottom sheet on mobile, ~480 px right-side panel on desktop; all fields editable (title, notes markdown, due date, due time, priority, quadrant, status, target backend); date quick-pick row + native picker; 2 × 2 quadrant picker; backend selector triggering migration; complete = instant toggle; delete = trash + 5 s undo snackbar; info icon for backend-unsupported fields; close returns to opener view.
+### Step 8.1 — Surface container
+**Goal.** view3 mounts inside `ResponsiveSurface` (Step 3.4): bottom sheet on mobile, right side panel on desktop, ≤ 480 px wide. The matrix below remains visible.
+**Outputs.** `packages/app/src/views/task/TaskView.tsx`, route handler reading `?task=:id`.
+**Done when.** Opening view3 over view1 keeps the matrix dim but visible; over view2 the focused quadrant is partly visible.
+
+### Step 8.2 — Field editors: title, notes, status
+**Goal.** Editable title (single-line), notes (markdown via a small editor — `textarea` in v1 with preview toggle is acceptable; a richer editor is later), status checkbox.
+**Outputs.** `TitleField.tsx`, `NotesField.tsx`, `StatusToggle.tsx`. All wired to `useUpdateTask` with debounce (300 ms).
+**Done when.** Edits persist; fast typing does not produce N writes (debounced to 1).
+
+### Step 8.3 — Due date + time
+**Goal.** Use `DueDatePicker` (Step 3.7) for date; an optional time field appears after a date is set.
+**Outputs.** `DueField.tsx`.
+**Done when.** Each preset works; clearing date also clears time; "No date" disables the time field.
+
+### Step 8.4 — Priority editor
+**Goal.** Segmented control for none / low / normal / high.
+**Outputs.** `PriorityField.tsx`.
+**Done when.** Keyboard navigation works; selection updates the task.
+
+### Step 8.5 — Quadrant editor
+**Goal.** `QuadrantPicker` (Step 3.6) with current selection highlighted.
+**Outputs.** `QuadrantField.tsx`.
+**Done when.** Picking a different quadrant updates the task; matrix below reflects the move.
+
+### Step 8.6 — Backend selector + migration
+**Goal.** Dropdown of registered backends; selecting a different backend triggers `migrateTask` (Step 2.7) with a progress indicator and error handling.
+**Outputs.** `BackendField.tsx`.
+**Done when.**
+- Migration success: task now lives under the new backendId; view3 stays open.
+- Migration failure (target-create): error banner; task unchanged.
+- Migration partial failure (source-delete): warning toast; orphan source is enqueued for cleanup retry.
+
+### Step 8.7 — Backend-unsupported field hints
+**Goal.** Each field declares which backends support it; an info icon appears next to a field whose value won't natively round-trip on the active backend (it will still be encoded into notes per design).
+**Outputs.** `useFieldSupport(field)` hook reading `BackendCapabilities`; small `<UnsupportedHint>` component.
+**Done when.** Switching to a less-capable backend mock surfaces the hint on Priority and Due-time fields.
+
+### Step 8.8 — Complete & delete actions
+**Goal.** Complete is the status toggle from 8.2; delete is a trash icon that fires `useDeleteTask` and shows an undo snackbar (Step 3.5) for 5 s.
+**Outputs.** `TaskActions.tsx`.
+**Done when.**
+- Click delete → snackbar appears; pressing undo cancels the delete (no commit happened yet).
+- Letting the snackbar expire commits the delete.
+
+### Step 8.9 — Close behavior
+**Goal.** Closing view3 returns the user to whichever view (view1 or view2) was visible when it opened, recorded by `openedFromZoom` in `ViewState` (Step 1.7).
+**Outputs.** Close handler in `TaskView.tsx`.
+**Done when.** Open from view1 → close → land in view1. Open from view2/Q3 → close → land in view2/Q3.
+
+**Phase 8 exit:** end-to-end task editing works on both desktop and mobile, including backend migration.
+
+---
 
 ## Phase 9 — view4: Options
 
-*Stub — to be detailed in next planning increment.*
+Settings & data management.
 
-Top-line: top-level groups Backends / Account / Appearance / Defaults / Data / About; sub-routing under `/options/*`.
+Depends on Phase 4. Internal sub-routing.
+
+### Step 9.1 — Options shell + sub-routing
+**Goal.** `/options` lists groups; `/options/:group` opens the corresponding panel; back-button friendly.
+**Outputs.** `packages/app/src/views/options/OptionsView.tsx`, `OptionsList.tsx`.
+**Done when.** Browser back/forward works between groups.
+
+### Step 9.2 — Backends panel
+**Goal.** List registered backends with sync status, connect/disconnect actions, and a "default backend for new tasks" radio.
+**Outputs.** `BackendsPanel.tsx`. (Connect actions for Google/MS will be wired when those adapters land; in this release only "Local (IndexedDB)" is connectable; the other two render disabled rows with "Coming later".)
+**Done when.** Default selection persists; UI shows last-sync timestamp from the sync engine.
+
+### Step 9.3 — Account panel
+**Goal.** Show connected identity per backend; sign-out per backend.
+**Outputs.** `AccountPanel.tsx`. Local backend has no account; renders informational copy. Google/MS rows are placeholders.
+**Done when.** UI renders correctly for the local-only state.
+
+### Step 9.4 — Appearance panel
+**Goal.** Theme is locked to Dark in this release (rendered as disabled). Per-quadrant color overrides editable; persisted to user prefs.
+**Outputs.** `AppearancePanel.tsx`. Override state stored under a `prefs` IDB store; merged into the theme on read.
+**Done when.** Changing Q1 color updates the matrix glow without reload; clearing override returns to the design-system default.
+
+### Step 9.5 — Defaults panel
+**Goal.** Default quadrant for new tasks; default secondary sort (due date / created / title).
+**Outputs.** `DefaultsPanel.tsx`. Defaults are read by Step 5.8 and Step 5.7.
+**Done when.** Changing default quadrant changes the FAB → quick composer pre-selection.
+
+### Step 9.6 — Data panel
+**Goal.** Export all tasks (across backends) to JSON; import from JSON; clear local cache (does not affect remote backends).
+**Outputs.** `DataPanel.tsx`. Export format documented in `packages/backend-core/src/export-format.md`.
+**Done when.**
+- Round-trip test: export → clear → import → original tasks restored.
+- Clear local cache leaves remote backends intact (verified with the in-memory adapter as a remote stand-in).
+
+### Step 9.7 — About panel
+**Goal.** Version, build commit SHA, link to source.
+**Outputs.** `AboutPanel.tsx`. Build info injected at Vite build time.
+**Done when.** Live build shows the actual commit hash.
+
+**Phase 9 exit:** options surface complete; user can manage backends, appearance, defaults, and data.
+
+---
 
 ## Phase 10 — Conflict resolution UI
 
-*Stub — to be detailed in next planning increment.*
+Wire the `ConflictResolver` (Step 1.4) to a user-facing modal.
 
-Top-line: side-by-side diff modal triggered when sync engine reports a conflict; whole-record local/remote choice; resolver wired into sync-engine instance.
+Depends on Phases 2, 3, 4.
+
+### Step 10.1 — Conflict modal
+**Goal.** Modal displaying local vs remote whole-record side by side with the differing fields highlighted; "Keep local" / "Keep remote" actions.
+**Outputs.** `packages/app/src/views/conflict/ConflictModal.tsx`. Uses the design-system Sheet/SidePanel surfaces (or a centered modal — to be decided in the step; default = centered modal because conflict resolution should be focused).
+**Done when.** Opening the modal with a synthetic `ConflictRecord` shows both sides and allows choosing.
+
+### Step 10.2 — Resolver wiring
+**Goal.** Register a `ConflictResolver` on the app's sync-engine instance that opens the modal and awaits the user's choice. Multiple conflicts queue and are presented one at a time.
+**Outputs.** `useConflictResolver` hook + connection in app shell. Resolver returns the chosen side; sync engine writes the choice back.
+**Done when.**
+- Synthetic two-conflict pull: modal opens twice in sequence.
+- Choosing remote produces the same record on both sides after sync.
+
+### Step 10.3 — Backstop for non-modal conflicts
+**Goal.** If the user is mid-action (drag, composing) when a conflict arrives, queue it; show a small badge on the sync-status icon; the modal opens on next user idle or on click.
+**Outputs.** Idle detector + queue.
+**Done when.** During an active drag, no modal appears; drag completes; modal opens.
+
+**Phase 10 exit:** conflict UX matches the design-input promise (whole-record local/remote choice).
+
+---
 
 ## Phase 11 — Cross-cutting polish & release
 
-*Stub — to be detailed in next planning increment.*
+Final pass for correctness, accessibility, and shipping.
 
-Top-line: time-zone handling end-to-end; standardized loading/error/empty states audit; accessibility audit (keyboard, screen reader, contrast); Playwright e2e for the golden path (create → drag → focus → set due → complete) plus a PWA install + offline scenario; release checklist + GitHub Pages live.
+Depends on all prior phases.
+
+### Step 11.1 — Time-zone handling end-to-end
+**Goal.** Verify dates round-trip through the canonical model and adapters in the user's local zone; document the rule in `packages/backend-core/src/time.md`.
+**Outputs.** Unit tests across DST boundaries; UI string for "Today / Tomorrow / This weekend / Next week" computed from `Date.now()` localized.
+**Done when.** Tests across UTC, Europe/Berlin, America/Los_Angeles pass.
+
+### Step 11.2 — Loading / error / empty audit
+**Goal.** Every view shows a skeleton while loading, an inline error banner with retry on failure, and the standardized empty state when applicable.
+**Outputs.** Audit checklist + minor patches per view.
+**Done when.** Each view file references the design-system primitives (mechanical grep verifies coverage).
+
+### Step 11.3 — Accessibility audit
+**Goal.** Verify WCAG 2.2 AA contrast across the dark palette + glow combinations; full keyboard navigation; screen-reader smoke test (NVDA / VoiceOver) on view1, view2, view3, view4.
+**Outputs.** `docs/a11y-audit.md` (audit results + actions); patches.
+**Done when.** Axe-core e2e check returns 0 critical issues. `prefers-reduced-motion` regression test passes.
+
+### Step 11.4 — E2E golden path
+**Goal.** Playwright test running: open app → see 3 sample tasks → create a new task → drag it from Q3 to Q1 → focus it → set due to "Tomorrow" → mark complete → verify completed state and order.
+**Outputs.** `packages/app/e2e/golden-path.spec.ts`.
+**Done when.** Runs green locally and in CI.
+
+### Step 11.5 — PWA install + offline e2e
+**Goal.** Playwright test installing the PWA (or simulating offline once installed): kill network → reload → app shell loads → existing tasks visible → new task creation queues; reconnect → queue flushes.
+**Outputs.** `packages/app/e2e/pwa-offline.spec.ts`.
+**Done when.** Runs green locally and in CI.
+
+### Step 11.6 — Release checklist & GitHub Pages live
+**Goal.** Tag a release, deploy to GitHub Pages, verify install flow on Android Chrome and Windows Chrome.
+**Outputs.**
+- `RELEASE.md` checklist (manual smoke, Android install screenshots, Windows install screenshots, Lighthouse PWA score).
+- v0.1.0 git tag + signed release notes.
+- Live URL recorded in `status.md`.
+**Done when.**
+- App is installable on Android Chrome and on Windows Chrome.
+- Lighthouse PWA audit ≥ 90.
+- All Phase 11 tests green in CI.
+
+**Phase 11 exit:** first release shipped.
+
+---
+
+## After the first release
+
+Out of scope for this plan; tracked here as forward-looking notes only:
+
+- `backend-google` adapter (Phase 1's contract suite is the entry point — implement it, run the suite, integrate the OAuth PKCE flow).
+- `backend-microsoft` adapter (same pattern).
+- Recurrence (RRULE-based; materialize follow-up at completion time).
+- Reminders / Web Notifications.
+- Light theme.
+- Multi-locale i18n.

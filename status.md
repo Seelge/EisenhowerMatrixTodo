@@ -6,9 +6,9 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Planning.
 
-**Last completed:** drafted `plan.md` skeleton + Phases 0–4 in full detail (foundation, contracts, backend, design system, app shell). Phases 5–11 are present as one-line stubs.
+**Last completed:** `plan.md` is complete — all 12 phases (0–11) detailed with steps, goals, inputs, outputs, and done-when checklists.
 
-**Next:** expand Phases 5–11 (views, conflict UI, polish) to the same level of detail as Phases 0–4. After that, switch from planning mode to implementation, starting at Step 0.1.
+**Next:** user review of the full plan. After review and any revisions, switch from planning mode to implementation, starting at Step 0.1.
 
 ## Pending external actions (user)
 
