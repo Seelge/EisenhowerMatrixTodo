@@ -1,16 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "src"
+    "composite": false,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "types": ["vite/client", "vite-plugin-pwa/client", "node"]
   },
-  "include": ["src"],
-  "references": [
-    { "path": "../backend-core" },
-    { "path": "../backend-inmemory" },
-    { "path": "../backend-local-indexeddb" },
-    { "path": "../backend-google" },
-    { "path": "../backend-microsoft" },
-    { "path": "../design-system" }
-  ]
+  "include": ["src", "vite.config.ts"]
 }

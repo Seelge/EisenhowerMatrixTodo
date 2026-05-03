@@ -8,7 +8,7 @@
   },
   "packageManager": "pnpm@10.33.2",
   "scripts": {
-    "typecheck": "tsc -b",
+    "typecheck": "tsc -b && pnpm --filter @emt/app exec tsc",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

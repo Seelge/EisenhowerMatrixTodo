@@ -104,7 +104,7 @@ Set up the monorepo, language, lint, test, and build tooling. End state: an empt
 - Workflow file passes `actionlint` (or equivalent) syntax check.
 - Locally simulated: `act -j ci` (optional) succeeds, or the file is committed and the user confirms a green run on push.
 
-### Step 0.7 — Vite PWA shell + GitHub Pages workflow
+### Step ✅ 0.7 — Vite PWA shell + GitHub Pages workflow
 **Goal.** `packages/app` is a real Vite app producing an installable PWA build; deploy workflow targets GitHub Pages.
 **Inputs.** Steps 0.1, 0.6.
 **Outputs.**

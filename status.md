@@ -6,9 +6,9 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 0.6 — CI workflow. `.github/workflows/ci.yml` triggers on push to `main` and PRs to `main`; runs install (`--frozen-lockfile`), lint (max-warnings 0), format:check, typecheck, test. Concurrency group cancels superseded runs on the same ref. Uses `pnpm/action-setup@v4` (pinned to 10.33.2) and `actions/setup-node@v4` reading `node-version-file: .node-version`. YAML syntax validated locally with python yaml.
+**Last completed:** Step 0.7 — Vite PWA shell + GitHub Pages deploy. Vite 8 + @vitejs/plugin-react + vite-plugin-pwa@1.2 in `@emt/app`. React 18.3 (with @types/react/react-dom). `vite.config.ts` reads `VITE_BASE_PATH` for production base; default `/EisenhowerMatrixTodo/`. `index.html`, `src/main.tsx` (StrictMode + createRoot), `src/App.tsx` (placeholder "Loading…"). `public/icons/{192,512,maskable-512}.png` are solid-color placeholders generated via Python stdlib. Build produces `dist/manifest.webmanifest` and `dist/sw.js`. App scripts: `dev`, `build`, `preview`. App tsconfig switched to `composite: false`, `noEmit: true`, `allowImportingTsExtensions: true`, with `vite/client`, `vite-plugin-pwa/client`, `node` types — Vite handles bundling, root `tsc -b` skips app, root `typecheck` script appends `pnpm --filter @emt/app exec tsc`. `.github/workflows/deploy.yml` builds + uploads + deploys to GitHub Pages on push to main. All checks green (lint, format:check, typecheck, unit test, e2e, build).
 
-**Next:** Step 0.7 — Vite PWA shell + GitHub Pages deploy workflow.
+**Next:** Phase 1, Step 1.1 — Canonical Task type in `@emt/backend-core`.
 
 ## Environment notes
 
@@ -18,8 +18,8 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 ## Pending external actions (user)
 
-- **GitHub Pages** must be enabled on the repository before Step 0.7's `deploy.yml` will succeed (deferred until Step 0.7).
-- `design-input.md` had uncommitted edits as of the last planning session — confirm they have been committed.
+- **GitHub Pages**: enable GitHub Pages for this repository under Settings → Pages, source = "GitHub Actions". The committed `.github/workflows/deploy.yml` will fail until this is enabled. (`VITE_BASE_PATH` is set in the workflow from the repo name, so the URL will be `https://<user>.github.io/EisenhowerMatrixTodo/`.)
+- `design-input.md` is now committed (the small guardrail edit from last planning session was bundled into the step 0.1 commit; not strictly clean diff hygiene but the change is intentional and small).
 
 ## Open questions / blockers
 
