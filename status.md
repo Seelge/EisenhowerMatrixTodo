@@ -6,9 +6,9 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 0.7 — Vite PWA shell + GitHub Pages deploy. Vite 8 + @vitejs/plugin-react + vite-plugin-pwa@1.2 in `@emt/app`. React 18.3 (with @types/react/react-dom). `vite.config.ts` reads `VITE_BASE_PATH` for production base; default `/EisenhowerMatrixTodo/`. `index.html`, `src/main.tsx` (StrictMode + createRoot), `src/App.tsx` (placeholder "Loading…"). `public/icons/{192,512,maskable-512}.png` are solid-color placeholders generated via Python stdlib. Build produces `dist/manifest.webmanifest` and `dist/sw.js`. App scripts: `dev`, `build`, `preview`. App tsconfig switched to `composite: false`, `noEmit: true`, `allowImportingTsExtensions: true`, with `vite/client`, `vite-plugin-pwa/client`, `node` types — Vite handles bundling, root `tsc -b` skips app, root `typecheck` script appends `pnpm --filter @emt/app exec tsc`. `.github/workflows/deploy.yml` builds + uploads + deploys to GitHub Pages on push to main. All checks green (lint, format:check, typecheck, unit test, e2e, build).
+**Last completed:** Step 1.1 — Canonical Task type. `packages/backend-core/src/task.ts` exports branded `TaskId` and `BackendId`, the `Quadrant` / `Priority` / `TaskStatus` literal unions, ISO date/time aliases, and the `Task` interface. Re-exported from package index. Type test in `test/task.test.ts` uses `expectTypeOf` to assert the `Task` shape, that branded ids are not assignable from bare strings, and that enum-like fields are constrained to their literal unions. 11 tests pass; lint/format/typecheck clean.
 
-**Next:** Phase 1, Step 1.1 — Canonical Task type in `@emt/backend-core`.
+**Next:** Step 1.2 — `BackendAdapter` interface (operations: list, get, create, update, delete, changesSince) plus `Cursor`, `ChangeSet`, `BackendCapabilities`, `BackendDescriptor`.
 
 ## Environment notes
 
