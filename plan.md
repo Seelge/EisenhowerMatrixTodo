@@ -187,7 +187,7 @@ Depends on Phase 0.
 - Compiles.
 - Doc note: "All choices are async to allow user prompting; resolver may also be implemented headlessly in tests."
 
-### Step 1.5 — Sync engine contract & cache schema
+### Step ✅ 1.5 — Sync engine contract & cache schema
 **Goal.** Define the sync engine API and IndexedDB cache schema used in front of every backend.
 **Inputs.** Steps 1.1–1.4.
 **Outputs.**
