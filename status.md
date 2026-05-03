@@ -6,9 +6,9 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 0.3 — ESLint + Prettier. Flat config in `eslint.config.js` with typescript-eslint, eslint-plugin-import-x (used in place of the older `eslint-plugin-import` because flat-config support is more reliable), React + react-hooks + jsx-a11y scoped to `packages/app` and `packages/design-system`, eslint-config-prettier last. Prettier configured (singleQuote, trailingComma all, printWidth 100). `*.md` is in `.prettierignore` so authored docs (`design-input.md`, `plan.md`, `status.md`, `README.md`) are not reformatted. Root scripts `lint`, `format`, `format:check`. `pnpm lint --max-warnings 0` and `pnpm format:check` both clean.
+**Last completed:** Step 0.4 — Vitest setup. Vitest 4 with workspace projects: root `vitest.config.ts` discovers `packages/*/vitest.config.ts`. Each of the 7 packages has its own minimal vitest config (named project) and a `test/smoke.test.ts`. Scripts `test` (= `vitest run`), `test:unit` (alias), `test:watch`. All 7 smoke tests pass; lint, format:check, typecheck still clean.
 
-**Next:** Step 0.4 — Vitest setup (workspace-level config, smoke test per package, root `test` script).
+**Next:** Step 0.5 — Playwright skeleton in `packages/app` (config, empty `e2e/` dir, root `e2e` and `e2e:install` scripts).
 
 ## Environment notes
 
