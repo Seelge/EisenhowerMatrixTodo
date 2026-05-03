@@ -7,6 +7,7 @@ export type {
   TaskDraft,
   TaskPatch,
 } from './adapter.ts';
+export type { ConflictRecord, ConflictResolver, DifferingField } from './conflict.ts';
 export { runAdapterContract } from './contract-tests.js';
 export type { AdapterFactory } from './contract-tests.js';
 export type {

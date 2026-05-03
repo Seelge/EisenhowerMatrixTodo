@@ -6,10 +6,9 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 1.3 — Adapter contract test suite. `packages/backend-core/src/contract-tests.ts` exports `runAdapterContract(name, factory)` and `AdapterFactory` type. Coverage: descriptor stability, create + get + distinct ids + unknown id returns undefined, partial update preserves fields + advances updatedAt + throws on unknown id, delete + idempotent delete, list (all + by quadrant + per-quadrant table-driven), changesSince (initial state with cursor + only-after-cursor + deletions reported + cursor advances), concurrency (disjoint and overlapping parallel updates). Runtime guard test verifies throw on missing/non-function factory. 13 tests pass; all checks clean.
-**Note.** Value re-export of `runAdapterContract` from package index uses `.js` extension (composite mode strips `.ts` in emit); type-only re-exports keep `.ts` since they erase. Vitest added as devDep of `@emt/backend-core` since contract-tests.ts imports describe/it/expect from it.
+**Last completed:** Step 1.4 — Conflict resolution contract. `packages/backend-core/src/conflict.ts` exports `DifferingField` (= `keyof Task` minus immutable identity/timestamp fields), `ConflictRecord` (`local`, `remote`, `differingFields`), and `ConflictResolver` (async callback returning `'local' | 'remote'`). Re-exported as types from package index. Doc covers the whole-record-not-field-merge resolution model, async-for-prompting rationale, and headless-test usage. All checks clean (13 tests).
 
-**Next:** Step 1.4 — Conflict resolution contract (`ConflictRecord`, `ConflictResolver` type) in `packages/backend-core/src/conflict.ts`.
+**Next:** Step 1.5 — Sync engine contract (`SyncEngine`) and IndexedDB cache schema (`tasks`, `outbox`, `cursors` stores) in `packages/backend-core/src/sync.ts` and `cache-schema.ts`.
 
 ## Environment notes
 
