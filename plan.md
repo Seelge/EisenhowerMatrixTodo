@@ -156,7 +156,7 @@ Depends on Phase 0.
 - Each method documented.
 **Note.** Two small deviations from the originally-sketched signatures, both tightening design: (a) `create` takes `TaskDraft = Omit<Task, 'id' | 'backendId' | 'createdAt' | 'updatedAt'>` so callers don't repeat the adapter's own `backendId`; (b) `update` takes `TaskPatch = Partial<Omit<Task, 'id' | 'backendId' | 'createdAt' | 'updatedAt'>>` so callers cannot patch immutable identity / timestamp fields. `list` and `changesSince` return `readonly` arrays.
 
-### Step 1.3 — Adapter contract test suite
+### Step ✅ 1.3 — Adapter contract test suite
 **Goal.** A parameterized test suite that runs against any `BackendAdapter` implementation, used by every adapter package.
 **Inputs.** Steps 1.1, 1.2.
 **Outputs.**
