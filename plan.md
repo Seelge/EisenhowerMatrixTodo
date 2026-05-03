@@ -175,7 +175,7 @@ Depends on Phase 0.
 - Throws "no adapter installed" placeholder if invoked without a factory.
 - Will fail loudly when applied to a stub adapter; verified once in-memory adapter exists in Phase 2.
 
-### Step 1.4 — Conflict resolution contract
+### Step ✅ 1.4 — Conflict resolution contract
 **Goal.** Define the callback the sync engine uses when an external client modified a task we also modified.
 **Inputs.** `design-input.md` (Backend → conflict resolution); Step 1.1.
 **Outputs.**
