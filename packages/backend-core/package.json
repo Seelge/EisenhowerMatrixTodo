@@ -2,5 +2,8 @@
   "name": "@emt/backend-core",
   "version": "0.0.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "vitest": "^4.1.5"
+  }
 }

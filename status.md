@@ -6,9 +6,10 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 1.2 — `BackendAdapter` interface. `packages/backend-core/src/adapter.ts` exports `Cursor`, `ChangeSet`, `BackendCapabilities`, `BackendDescriptor`, `TaskDraft`, `TaskPatch`, `BackendAdapter`. Method-level JSDoc covers concurrency (last-write-wins per field on `update`), idempotency (`delete` is idempotent; `update` advances `updatedAt` even when stable), and error semantics. Re-exported from package index. Lint, format:check, typecheck, test all clean (11 tests).
+**Last completed:** Step 1.3 — Adapter contract test suite. `packages/backend-core/src/contract-tests.ts` exports `runAdapterContract(name, factory)` and `AdapterFactory` type. Coverage: descriptor stability, create + get + distinct ids + unknown id returns undefined, partial update preserves fields + advances updatedAt + throws on unknown id, delete + idempotent delete, list (all + by quadrant + per-quadrant table-driven), changesSince (initial state with cursor + only-after-cursor + deletions reported + cursor advances), concurrency (disjoint and overlapping parallel updates). Runtime guard test verifies throw on missing/non-function factory. 13 tests pass; all checks clean.
+**Note.** Value re-export of `runAdapterContract` from package index uses `.js` extension (composite mode strips `.ts` in emit); type-only re-exports keep `.ts` since they erase. Vitest added as devDep of `@emt/backend-core` since contract-tests.ts imports describe/it/expect from it.
 
-**Next:** Step 1.3 — Adapter contract test suite (`packages/backend-core/src/contract-tests.ts` exporting `runAdapterContract(name, factory)`).
+**Next:** Step 1.4 — Conflict resolution contract (`ConflictRecord`, `ConflictResolver` type) in `packages/backend-core/src/conflict.ts`.
 
 ## Environment notes
 
