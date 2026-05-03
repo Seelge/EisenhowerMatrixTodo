@@ -82,16 +82,18 @@ Set up the monorepo, language, lint, test, and build tooling. End state: an empt
 **Done when.**
 - `pnpm test` passes with all smoke tests green.
 
-### Step 0.5 — Playwright skeleton
-**Goal.** Playwright installed and configured for `packages/app` end-to-end tests; no real tests yet.
+### Step ✅ 0.5 — Playwright skeleton
+**Goal.** Playwright installed and configured for `packages/app` end-to-end tests; smoke test verifies runner wiring.
 **Inputs.** Step 0.1.
 **Outputs.**
 - `packages/app/playwright.config.ts` (Chromium project only; baseURL `http://localhost:4173`).
-- `packages/app/e2e/.gitkeep`.
+- `packages/app/e2e/smoke.spec.ts` — trivial assertion test verifying the runner.
 - Root scripts: `e2e`, `e2e:install` (browsers).
 **Done when.**
 - `pnpm e2e:install` succeeds.
-- `pnpm e2e` exits 0 with "no tests found".
+- `pnpm e2e` exits 0 (smoke test passes).
+**Note.** Original plan said `e2e/.gitkeep` and `pnpm e2e` exits 0 with "no tests found", but Playwright exits 1 on no-tests with no flag to override. Replaced the placeholder with a real one-line smoke test that asserts `1 + 1 === 2` without needing a running server.
+**Note.** Browser install required `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64` because Playwright 1.59.1 does not have prebuilt browsers for ubuntu26.04 (which is the dev environment). The ubuntu24.04 build is ABI-compatible. Override baked into the `e2e:install` script.
 
 ### Step 0.6 — CI workflow
 **Goal.** GitHub Actions runs lint + typecheck + unit tests on PRs and `main`.
