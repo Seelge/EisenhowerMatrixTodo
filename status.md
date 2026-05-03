@@ -6,9 +6,9 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 0.5 — Playwright skeleton. `@playwright/test@1.59.1` installed in `@emt/app`, `playwright.config.ts` (Chromium-only, baseURL `http://localhost:4173`), `e2e/smoke.spec.ts` with a server-less assertion. Root scripts `e2e` and `e2e:install`. Two deviations from plan documented inline as Notes on the step: (a) replaced the `.gitkeep` with a real smoke test because Playwright has no pass-with-no-tests mode; (b) `e2e:install` carries `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64` because Playwright doesn't prebuild for ubuntu26.04 (this WSL env). All checks (lint, format:check, typecheck, test, e2e) green.
+**Last completed:** Step 0.6 — CI workflow. `.github/workflows/ci.yml` triggers on push to `main` and PRs to `main`; runs install (`--frozen-lockfile`), lint (max-warnings 0), format:check, typecheck, test. Concurrency group cancels superseded runs on the same ref. Uses `pnpm/action-setup@v4` (pinned to 10.33.2) and `actions/setup-node@v4` reading `node-version-file: .node-version`. YAML syntax validated locally with python yaml.
 
-**Next:** Step 0.6 — CI workflow (`.github/workflows/ci.yml` running install + lint + typecheck + test).
+**Next:** Step 0.7 — Vite PWA shell + GitHub Pages deploy workflow.
 
 ## Environment notes
 
