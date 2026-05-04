@@ -80,7 +80,14 @@ importers:
         version: 1.2.0(vite@8.0.10(@types/node@25.6.0)(terser@5.46.2))(workbox-build@7.4.0)(workbox-window@7.4.0)
 
   packages/backend-core:
+    dependencies:
+      idb:
+        specifier: ^8.0.3
+        version: 8.0.3
     devDependencies:
+      fake-indexeddb:
+        specifier: ^6.2.5
+        version: 6.2.5
       vitest:
         specifier: ^4.1.5
         version: 4.1.5(@types/node@25.6.0)(vite@8.0.10(@types/node@25.6.0)(terser@5.46.2))

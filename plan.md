@@ -276,7 +276,7 @@ Depends on Phase 1.
 **Done when.**
 - Full contract test suite green for `LocalIndexedDbAdapter`.
 
-### Step 2.4 — Sync engine — outbound queue & flush
+### Step ✅ 2.4 — Sync engine — outbound queue & flush
 **Goal.** Implement `enqueueWrite` and `flush`. For local backend, flush is a no-op (writes already applied directly). For remote backends, the queue replays operations against the adapter with retry + backoff.
 **Inputs.** Steps 1.5, 2.3.
 **Outputs.**
