@@ -265,7 +265,7 @@ Depends on Phase 1.
 **Done when.**
 - CRUD subset of the contract suite passes (a tagged subset; the changesSince tests are skipped via `it.skip` until 2.3).
 
-### Step 2.3 — Local IndexedDB adapter — change tracking
+### Step ✅ 2.3 — Local IndexedDB adapter — change tracking
 **Goal.** Implement `changesSince` using a monotonic per-DB sequence number written on every mutation.
 **Inputs.** Step 2.2.
 **Outputs.**

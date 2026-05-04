@@ -6,21 +6,17 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 2.2 — Local IndexedDB adapter (basic CRUD).
+**Last completed:** Step 2.3 — Local IndexedDB adapter (change tracking).
 
-`packages/backend-local-indexeddb/src/db.ts`: schema declaration + `openLocalDb(name)` opening DB v1 with a single `tasks` store keyed by `Task.id`, indexed on `quadrant`, `status`, `updatedAt`. Step 2.3 will introduce DB v2 with change-tracking fields.
+`packages/backend-local-indexeddb/src/db.ts`: bumped `DB_VERSION` to 2. Schema now has three stores — `tasks`, `deletions`, `meta`. The `tasks` store gains a `bySeq` index plus an internal `seq` field on every record (`LocalTaskRecord = Task & { seq }`); the adapter strips `seq` before returning `Task` records. `deletions` is keyed by `TaskId` with a `bySeq` index. `meta` is a tiny key/value store currently holding only `nextSeq`. The v1→v2 upgrade walks any pre-existing tasks and assigns dense seq values starting at 1, then seeds `nextSeq`.
 
-`packages/backend-local-indexeddb/src/adapter.ts`: `LocalIndexedDbAdapter implements BackendAdapter`. Constructor takes a pre-opened `LocalDb` + `BackendDescriptor`; the async factory `createLocalIndexedDbAdapter(options?)` opens the DB and wires the descriptor (`id` defaults to `'local'`, `databaseName` defaults to `id`, capabilities all `true`). CRUD goes through `idb`'s promise wrapper. `update` uses one explicit `readwrite` transaction per call so concurrent updates serialize correctly. `crypto.randomUUID()` for ids; per-instance monotonic ms clock for `updatedAt`. `changesSince` throws `not yet implemented (step 2.3)`. Adds `close()` for callers that need it.
+`packages/backend-local-indexeddb/src/adapter.ts`: every mutation reserves a fresh seq atomically inside its `readwrite` transaction (helper `allocateSeq(metaStore)` reads `nextSeq`, writes `nextSeq+1`, returns the reserved value). `create`/`update` stamp it on the record; `delete` writes a `{id, seq}` tombstone and removes the row. Idempotent delete short-circuits without writing a tombstone. `changesSince(cursor)` parses the cursor as an integer watermark, runs a `bySeq` lower-bound range query on each of `tasks` and `deletions`, sorts both by seq, strips seq from upserts, returns `String(nextSeq - 1)` as the new cursor (so an empty DB yields `'0'`).
 
-`packages/backend-local-indexeddb/test/contract.test.ts`: imports `fake-indexeddb/auto`, calls `runAdapterContract('local-indexeddb', factory, { skip: ['changesSince'] })`. Each factory invocation opens a fresh DB by minting a unique name (`local-test-${Date.now()}-${counter++}`), so `beforeEach` always gets empty state without an explicit drop API. Smoke test removed.
+`packages/backend-local-indexeddb/test/contract.test.ts`: dropped the `skip: ['changesSince']` option — the local adapter now runs the full contract suite. 21 contract tests green for `local-indexeddb` (matching the in-memory adapter).
 
-`packages/backend-core/src/contract-tests.ts`: extended with `AdapterContractOptions = { skip?: ContractSection[] }` (`ContractSection = 'changesSince'`). The `changesSince` `describe` block becomes `describe.skip` when listed. Re-exported from `@emt/backend-core`.
+70 tests pass overall (no skips remain); typecheck, lint, format clean.
 
-`@emt/backend-local-indexeddb/package.json`: same `main`/`types`/`exports`/`files` plumbing as the other adapters; deps `@emt/backend-core: workspace:*` and `idb ^8.0.3`; devDeps `fake-indexeddb ^6.2.5` and `vitest`. Source uses the project's `'./adapter.js'` (value) / `'./adapter.ts'` (type-only) import convention.
-
-70 tests pass (4 skipped — the `changesSince` block, until 2.3); typecheck, lint, format clean.
-
-**Next:** Step 2.3 — Local IndexedDB adapter, change tracking (DB v2 migration: per-record `seq`, `nextSeq` meta, `deletions` store; implement `changesSince`; re-enable the previously-skipped contract section).
+**Next:** Step 2.4 — Sync engine outbound queue & flush. Implements `enqueueWrite` and `flush` for `DefaultSyncEngine` in `@emt/backend-core`, with exponential backoff + jitter, max 5 retries / 60 s delay, outbox persisted in IDB per the cache schema.
 
 ## Environment notes
 
