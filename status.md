@@ -6,21 +6,17 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 1.7 — Route + view-state contract. **Phase 1 complete.**
+**Last completed:** Step 2.1 — In-memory adapter.
 
-`packages/app/src/routes/contract.ts`: `Zoom` (`'matrix' | 'quadrant'`), `ViewState` (zoom, focusedQuadrant?, focusedTaskId?, openedFromZoom?), `defaultViewState`, `parseUrl(url)` and `serializeUrl(state)`. Routes handled: `/`, `/q/:Q1..Q4`, with `?task=` and `?from=` overlay params. `/options/*` and unknown paths degrade to the default matrix state — view4 has its own router.
+`packages/backend-inmemory/src/adapter.ts`: `InMemoryAdapter implements BackendAdapter`, backed by a `Map<TaskId, Task>`. `crypto.randomUUID()` for ids. Per-instance monotonic seq clock drives `changesSince` (cursor = stringified seq); per-instance monotonic ms clock drives `updatedAt` (bumps forward on collision so back-to-back writes keep the timestamp strictly increasing). Deletes recorded as `{id, seq}` so `changesSince` reports tombstones. Capabilities: all true (lossless reference). `tags` arrays defensively copied on read of patches.
 
-Plumbing for cross-package imports landed in this step too:
-- `@emt/backend-core/package.json` gained `main`/`types`/`exports` pointing to `dist/`, plus a `files: ["dist"]` whitelist.
-- `@emt/app` now declares `@emt/backend-core: workspace:*` as a dependency.
+`packages/backend-inmemory/test/contract.test.ts`: invokes `runAdapterContract('in-memory', () => Promise.resolve(new InMemoryAdapter()))` from `@emt/backend-core`. Smoke test removed.
 
-`packages/app/test/routes-contract.test.ts`: round-trips 20 randomized states; asserts each route shape; degrades-gracefully cases (unknown quadrant, `/options/*`, malformed); serializer omits `from` when no task is set.
+`@emt/backend-inmemory/package.json` got the same `main`/`types`/`exports`/`files` plumbing as backend-core, plus `@emt/backend-core: workspace:*`.
 
-30 tests pass; all checks clean.
+50 tests pass (20 contract tests added); typecheck, lint, format clean.
 
-**Phase 1 done.** All inter-slice contracts are in place: canonical Task, BackendAdapter, contract test suite, conflict resolver, sync engine + cache schema, design tokens, route + view-state. Phases 2 / 3 / parts of 4 can now proceed in parallel.
-
-**Next:** Phase 2, Step 2.1 — In-memory adapter (reference implementation; runs the contract test suite).
+**Next:** Step 2.2 — Local IndexedDB adapter, basic CRUD (CRUD subset of contract suite passes; `changesSince` tests skipped until 2.3).
 
 ## Environment notes
 
