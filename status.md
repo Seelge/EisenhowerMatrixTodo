@@ -6,17 +6,21 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 2.1 — In-memory adapter.
+**Last completed:** Step 2.2 — Local IndexedDB adapter (basic CRUD).
 
-`packages/backend-inmemory/src/adapter.ts`: `InMemoryAdapter implements BackendAdapter`, backed by a `Map<TaskId, Task>`. `crypto.randomUUID()` for ids. Per-instance monotonic seq clock drives `changesSince` (cursor = stringified seq); per-instance monotonic ms clock drives `updatedAt` (bumps forward on collision so back-to-back writes keep the timestamp strictly increasing). Deletes recorded as `{id, seq}` so `changesSince` reports tombstones. Capabilities: all true (lossless reference). `tags` arrays defensively copied on read of patches.
+`packages/backend-local-indexeddb/src/db.ts`: schema declaration + `openLocalDb(name)` opening DB v1 with a single `tasks` store keyed by `Task.id`, indexed on `quadrant`, `status`, `updatedAt`. Step 2.3 will introduce DB v2 with change-tracking fields.
 
-`packages/backend-inmemory/test/contract.test.ts`: invokes `runAdapterContract('in-memory', () => Promise.resolve(new InMemoryAdapter()))` from `@emt/backend-core`. Smoke test removed.
+`packages/backend-local-indexeddb/src/adapter.ts`: `LocalIndexedDbAdapter implements BackendAdapter`. Constructor takes a pre-opened `LocalDb` + `BackendDescriptor`; the async factory `createLocalIndexedDbAdapter(options?)` opens the DB and wires the descriptor (`id` defaults to `'local'`, `databaseName` defaults to `id`, capabilities all `true`). CRUD goes through `idb`'s promise wrapper. `update` uses one explicit `readwrite` transaction per call so concurrent updates serialize correctly. `crypto.randomUUID()` for ids; per-instance monotonic ms clock for `updatedAt`. `changesSince` throws `not yet implemented (step 2.3)`. Adds `close()` for callers that need it.
 
-`@emt/backend-inmemory/package.json` got the same `main`/`types`/`exports`/`files` plumbing as backend-core, plus `@emt/backend-core: workspace:*`.
+`packages/backend-local-indexeddb/test/contract.test.ts`: imports `fake-indexeddb/auto`, calls `runAdapterContract('local-indexeddb', factory, { skip: ['changesSince'] })`. Each factory invocation opens a fresh DB by minting a unique name (`local-test-${Date.now()}-${counter++}`), so `beforeEach` always gets empty state without an explicit drop API. Smoke test removed.
 
-50 tests pass (20 contract tests added); typecheck, lint, format clean.
+`packages/backend-core/src/contract-tests.ts`: extended with `AdapterContractOptions = { skip?: ContractSection[] }` (`ContractSection = 'changesSince'`). The `changesSince` `describe` block becomes `describe.skip` when listed. Re-exported from `@emt/backend-core`.
 
-**Next:** Step 2.2 — Local IndexedDB adapter, basic CRUD (CRUD subset of contract suite passes; `changesSince` tests skipped until 2.3).
+`@emt/backend-local-indexeddb/package.json`: same `main`/`types`/`exports`/`files` plumbing as the other adapters; deps `@emt/backend-core: workspace:*` and `idb ^8.0.3`; devDeps `fake-indexeddb ^6.2.5` and `vitest`. Source uses the project's `'./adapter.js'` (value) / `'./adapter.ts'` (type-only) import convention.
+
+70 tests pass (4 skipped — the `changesSince` block, until 2.3); typecheck, lint, format clean.
+
+**Next:** Step 2.3 — Local IndexedDB adapter, change tracking (DB v2 migration: per-record `seq`, `nextSeq` meta, `deletions` store; implement `changesSince`; re-enable the previously-skipped contract section).
 
 ## Environment notes
 

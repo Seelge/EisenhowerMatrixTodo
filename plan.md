@@ -255,7 +255,7 @@ Depends on Phase 1.
 **Done when.**
 - All contract tests green.
 
-### Step 2.2 — Local IndexedDB adapter — basic CRUD
+### Step ✅ 2.2 — Local IndexedDB adapter — basic CRUD
 **Goal.** Implement create/read/update/delete/list against IndexedDB; no change tracking yet.
 **Inputs.** Steps 2.1, 1.5.
 **Outputs.**

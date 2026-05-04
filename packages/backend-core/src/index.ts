@@ -11,7 +11,7 @@ export { STORE_NAMES, taskKey } from './cache-schema.js';
 export type { CursorRecord, OutboxOp, OutboxRecord, TaskRecord } from './cache-schema.ts';
 export type { ConflictRecord, ConflictResolver, DifferingField } from './conflict.ts';
 export { runAdapterContract } from './contract-tests.js';
-export type { AdapterFactory } from './contract-tests.js';
+export type { AdapterContractOptions, AdapterFactory, ContractSection } from './contract-tests.js';
 export type { FlushResult, PullResult, SyncEngine, TaskRef } from './sync.ts';
 export type {
   BackendId,

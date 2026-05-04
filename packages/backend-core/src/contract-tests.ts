@@ -24,6 +24,19 @@ import type { Quadrant, Task } from './task.ts';
  */
 export type AdapterFactory = () => Promise<BackendAdapter>;
 
+/**
+ * Names of optional contract sections an adapter may skip while a feature
+ * is still in progress. Used by partial implementations during a
+ * multi-step rollout (e.g. the local-IndexedDB adapter skips
+ * `changesSince` until step 2.3 lands change tracking).
+ */
+export type ContractSection = 'changesSince';
+
+export interface AdapterContractOptions {
+  /** Sections to mark as skipped instead of run. */
+  readonly skip?: ReadonlyArray<ContractSection>;
+}
+
 const baseDraft: TaskDraft = {
   title: 'Sample',
   notes: '',
@@ -47,10 +60,17 @@ function draft(overrides: Partial<TaskDraft> = {}): TaskDraft {
  *                  the factory once per test in `beforeEach`.
  * @throws if `factory` is not a function.
  */
-export function runAdapterContract(name: string, factory: AdapterFactory): void {
+export function runAdapterContract(
+  name: string,
+  factory: AdapterFactory,
+  options: AdapterContractOptions = {},
+): void {
   if (typeof factory !== 'function') {
     throw new Error(`runAdapterContract(${JSON.stringify(name)}): no adapter factory provided`);
   }
+
+  const skip = new Set<ContractSection>(options.skip ?? []);
+  const describeChangesSince = skip.has('changesSince') ? describe.skip : describe;
 
   describe(`BackendAdapter contract — ${name}`, () => {
     let adapter: BackendAdapter;
@@ -170,7 +190,7 @@ export function runAdapterContract(name: string, factory: AdapterFactory): void 
       );
     });
 
-    describe('changesSince', () => {
+    describeChangesSince('changesSince', () => {
       it('returns the full state plus a cursor when called with no cursor', async () => {
         const a = await adapter.create(draft({ title: 'A' }));
         const b = await adapter.create(draft({ title: 'B' }));
