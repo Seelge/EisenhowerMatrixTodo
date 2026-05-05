@@ -18,6 +18,8 @@ export type {
 export type { ConflictRecord, ConflictResolver, DifferingField } from './conflict.ts';
 export { runAdapterContract } from './contract-tests.js';
 export type { AdapterContractOptions, AdapterFactory, ContractSection } from './contract-tests.js';
+export { migrateTask } from './migrate.js';
+export type { MigrateOptions, StaleSourceEvent } from './migrate.js';
 export { BackendRegistry } from './registry.js';
 export type { BackendRegistryOptions, MetaStore } from './registry.js';
 export {
