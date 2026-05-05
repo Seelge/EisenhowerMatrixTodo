@@ -6,21 +6,21 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 2.5 — Sync engine pull & conflict detection.
+**Last completed:** Step 2.6 — Backend registry.
 
-`packages/backend-core/src/sync-engine.ts`: `DefaultSyncEngine.pull(backendId)` now reads the per-backend cursor, calls `adapter.changesSince(cursor)`, and reconciles the response against the outbox. Conflict trigger: a remote upsert whose `taskId` also has a queued local entry (looked up via `outbox.list(backendId)` keyed by `taskId`, last-wins on duplicates). When the local pending op is `'delete'`, remote is skipped (queued local delete will reach the backend on the next flush). Otherwise the engine reads `cache.get(backendId, taskId)`, computes `differingFields` via the new `computeDifferingFields` helper (shallow per-field diff over `DifferingField`; `tags` compared element-wise), and — when fields actually differ — invokes the registered `ConflictResolver`. `'remote'` writes remote to cache and drops the pending entry; `'local'` is a no-op (cache already has local; pending entry will push on next flush). Identical-but-pending remotes apply silently with no resolver call. Remote deletes apply unconditionally except when blocked by a pending local create/update (skipped); a coincident pending delete is dropped after applying. Finally the new `changes.cursor` is persisted via the cursor store. Throws on unknown `backendId`, missing `cache`/`cursors` options, or a conflict with no resolver registered.
+`packages/backend-core/src/registry.ts` (new): `BackendRegistry` class. `register(adapter)` / `unregister(id)` mutate an in-memory `Map<BackendId, BackendAdapter>`; `get(id)`, `list()` are sync reads. `getDefault()` returns the persisted default if it is currently registered, else the first registered adapter, else `undefined` — so the app gets a sensible default before the user has explicitly picked one. `setDefault(id)` validates the id is registered (throws otherwise) and writes to the injected `MetaStore` under `META_DEFAULT_BACKEND_KEY = 'defaultBackendId'`. `load()` rehydrates the persisted id from the meta store; safe to call multiple times. Adapter instances are not persisted (the app re-registers them on startup); only the default-id survives reloads.
 
-New abstractions in `sync-engine.ts`:
-- `LocalTaskCache` — opaque `(get | put | delete)` over `(backendId, taskId)`. The concrete IDB cache implementation lives outside this module and will be wired in when registry/cache integration lands.
-- `CursorStore` — `(get | set)` per `backendId`. Canonical impl `IdbCursorStore` ships in this commit, opened via `createIdbCursorStore(db)`.
-- `openSyncDb` bumped to `SYNC_DB_VERSION = 2`; v2 upgrade adds the `cursors` object store (`keyPath: 'backendId'`). v1→v2 migration is additive — existing outbox rows survive.
-- `DefaultSyncEngineOptions` gained optional `cache` and `cursors` fields. Both are required at runtime for `pull`; flush-only constructions omit them.
+`MetaStore` interface (in `registry.ts`): generic `get`/`set`/`delete` over string keys/values — kept loose so future single-row settings can share the store.
 
-`packages/backend-core/test/sync-engine.test.ts`: dropped the placeholder, added 7 pull tests against in-memory `LocalTaskCache` / `CursorStore` plus the existing `StubAdapter` (extended with a `nextChanges(cursor)` hook and a `seenCursors` log). Covers: clean pull verbatim, cursor round-tripping across two pulls, local-only-edits no-op, true conflict (one resolver call per task, mixed local/remote outcomes, correct `differingFields`, outbox dropped only for the remote-wins side), identical-payload silent apply, missing-resolver throw, coincident remote+local delete, and unknown-backend throw.
+`packages/backend-core/src/sync-engine.ts`: `openSyncDb` bumped to `SYNC_DB_VERSION = 3`; v3 upgrade adds the `meta` object store (`keyPath: 'key'`). New `IdbMetaStore` (factory `createIdbMetaStore(db)`) implements `MetaStore` against the same sync DB. v2→v3 migration is additive — existing outbox/cursors rows survive.
 
-86 tests pass overall (was 79; +7 pull tests in backend-core); typecheck, lint, format clean.
+`packages/backend-core/src/cache-schema.ts`: added `MetaRecord` interface, `STORE_NAMES.meta = 'meta'`, and the `META_DEFAULT_BACKEND_KEY` constant.
 
-**Next:** Step 2.6 — Backend registry. `packages/backend-core/src/registry.ts` with `BackendRegistry` (`register`, `unregister`, `get`, `list`, `getDefault`, `setDefault`); persist default-id to IDB `meta` store; tests for registration, default selection, and persistence across re-instantiation.
+`packages/backend-core/test/registry.test.ts` (new): 11 tests against an `InMemoryMeta` and a minimal `StubAdapter`. Covers: register/list/get, replace-on-re-register, unregister, no-default fallback to first-registered, `setDefault` writes to meta, `setDefault` throws for unknown id, fallback when persisted id is no longer registered, persistence across two registry instances sharing the same in-memory meta store, persistence across an IDB-backed meta store re-open, and IDB meta store set/get/delete round-trip.
+
+97 tests pass overall (was 86; +11 registry tests in backend-core); typecheck, lint, format clean.
+
+**Next:** Step 2.7 — Task migration. `packages/backend-core/src/migrate.ts` with `migrateTask(taskId, fromBackendId, toBackendId): Promise<Task>` — create on target, delete on source, with rollback on target-create failure (source untouched + error surfaced) and graceful degradation on source-delete failure (log, return new task, raise a "stale source copy" event for later cleanup). Tests for both failure paths.
 
 ## Environment notes
 

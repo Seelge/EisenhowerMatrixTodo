@@ -17,8 +17,9 @@ import { type DBSchema, type IDBPDatabase, openDB } from 'idb';
 
 import type { BackendAdapter, Cursor } from './adapter.ts';
 import { STORE_NAMES } from './cache-schema.js';
-import type { CursorRecord, OutboxOp, OutboxRecord } from './cache-schema.ts';
+import type { CursorRecord, MetaRecord, OutboxOp, OutboxRecord } from './cache-schema.ts';
 import type { ConflictRecord, ConflictResolver, DifferingField } from './conflict.ts';
+import type { MetaStore } from './registry.ts';
 import type { FlushResult, PullResult, SyncEngine, TaskRef } from './sync.ts';
 import type { BackendId, Task, TaskId } from './task.ts';
 
@@ -66,17 +67,22 @@ interface SyncDbSchema extends DBSchema {
     key: BackendId;
     value: CursorRecord;
   };
+  [STORE_NAMES.meta]: {
+    key: string;
+    value: MetaRecord;
+  };
 }
 
 /** Connection type returned by {@link openSyncDb}. */
 export type SyncDb = IDBPDatabase<SyncDbSchema>;
 
-export const SYNC_DB_VERSION = 2;
+export const SYNC_DB_VERSION = 3;
 
 /**
  * Open (and migrate) the sync-engine IDB database. Holds the `outbox`
- * (v1) and `cursors` (v2) stores; the cached `tasks` mirror lives in a
- * separate IDB owned by the cache layer per `cache-schema.ts`.
+ * (v1), `cursors` (v2), and `meta` (v3) stores; the cached `tasks`
+ * mirror lives in a separate IDB owned by the cache layer per
+ * `cache-schema.ts`.
  */
 export function openSyncDb(name = 'emt-sync'): Promise<SyncDb> {
   return openDB<SyncDbSchema>(name, SYNC_DB_VERSION, {
@@ -90,6 +96,9 @@ export function openSyncDb(name = 'emt-sync'): Promise<SyncDb> {
       }
       if (oldVersion < 2) {
         db.createObjectStore(STORE_NAMES.cursors, { keyPath: 'backendId' });
+      }
+      if (oldVersion < 3) {
+        db.createObjectStore(STORE_NAMES.meta, { keyPath: 'key' });
       }
     },
   });
@@ -148,6 +157,28 @@ class IdbCursorStore implements CursorStore {
       updatedAt: new Date().toISOString(),
     };
     await this.db.put(STORE_NAMES.cursors, record);
+  }
+}
+
+/** IDB-backed {@link MetaStore}. Shares the sync DB with outbox/cursors. */
+export function createIdbMetaStore(db: SyncDb): MetaStore {
+  return new IdbMetaStore(db);
+}
+
+class IdbMetaStore implements MetaStore {
+  constructor(private readonly db: SyncDb) {}
+
+  async get(key: string): Promise<string | undefined> {
+    const row = await this.db.get(STORE_NAMES.meta, key);
+    return row?.value;
+  }
+
+  async set(key: string, value: string): Promise<void> {
+    await this.db.put(STORE_NAMES.meta, { key, value });
+  }
+
+  async delete(key: string): Promise<void> {
+    await this.db.delete(STORE_NAMES.meta, key);
   }
 }
 
