@@ -100,6 +100,19 @@ export interface CursorRecord {
 }
 
 /**
+ * Object store: `meta`. Generic key/value bag for app-level state that
+ * isn't a task / outbox / cursor — currently the registry's
+ * default-backend id, but kept open for future single-row settings.
+ *
+ * Keyed by `key` (a free-form string). Values are typed at the call
+ * site; the schema deliberately stays loose.
+ */
+export interface MetaRecord {
+  readonly key: string;
+  readonly value: string;
+}
+
+/**
  * Names of the object stores. Centralized so the IDB open-and-migrate
  * code in Phase 2 stays in lockstep with the consumers.
  */
@@ -107,7 +120,11 @@ export const STORE_NAMES = {
   tasks: 'tasks',
   outbox: 'outbox',
   cursors: 'cursors',
+  meta: 'meta',
 } as const satisfies Record<string, string>;
+
+/** Meta key under which the registry persists its default backend id. */
+export const META_DEFAULT_BACKEND_KEY = 'defaultBackendId';
 
 /**
  * Compose the composite key for a `tasks` row.
