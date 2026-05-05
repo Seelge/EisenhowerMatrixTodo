@@ -1,20 +1,24 @@
 /**
  * Default {@link SyncEngine} implementation.
  *
- * Step 2.4 scope: enqueueWrite + flush. The outbox is persisted in
- * IndexedDB (via the {@link OutboxStore} abstraction so tests can inject
- * an in-memory implementation, but the canonical backing is IDB per the
- * cache schema in `cache-schema.ts`).
+ * Steps 2.4–2.5: enqueueWrite + flush + pull + conflict detection. The
+ * outbox and per-backend cursors are persisted in IndexedDB (via the
+ * {@link OutboxStore} / {@link CursorStore} abstractions so tests can
+ * inject in-memory implementations). The canonical backings are IDB per
+ * the cache schema in `cache-schema.ts`.
  *
- * Pull / conflict handling lands in Step 2.5.
+ * The local task cache is injected as an opaque {@link LocalTaskCache}
+ * — pull writes remote upserts/deletes through it. Its concrete IDB
+ * implementation lives outside this module (the cache will be wired up
+ * when the app integrates with the registry).
  */
 
 import { type DBSchema, type IDBPDatabase, openDB } from 'idb';
 
-import type { BackendAdapter } from './adapter.ts';
+import type { BackendAdapter, Cursor } from './adapter.ts';
 import { STORE_NAMES } from './cache-schema.js';
-import type { OutboxOp, OutboxRecord } from './cache-schema.ts';
-import type { ConflictResolver } from './conflict.ts';
+import type { CursorRecord, OutboxOp, OutboxRecord } from './cache-schema.ts';
+import type { ConflictRecord, ConflictResolver, DifferingField } from './conflict.ts';
 import type { FlushResult, PullResult, SyncEngine, TaskRef } from './sync.ts';
 import type { BackendId, Task, TaskId } from './task.ts';
 
@@ -42,32 +46,51 @@ export interface OutboxStore {
 /** Input shape for {@link OutboxStore.append} — `seq` is assigned by the store. */
 export type OutboxAppend = Omit<OutboxRecord, 'seq'>;
 
+/**
+ * Per-backend cursor persistence. The sync engine reads the most
+ * recently consumed cursor before calling `BackendAdapter.changesSince`
+ * and writes back the cursor returned by the adapter on completion.
+ */
+export interface CursorStore {
+  get(backendId: BackendId): Promise<Cursor | undefined>;
+  set(backendId: BackendId, cursor: Cursor): Promise<void>;
+}
+
 interface SyncDbSchema extends DBSchema {
   [STORE_NAMES.outbox]: {
     key: number;
     value: OutboxRecord;
     indexes: { byBackend: BackendId };
   };
+  [STORE_NAMES.cursors]: {
+    key: BackendId;
+    value: CursorRecord;
+  };
 }
 
 /** Connection type returned by {@link openSyncDb}. */
 export type SyncDb = IDBPDatabase<SyncDbSchema>;
 
-export const SYNC_DB_VERSION = 1;
+export const SYNC_DB_VERSION = 2;
 
 /**
- * Open (and migrate) the sync-engine IDB database. Currently holds only
- * the `outbox` store; future steps add `cursors` and the cached `tasks`
- * mirror per `cache-schema.ts`.
+ * Open (and migrate) the sync-engine IDB database. Holds the `outbox`
+ * (v1) and `cursors` (v2) stores; the cached `tasks` mirror lives in a
+ * separate IDB owned by the cache layer per `cache-schema.ts`.
  */
 export function openSyncDb(name = 'emt-sync'): Promise<SyncDb> {
   return openDB<SyncDbSchema>(name, SYNC_DB_VERSION, {
-    upgrade(db) {
-      const store = db.createObjectStore(STORE_NAMES.outbox, {
-        keyPath: 'seq',
-        autoIncrement: true,
-      });
-      store.createIndex('byBackend', 'backendId');
+    upgrade(db, oldVersion) {
+      if (oldVersion < 1) {
+        const outbox = db.createObjectStore(STORE_NAMES.outbox, {
+          keyPath: 'seq',
+          autoIncrement: true,
+        });
+        outbox.createIndex('byBackend', 'backendId');
+      }
+      if (oldVersion < 2) {
+        db.createObjectStore(STORE_NAMES.cursors, { keyPath: 'backendId' });
+      }
     },
   });
 }
@@ -105,6 +128,42 @@ class IdbOutboxStore implements OutboxStore {
   }
 }
 
+/** IDB-backed {@link CursorStore}. */
+export function createIdbCursorStore(db: SyncDb): CursorStore {
+  return new IdbCursorStore(db);
+}
+
+class IdbCursorStore implements CursorStore {
+  constructor(private readonly db: SyncDb) {}
+
+  async get(backendId: BackendId): Promise<Cursor | undefined> {
+    const row = await this.db.get(STORE_NAMES.cursors, backendId);
+    return row?.cursor;
+  }
+
+  async set(backendId: BackendId, cursor: Cursor): Promise<void> {
+    const record: CursorRecord = {
+      backendId,
+      cursor,
+      updatedAt: new Date().toISOString(),
+    };
+    await this.db.put(STORE_NAMES.cursors, record);
+  }
+}
+
+/**
+ * Local task cache used by `pull` to apply remote changes and to read
+ * the current local copy when computing field-level conflict diffs.
+ *
+ * Implementations key tasks by `(backendId, taskId)` — see
+ * {@link taskKey} in `cache-schema.ts`.
+ */
+export interface LocalTaskCache {
+  get(backendId: BackendId, taskId: TaskId): Promise<Task | undefined>;
+  put(task: Task): Promise<void>;
+  delete(backendId: BackendId, taskId: TaskId): Promise<void>;
+}
+
 export interface DefaultSyncEngineOptions {
   /** Backing store for the outbox. */
   readonly outbox: OutboxStore;
@@ -114,6 +173,16 @@ export interface DefaultSyncEngineOptions {
    * connected); affected entries stay queued without consuming retries.
    */
   readonly getAdapter: (backendId: BackendId) => BackendAdapter | undefined;
+  /**
+   * Local task cache. Required for `pull`; flush-only deployments may
+   * omit it.
+   */
+  readonly cache?: LocalTaskCache;
+  /**
+   * Per-backend cursor persistence. Required for `pull`; flush-only
+   * deployments may omit it.
+   */
+  readonly cursors?: CursorStore;
   /** Max attempts per outbox entry per `flush` call. Default 5. */
   readonly maxAttempts?: number;
   /** Base backoff in ms; doubled each attempt. Default 1000. */
@@ -126,24 +195,24 @@ export interface DefaultSyncEngineOptions {
   readonly sleep?: (ms: number) => Promise<void>;
 }
 
-/**
- * Default sync-engine implementation. The pull / conflict path is a
- * placeholder until Step 2.5; calling `pull` throws.
- */
+/** Default {@link SyncEngine} implementation. */
 export class DefaultSyncEngine implements SyncEngine {
   private readonly outbox: OutboxStore;
   private readonly getAdapter: (id: BackendId) => BackendAdapter | undefined;
+  private readonly cache: LocalTaskCache | undefined;
+  private readonly cursors: CursorStore | undefined;
   private readonly maxAttempts: number;
   private readonly baseBackoffMs: number;
   private readonly maxBackoffMs: number;
   private readonly random: () => number;
   private readonly sleep: (ms: number) => Promise<void>;
-  // Stored for Step 2.5 — read by `pull` once that lands.
   private resolver: ConflictResolver | undefined;
 
   constructor(options: DefaultSyncEngineOptions) {
     this.outbox = options.outbox;
     this.getAdapter = options.getAdapter;
+    this.cache = options.cache;
+    this.cursors = options.cursors;
     this.maxAttempts = options.maxAttempts ?? 5;
     this.baseBackoffMs = options.baseBackoffMs ?? 1000;
     this.maxBackoffMs = options.maxBackoffMs ?? 60_000;
@@ -180,11 +249,106 @@ export class DefaultSyncEngine implements SyncEngine {
     this.resolver = resolver;
   }
 
-  pull(_backendId: BackendId): Promise<PullResult> {
-    void this.resolver;
-    return Promise.reject(
-      new Error('DefaultSyncEngine.pull is not implemented yet (lands in Step 2.5)'),
-    );
+  async pull(backendId: BackendId): Promise<PullResult> {
+    const adapter = this.getAdapter(backendId);
+    if (adapter === undefined) {
+      throw new Error(`No adapter registered for backend "${String(backendId)}"`);
+    }
+    if (this.cache === undefined) {
+      throw new Error('DefaultSyncEngine.pull requires a `cache` option');
+    }
+    if (this.cursors === undefined) {
+      throw new Error('DefaultSyncEngine.pull requires a `cursors` option');
+    }
+    const cache = this.cache;
+    const cursorStore = this.cursors;
+
+    const previousCursor = await cursorStore.get(backendId);
+    const changes = await adapter.changesSince(previousCursor);
+
+    const pendingByTaskId = new Map<TaskId, OutboxRecord>();
+    for (const entry of await this.outbox.list(backendId)) {
+      // Last entry wins if a task has multiple queued ops — flush drains
+      // in seq order, so the latest is what would land at the backend.
+      pendingByTaskId.set(entry.taskId, entry);
+    }
+
+    let applied = 0;
+    let conflicts = 0;
+
+    for (const remote of changes.upserts) {
+      const pending = pendingByTaskId.get(remote.id);
+      if (pending === undefined) {
+        await cache.put(remote);
+        applied++;
+        continue;
+      }
+      // Local has a queued change for this task: a possible conflict.
+      // We can only diff fields when both sides are full Tasks, which
+      // means the local pending op is `create` or `update` (not `delete`)
+      // and the cache holds the local copy.
+      if (pending.op === 'delete') {
+        // Local wants to delete; remote upserted. Leave local pending in
+        // place — the queued delete will reach the backend on next flush.
+        continue;
+      }
+      const localCached = await cache.get(backendId, remote.id);
+      if (localCached === undefined) {
+        // Pending create/update without a cache row is anomalous; fall
+        // back to remote so we converge.
+        await cache.put(remote);
+        applied++;
+        continue;
+      }
+      const differingFields = computeDifferingFields(localCached, remote);
+      if (differingFields.length === 0) {
+        await cache.put(remote);
+        applied++;
+        continue;
+      }
+      const resolver = this.resolver;
+      if (resolver === undefined) {
+        throw new Error(
+          `Conflict on task ${String(remote.id)} but no ConflictResolver is registered`,
+        );
+      }
+      const record: ConflictRecord = {
+        local: localCached,
+        remote,
+        differingFields,
+      };
+      const choice = await resolver(record);
+      conflicts++;
+      if (choice === 'remote') {
+        await cache.put(remote);
+        // Drop the now-superseded local pending entry.
+        await this.outbox.delete(pending.seq);
+        applied++;
+      } else {
+        // Keep local. Cache already holds the local copy; the queued
+        // outbox entry will push it to the backend on the next flush.
+      }
+    }
+
+    for (const taskId of changes.deletes) {
+      const pending = pendingByTaskId.get(taskId);
+      if (pending !== undefined && pending.op !== 'delete') {
+        // Local has a pending create/update; remote deleted. Leave local
+        // alone — the queued local change will recreate / update on the
+        // backend during the next flush.
+        continue;
+      }
+      await cache.delete(backendId, taskId);
+      if (pending !== undefined) {
+        // Pending was also a delete: both sides agree. Drop the queued
+        // entry since the backend has already deleted.
+        await this.outbox.delete(pending.seq);
+      }
+      applied++;
+    }
+
+    await cursorStore.set(backendId, changes.cursor);
+    return { applied, conflicts, cursor: changes.cursor };
   }
 
   private async flushEntry(entry: OutboxRecord): Promise<'flushed' | 'failed' | 'deferred'> {
@@ -245,4 +409,40 @@ async function applyEntry(adapter: BackendAdapter, entry: OutboxRecord): Promise
 function defaultSleep(ms: number): Promise<void> {
   if (ms <= 0) return Promise.resolve();
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+const DIFFABLE_FIELDS = [
+  'title',
+  'notes',
+  'dueDate',
+  'dueTime',
+  'priority',
+  'quadrant',
+  'status',
+  'completedAt',
+  'tags',
+] as const satisfies readonly DifferingField[];
+
+/**
+ * Shallow field-level diff between two Tasks. Identity / timestamp
+ * fields are intentionally excluded (see {@link DifferingField}).
+ */
+export function computeDifferingFields(local: Task, remote: Task): readonly DifferingField[] {
+  const out: DifferingField[] = [];
+  for (const field of DIFFABLE_FIELDS) {
+    if (field === 'tags') {
+      if (!stringArraysEqual(local.tags, remote.tags)) out.push(field);
+    } else if (local[field] !== remote[field]) {
+      out.push(field);
+    }
+  }
+  return out;
+}
+
+function stringArraysEqual(a: readonly string[], b: readonly string[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
 }
