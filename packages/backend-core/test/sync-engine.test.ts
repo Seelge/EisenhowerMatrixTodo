@@ -1,17 +1,23 @@
 import 'fake-indexeddb/auto';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type {
   BackendAdapter,
   BackendDescriptor,
   BackendId,
   ChangeSet,
+  ConflictRecord,
+  ConflictResolver,
+  Cursor,
+  CursorStore,
+  LocalTaskCache,
   Quadrant,
   Task,
   TaskDraft,
   TaskId,
   TaskPatch,
 } from '../src/index.ts';
+import { taskKey } from '../src/index.ts';
 import {
   createIdbOutboxStore,
   DefaultSyncEngine,
@@ -33,6 +39,14 @@ class StubAdapter implements BackendAdapter {
   attempts = 0;
   /** Caller-controlled hook: return true to fail the next call. */
   shouldFail: () => boolean = () => false;
+  /** Caller-controlled hook for `changesSince`. Defaults to empty + cursor '0'. */
+  nextChanges: (cursor: Cursor | undefined) => ChangeSet = () => ({
+    upserts: [],
+    deletes: [],
+    cursor: '0',
+  });
+  /** Cursors observed in `changesSince` calls. */
+  readonly seenCursors: (Cursor | undefined)[] = [];
 
   private readonly known = new Set<TaskId>();
 
@@ -100,8 +114,37 @@ class StubAdapter implements BackendAdapter {
     this.applied.push({ op: 'delete', id });
   }
 
-  changesSince(): Promise<ChangeSet> {
-    return Promise.resolve({ upserts: [], deletes: [], cursor: '0' });
+  changesSince(cursor?: Cursor): Promise<ChangeSet> {
+    this.seenCursors.push(cursor);
+    return Promise.resolve(this.nextChanges(cursor));
+  }
+}
+
+class InMemoryCache implements LocalTaskCache {
+  readonly tasks = new Map<string, Task>();
+
+  get(backendId: BackendId, taskId: TaskId): Promise<Task | undefined> {
+    return Promise.resolve(this.tasks.get(taskKey(backendId, taskId)));
+  }
+  put(task: Task): Promise<void> {
+    this.tasks.set(taskKey(task.backendId, task.id), task);
+    return Promise.resolve();
+  }
+  delete(backendId: BackendId, taskId: TaskId): Promise<void> {
+    this.tasks.delete(taskKey(backendId, taskId));
+    return Promise.resolve();
+  }
+}
+
+class InMemoryCursorStore implements CursorStore {
+  readonly cursors = new Map<BackendId, Cursor>();
+
+  get(backendId: BackendId): Promise<Cursor | undefined> {
+    return Promise.resolve(this.cursors.get(backendId));
+  }
+  set(backendId: BackendId, cursor: Cursor): Promise<void> {
+    this.cursors.set(backendId, cursor);
+    return Promise.resolve();
   }
 }
 
@@ -279,9 +322,151 @@ describe('DefaultSyncEngine', () => {
     });
   });
 
-  describe('pull placeholder', () => {
-    it('throws until Step 2.5 lands', async () => {
-      await expect(engine.pull(REMOTE)).rejects.toThrow(/not implemented yet/);
+  describe('pull', () => {
+    let cache: InMemoryCache;
+    let cursors: InMemoryCursorStore;
+    let pullEngine: DefaultSyncEngine;
+
+    beforeEach(() => {
+      cache = new InMemoryCache();
+      cursors = new InMemoryCursorStore();
+      pullEngine = new DefaultSyncEngine({
+        outbox,
+        getAdapter: (id) => (id === REMOTE ? adapter : undefined),
+        cache,
+        cursors,
+        sleep: noSleep,
+        random: () => 0,
+      });
+    });
+
+    it('applies a clean pull verbatim and persists the new cursor', async () => {
+      const resolver = vi.fn<ConflictResolver>();
+      pullEngine.setConflictResolver(resolver);
+
+      const t1 = makeTask({ title: 'remote-1' });
+      const t2 = makeTask({ title: 'remote-2' });
+      adapter.nextChanges = () => ({ upserts: [t1, t2], deletes: [], cursor: 'c1' });
+
+      const result = await pullEngine.pull(REMOTE);
+
+      expect(result).toEqual({ applied: 2, conflicts: 0, cursor: 'c1' });
+      expect(resolver).not.toHaveBeenCalled();
+      expect(await cache.get(REMOTE, t1.id)).toEqual(t1);
+      expect(await cache.get(REMOTE, t2.id)).toEqual(t2);
+      expect(await cursors.get(REMOTE)).toBe('c1');
+    });
+
+    it('passes the previously stored cursor to the adapter on subsequent pulls', async () => {
+      adapter.nextChanges = () => ({ upserts: [], deletes: [], cursor: 'c1' });
+      await pullEngine.pull(REMOTE);
+      adapter.nextChanges = () => ({ upserts: [], deletes: [], cursor: 'c2' });
+      await pullEngine.pull(REMOTE);
+
+      expect(adapter.seenCursors).toEqual([undefined, 'c1']);
+      expect(await cursors.get(REMOTE)).toBe('c2');
+    });
+
+    it('does not overwrite local-only edits when the remote has no changes', async () => {
+      const local = makeTask({ title: 'local-edit' });
+      await cache.put(local);
+      await pullEngine.enqueueWrite('update', local);
+
+      adapter.nextChanges = () => ({ upserts: [], deletes: [], cursor: 'c1' });
+      const result = await pullEngine.pull(REMOTE);
+
+      expect(result).toEqual({ applied: 0, conflicts: 0, cursor: 'c1' });
+      expect(await cache.get(REMOTE, local.id)).toEqual(local);
+      const queued = await outbox.list();
+      expect(queued).toHaveLength(1);
+    });
+
+    it('invokes the resolver once per true conflict and persists the chosen side', async () => {
+      const localA = makeTask({ id: 'a' as TaskId, title: 'local-A' });
+      const remoteA: Task = { ...localA, title: 'remote-A' };
+      const localB = makeTask({ id: 'b' as TaskId, title: 'local-B', notes: 'local-notes' });
+      const remoteB: Task = { ...localB, title: 'remote-B', notes: 'remote-notes' };
+
+      await cache.put(localA);
+      await cache.put(localB);
+      await pullEngine.enqueueWrite('update', localA);
+      await pullEngine.enqueueWrite('update', localB);
+
+      adapter.nextChanges = () => ({ upserts: [remoteA, remoteB], deletes: [], cursor: 'c1' });
+
+      const seen: ConflictRecord[] = [];
+      pullEngine.setConflictResolver(async (record) => {
+        seen.push(record);
+        // Keep local on A, take remote on B.
+        return record.local.id === localA.id ? 'local' : 'remote';
+      });
+
+      const result = await pullEngine.pull(REMOTE);
+
+      expect(result.conflicts).toBe(2);
+      expect(result.applied).toBe(1); // only B applied; A kept local
+      expect(seen).toHaveLength(2);
+      expect(seen.find((r) => r.local.id === localA.id)?.differingFields).toEqual(['title']);
+      expect(seen.find((r) => r.local.id === localB.id)?.differingFields).toEqual([
+        'title',
+        'notes',
+      ]);
+
+      // Cache reflects the chosen sides.
+      expect(await cache.get(REMOTE, localA.id)).toEqual(localA);
+      expect(await cache.get(REMOTE, localB.id)).toEqual(remoteB);
+
+      // Outbox: A's local-update entry remains queued (will push local back
+      // to backend); B's was dropped because remote won.
+      const queued = await outbox.list();
+      expect(queued).toHaveLength(1);
+      expect(queued[0]?.taskId).toBe(localA.id);
+    });
+
+    it('skips remote upserts when no resolver is needed (identical remote)', async () => {
+      const local = makeTask({ title: 'same' });
+      await cache.put(local);
+      await pullEngine.enqueueWrite('update', local);
+
+      const resolver = vi.fn<ConflictResolver>();
+      pullEngine.setConflictResolver(resolver);
+      adapter.nextChanges = () => ({ upserts: [{ ...local }], deletes: [], cursor: 'c1' });
+
+      const result = await pullEngine.pull(REMOTE);
+
+      expect(result).toEqual({ applied: 1, conflicts: 0, cursor: 'c1' });
+      expect(resolver).not.toHaveBeenCalled();
+    });
+
+    it('throws on conflict when no resolver is registered', async () => {
+      const local = makeTask({ title: 'local' });
+      await cache.put(local);
+      await pullEngine.enqueueWrite('update', local);
+
+      adapter.nextChanges = () => ({
+        upserts: [{ ...local, title: 'remote' }],
+        deletes: [],
+        cursor: 'c1',
+      });
+
+      await expect(pullEngine.pull(REMOTE)).rejects.toThrow(/no ConflictResolver/i);
+    });
+
+    it('applies remote deletes and drops a coincident pending delete', async () => {
+      const t = makeTask();
+      await cache.put(t);
+      await pullEngine.enqueueWrite('delete', { id: t.id, backendId: REMOTE });
+
+      adapter.nextChanges = () => ({ upserts: [], deletes: [t.id], cursor: 'c1' });
+      const result = await pullEngine.pull(REMOTE);
+
+      expect(result).toEqual({ applied: 1, conflicts: 0, cursor: 'c1' });
+      expect(await cache.get(REMOTE, t.id)).toBeUndefined();
+      expect(await outbox.list()).toHaveLength(0);
+    });
+
+    it('throws when the backend has no registered adapter', async () => {
+      await expect(pullEngine.pull('unknown' as BackendId)).rejects.toThrow(/No adapter/i);
     });
   });
 });

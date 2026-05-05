@@ -6,21 +6,21 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 2.4 — Sync engine outbound queue & flush.
+**Last completed:** Step 2.5 — Sync engine pull & conflict detection.
 
-`packages/backend-core/src/sync-engine.ts` (new): `DefaultSyncEngine implements SyncEngine`. `enqueueWrite(op, taskOrRef)` appends to an `OutboxStore`; the local cache write is the caller's responsibility per the `SyncEngine` JSDoc. `flush(backendId?)` walks queued entries in `seq` order; each entry attempts up to `maxAttempts` (default 5) with full-jitter exponential backoff (`min(maxBackoffMs, baseBackoffMs * 2^(attempt-1)) * random()`, capped at 60 s by default). On success the entry is deleted; on terminal failure it is left queued with `attempts`, `lastAttemptAt`, `lastError` updated for diagnostics. When `getAdapter(backendId)` returns `undefined` (offline / unconfigured), the entry is *deferred* — left queued without consuming a retry — so going offline does not burn the budget. `pull` is a placeholder that throws until Step 2.5.
+`packages/backend-core/src/sync-engine.ts`: `DefaultSyncEngine.pull(backendId)` now reads the per-backend cursor, calls `adapter.changesSince(cursor)`, and reconciles the response against the outbox. Conflict trigger: a remote upsert whose `taskId` also has a queued local entry (looked up via `outbox.list(backendId)` keyed by `taskId`, last-wins on duplicates). When the local pending op is `'delete'`, remote is skipped (queued local delete will reach the backend on the next flush). Otherwise the engine reads `cache.get(backendId, taskId)`, computes `differingFields` via the new `computeDifferingFields` helper (shallow per-field diff over `DifferingField`; `tags` compared element-wise), and — when fields actually differ — invokes the registered `ConflictResolver`. `'remote'` writes remote to cache and drops the pending entry; `'local'` is a no-op (cache already has local; pending entry will push on next flush). Identical-but-pending remotes apply silently with no resolver call. Remote deletes apply unconditionally except when blocked by a pending local create/update (skipped); a coincident pending delete is dropped after applying. Finally the new `changes.cursor` is persisted via the cursor store. Throws on unknown `backendId`, missing `cache`/`cursors` options, or a conflict with no resolver registered.
 
-`OutboxStore` is an interface so tests / future engines can swap backings; the canonical impl is `IdbOutboxStore`, opened via `openSyncDb()` (DB name defaults to `'emt-sync'`, version 1). The store uses `keyPath: 'seq'` + `autoIncrement` so IDB owns seq generation, plus a `byBackend` index to power `flush(backendId)`.
+New abstractions in `sync-engine.ts`:
+- `LocalTaskCache` — opaque `(get | put | delete)` over `(backendId, taskId)`. The concrete IDB cache implementation lives outside this module and will be wired in when registry/cache integration lands.
+- `CursorStore` — `(get | set)` per `backendId`. Canonical impl `IdbCursorStore` ships in this commit, opened via `createIdbCursorStore(db)`.
+- `openSyncDb` bumped to `SYNC_DB_VERSION = 2`; v2 upgrade adds the `cursors` object store (`keyPath: 'backendId'`). v1→v2 migration is additive — existing outbox rows survive.
+- `DefaultSyncEngineOptions` gained optional `cache` and `cursors` fields. Both are required at runtime for `pull`; flush-only constructions omit them.
 
-`enqueueWrite` is overloaded: `('create' | 'update', Task)` vs `('delete', TaskRef)`. The dispatcher in `applyEntry` extracts a `TaskDraft` from the cached `Task` payload (drops `id`/`backendId`/`createdAt`/`updatedAt` plus undefined optional fields, per `exactOptionalPropertyTypes`). `update` reuses the same draft as the patch — partial-patch coalescing is a Step 2.5+ concern.
+`packages/backend-core/test/sync-engine.test.ts`: dropped the placeholder, added 7 pull tests against in-memory `LocalTaskCache` / `CursorStore` plus the existing `StubAdapter` (extended with a `nextChanges(cursor)` hook and a `seenCursors` log). Covers: clean pull verbatim, cursor round-tripping across two pulls, local-only-edits no-op, true conflict (one resolver call per task, mixed local/remote outcomes, correct `differingFields`, outbox dropped only for the remote-wins side), identical-payload silent apply, missing-resolver throw, coincident remote+local delete, and unknown-backend throw.
 
-`packages/backend-core/test/sync-engine.test.ts`: 9 tests against a hand-rolled `StubAdapter` (kept local to avoid a circular workspace dep on `@emt/backend-inmemory`) and `fake-indexeddb`. Covers happy path drain, idempotent second flush, alternating-flake convergence, terminal-failure bookkeeping, no-adapter deferral, offline→online recovery, backendId filter, and the pull placeholder. Engine is constructed with `sleep: () => Promise.resolve()` and `random: () => 0` for deterministic fast runs.
+86 tests pass overall (was 79; +7 pull tests in backend-core); typecheck, lint, format clean.
 
-`packages/backend-core/package.json`: added `idb ^8.0.3` runtime dep, `fake-indexeddb ^6.2.5` dev dep.
-
-79 tests pass overall (was 70; +9 sync engine tests, +0 elsewhere); typecheck, lint, format clean.
-
-**Next:** Step 2.5 — Sync engine pull & conflict detection. Implements `pull(backendId)` reading `changesSince(cursor)`, applying remote changes to the local cache, raising `ConflictResolver` for tasks edited locally since the cursor; computes `ConflictRecord.differingFields` via shallow diff. Persists per-backend cursor via the `cursors` store (currently only declared in `cache-schema.ts`).
+**Next:** Step 2.6 — Backend registry. `packages/backend-core/src/registry.ts` with `BackendRegistry` (`register`, `unregister`, `get`, `list`, `getDefault`, `setDefault`); persist default-id to IDB `meta` store; tests for registration, default selection, and persistence across re-instantiation.
 
 ## Environment notes
 

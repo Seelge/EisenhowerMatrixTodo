@@ -13,12 +13,21 @@ export type { ConflictRecord, ConflictResolver, DifferingField } from './conflic
 export { runAdapterContract } from './contract-tests.js';
 export type { AdapterContractOptions, AdapterFactory, ContractSection } from './contract-tests.js';
 export {
+  computeDifferingFields,
+  createIdbCursorStore,
   createIdbOutboxStore,
   DefaultSyncEngine,
   openSyncDb,
   SYNC_DB_VERSION,
 } from './sync-engine.js';
-export type { DefaultSyncEngineOptions, OutboxAppend, OutboxStore, SyncDb } from './sync-engine.js';
+export type {
+  CursorStore,
+  DefaultSyncEngineOptions,
+  LocalTaskCache,
+  OutboxAppend,
+  OutboxStore,
+  SyncDb,
+} from './sync-engine.js';
 export type { FlushResult, PullResult, SyncEngine, TaskRef } from './sync.ts';
 export type {
   BackendId,
