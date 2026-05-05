@@ -244,7 +244,7 @@ Implement the in-memory and local-IndexedDB adapters, the sync engine, and the m
 
 Depends on Phase 1.
 
-### Step 2.1 — In-memory adapter
+### Step ✅ 2.1 — In-memory adapter
 **Goal.** Reference implementation of `BackendAdapter` backed by a Map; passes the contract test suite.
 **Inputs.** Steps 1.1–1.3.
 **Outputs.**
@@ -290,7 +290,7 @@ Depends on Phase 1.
 **Done when.**
 - Tests green.
 
-### Step 2.5 — Sync engine — pull & conflict detection
+### Step ✅ 2.5 — Sync engine — pull & conflict detection
 **Goal.** Implement `pull(backendId)`: read `changesSince(cursor)`, apply remote changes to the cache, raise `ConflictResolver` for tasks edited locally since the cursor.
 **Inputs.** Steps 2.4, 1.4.
 **Outputs.**
@@ -303,7 +303,7 @@ Depends on Phase 1.
 **Done when.**
 - Tests green.
 
-### Step 2.6 — Backend registry
+### Step ✅ 2.6 — Backend registry
 **Goal.** Registry of installed backends with a configurable default for new tasks.
 **Inputs.** Step 2.5.
 **Outputs.**
@@ -314,7 +314,7 @@ Depends on Phase 1.
 **Done when.**
 - Tests green.
 
-### Step 2.7 — Task migration
+### Step ✅ 2.7 — Task migration
 **Goal.** Move a task between backends as a create-then-delete with rollback.
 **Inputs.** Step 2.6.
 **Outputs.**
@@ -335,7 +335,7 @@ Implement design tokens (already typed in 1.6) as runtime CSS, plus the primitiv
 
 Depends on Step 1.6 and Phase 0.
 
-### Step 3.1 — Theme provider + CSS reset
+### Step ✅ 3.1 — Theme provider + CSS reset
 **Goal.** A `<ThemeProvider>` injects the token CSS vars and applies a CSS reset; `color-scheme: dark`.
 **Outputs.** `ThemeProvider.tsx`, `reset.css`, integration test rendering a child that reads `--color-bg`.
 **Done when.** Token-preview page renders in the dark palette.
