@@ -143,13 +143,14 @@ Top-level groups:
   - Route + view-state contract: how view1 / view2 / view3 / view4 are reachable, URL params (owned by `app` shell)
 - Each slice's plan must include a **"done when"** checklist: tests passing, contracts honored, accessibility checks passed, manual demo script.
 - **Testing strategy**: unit tests for backend adapters using `backend-inmemory` as the contract reference; component tests via Testing Library; Playwright end-to-end covering create → drag between quadrants → focus → set due → complete; plus a PWA install + offline scenario.
-- **Suggested model assignments per slice** (the planner can adjust):
-  - Planning and orchestration: **Opus**
-  - Design system / UI primitives: **Sonnet**
-  - Backend adapters and sync engine: **Sonnet**
-  - view1 / view2 / drag-and-drop / zoom transitions: **Sonnet**
-  - view3 / view4 / forms: **Sonnet**
-  - Tests + CI scaffolding: **Haiku**
+
+## Suggested model assignments per slice 
+- Planning and orchestration: **Opus**
+- Design system / UI primitives: **Sonnet**
+- Backend adapters and sync engine: **Sonnet**
+- view1 / view2 / drag-and-drop / zoom transitions: **Sonnet**
+- view3 / view4 / forms: **Sonnet**
+- Tests + CI scaffolding: **Haiku**
 
 ## Session continuity
 
