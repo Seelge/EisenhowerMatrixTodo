@@ -365,7 +365,7 @@ Depends on Step 1.6 and Phase 0.
 **Outputs.** `QuadrantPicker.tsx`.
 **Done when.** Component test for selection change + keyboard navigation.
 
-### Step 3.7 — Due-date picker
+### Step ✅ 3.7 — Due-date picker
 **Goal.** Quick-pick row ("Today / Tomorrow / This weekend / Next week / No date") + native `<input type="date">` fallback.
 **Outputs.** `DueDatePicker.tsx`.
 **Done when.** Test for each preset; locale-aware "weekend" computation has a unit test (Saturday upcoming).

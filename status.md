@@ -6,24 +6,26 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 3.6 — Quadrant picker (2 × 2).
+**Last completed:** Step 3.7 — Due-date picker.
 
-`packages/design-system/src/QuadrantPicker.tsx` (new): controlled `<QuadrantPicker value onChange labels? aria-label?>`. The 2 × 2 grid is laid out spatially via CSS `grid-template-areas` matching the matrix axes from design-input.md (Important ↑ / Urgent →): q2 Schedule / q1 Do on the top row, q4 Delete / q3 Delegate on the bottom. Tab/reading order is q2, q1, q4, q3 (TL → TR → BL → BR).
+`packages/design-system/src/due-date-helpers.ts` (new): pure date math, no React/DOM dependencies, so the helpers can be unit-tested under the node test environment. Exports:
+  - `formatLocalDate(d)` — `YYYY-MM-DD` from local-time fields (due dates are wall-clock, never UTC instants).
+  - `addDays(d, n)` — local-time-safe day arithmetic.
+  - `computeWeekendDate(today)` — "this weekend" is the upcoming Saturday, except on Sat/Sun where it's today (the user is already inside the weekend).
+  - `getFirstDayOfWeek(locale)` — uses `Intl.Locale.prototype.getWeekInfo()` where available (Node 24 ✓) and remaps CLDR's `firstDay` (1..7, 7 = Sunday) to JS's `getDay()` (0 = Sunday); falls back to ISO 8601 Monday on unknown locales or older runtimes.
+  - `computeNextWeekDate(today, locale)` — next occurrence of the locale's first weekday. If today *is* the first weekday, returns one full week ahead so "Next week" never resolves to today.
 
-Implements the WAI-ARIA radio-group pattern:
-  - Container `<div role="radiogroup" aria-label="Quadrant">` (label overridable). The group itself is *not* focusable — only the currently-checked radio is in tab order via a roving `tabIndex={0}` (others get `-1`). The `jsx-a11y/interactive-supports-focus` rule is suppressed at that line with a comment because its heuristic does not model the radio-group pattern.
-  - Each cell is a `<button type="button" role="radio" aria-checked={value === q} data-emt-quadrant={q}>` with the per-quadrant class hook (`emt-quadrant-picker__cell--{q1..q4}`). Selected cells light up via the matching `--glow-{q1..q4}` token through an `[aria-checked='true']` selector — selection is a single source-of-truth driven by `value`, no separate "active" state.
-  - Click → `onChange(q)`.
-  - Arrow keys move both selection and focus *spatially*, not as a 1-D radio cycle: ArrowRight from q2 → q1, ArrowDown from q2 → q4, ArrowLeft from q1 → q2, ArrowUp from q3 → q1, etc. Arrows clamp at the grid boundary rather than wrapping (with only 2 × 2, "right from the rightmost column" wrapping to the next row would be confusing). The neighbor lookup is a static `Record<Quadrant, Record<ArrowKey, Quadrant>>` so it cannot drift from the visual layout. Focus moves via `queueMicrotask(() => cellRefs.current[next]?.focus())` so the new `aria-checked` state is committed before the browser hands focus over.
-  - Non-arrow keys are ignored — no `preventDefault`, no `onChange`, so input controls inside a parent form continue to receive their keystrokes.
+`packages/design-system/src/DueDatePicker.tsx` (new): controlled `<DueDatePicker value onChange today? locale?>`. Renders five preset buttons (`<Button>`) — Today, Tomorrow, This weekend, Next week, No date — followed by `<input type="date">` for precise picks. Selected preset (matched by ISO string equality with `value`) renders as `variant="filled"`; the others use `variant="tonal"`; both states also set `aria-pressed`. The native input mirrors `value` and emits `null` when cleared. `today` and `locale` are injectable for test determinism; defaults are `new Date()` and `navigator.language` (or `'en-US'`).
 
-`packages/design-system/src/components.css` + `components.ts`: extended with `.emt-quadrant-picker` (grid container, 240 px max width, 1 : 1 aspect ratio), `.emt-quadrant-picker__cell` (transparent surface, secondary-text color, transition on box-shadow/color/border), and four `[aria-checked='true']` rules wiring each cell to its `--glow-q{1..4}`. The reduced-motion block adds `.emt-quadrant-picker__cell` to the `transition: none` selector list. Drift guard (`components.test.ts`) keeps the two byte-identical.
+`packages/design-system/src/components.css` + `components.ts`: extended with `.emt-due-date-picker` (column flex), `.emt-due-date-picker__presets` (wrap-flex row), and `.emt-due-date-picker__native` (full-width 48 px input on the dark surface, `color-scheme: dark` so the native picker chrome inherits the theme). Drift guard kept byte-identical.
 
-`packages/design-system/test/quadrant-picker.test.tsx` (new, 11 cases): renders the radiogroup with the four expected labels in TL/TR/BL/BR order; aria-checked is set on exactly one radio and only that radio carries `tabIndex=0`; clicking a cell drives `onChange` and re-renders the picker with the new selection; arrow keys produce the spatially correct neighbor (cases for ArrowRight/Down/Left/Up); ArrowRight from q1 (rightmost-top) is a no-op (boundary clamp); non-arrow keys are ignored and don't `preventDefault`; custom `labels` and custom `aria-label` are honored. A small `<Host>` test wrapper holds local state so `onChange` actually flips the picker — matching how callers will use it.
+`packages/design-system/test/due-date-helpers.test.ts` (new, 14 cases, node env): `formatLocalDate` zero-pads and uses local-time; `addDays` advances and rolls across month boundaries; `computeWeekendDate` covers Mon/Wed (the "Saturday upcoming" canonical case from the done-when), Fri, Sat, Sun; `getFirstDayOfWeek` returns 0 for `en-US`, 1 for `de-DE`, 1 for unknown locales; `computeNextWeekDate` covers the Sun-first vs Mon-first split *and* the "today is the first day" edge cases (returns +7, never today).
 
-163 tests pass (was 152; +11). Typecheck, lint, format, secret scan clean.
+`packages/design-system/test/due-date-picker.test.tsx` (new, 11 cases, happy-dom): each preset has its own case (Today → 2026-05-06, Tomorrow → +1, This weekend → upcoming Sat, Next week → upcoming Mon under `de-DE`, No date → `null`); the matching preset carries `aria-pressed="true"` and the `emt-button--filled` class while the others use `emt-button--tonal`; clicking a preset flips the filled variant; the native input mirrors `value` and emits both new values and `null` on clear. The native-input test uses `Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set` to bypass React 18's value-setter patch — assigning `input.value` directly silently no-ops the synthetic onChange.
 
-**Next:** Phase 3 — Step 3.7 — Due-date picker. Quick-pick row ("Today / Tomorrow / This weekend / Next week / No date") + native `<input type="date">` fallback. Outputs: `DueDatePicker.tsx`. Done when each preset has a test and the locale-aware "weekend" computation has its own unit test (Saturday upcoming).
+188 tests pass (was 163; +25). Typecheck, lint, format, secret scan clean.
+
+**Next:** Phase 3 — Step 3.8 — Loading / empty / error primitives. Standardized states. Outputs: `Skeleton.tsx`, `EmptyNote.tsx` (the muted-grey "empty" note from view2), `ErrorBanner.tsx`. Done when component tests pass.
 
 ## Environment notes
 

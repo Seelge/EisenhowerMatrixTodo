@@ -1,5 +1,6 @@
 export { Button, type ButtonProps, type ButtonVariant } from './Button.js';
 export { Card, type CardProps } from './Card.js';
+export { DueDatePicker, type DueDatePickerProps } from './DueDatePicker.js';
 export { Fab, type FabProps } from './Fab.js';
 export { Glow, type GlowColor, type GlowProps } from './Glow.js';
 export { IconButton, type IconButtonProps } from './IconButton.js';
