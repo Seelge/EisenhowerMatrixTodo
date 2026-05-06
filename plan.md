@@ -355,7 +355,7 @@ Depends on Step 1.6 and Phase 0.
 **Outputs.** `Sheet.tsx`, `SidePanel.tsx`, `ResponsiveSurface.tsx` (picks one by viewport).
 **Done when.** Tests for both breakpoints pass; reduced-motion path gives instant open/close.
 
-### Step 3.5 — Snackbar with undo
+### Step ✅ 3.5 — Snackbar with undo
 **Goal.** Snackbar primitive with optional 5 s undo CTA.
 **Outputs.** `Snackbar.tsx`, `SnackbarProvider`, `useSnackbar` hook.
 **Done when.** Test: undo within 5 s cancels callback; otherwise commits.

@@ -6,6 +6,14 @@ export { IconButton, type IconButtonProps } from './IconButton.js';
 export { ResponsiveSurface, type ResponsiveSurfaceProps } from './ResponsiveSurface.js';
 export { Sheet, type SheetProps } from './Sheet.js';
 export { SidePanel, type SidePanelProps } from './SidePanel.js';
+export { Snackbar, type SnackbarProps } from './Snackbar.js';
+export {
+  SnackbarProvider,
+  useSnackbar,
+  type SnackbarContextValue,
+  type SnackbarProviderProps,
+  type SnackbarShowOptions,
+} from './SnackbarProvider.js';
 export { ThemeProvider, type ThemeProviderProps } from './ThemeProvider.js';
 export { COMPONENT_CSS } from './components.js';
 export { RESET_CSS } from './reset.js';
