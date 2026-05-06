@@ -54,6 +54,9 @@ describe('ThemeProvider', () => {
     const styleNodes = document.querySelectorAll('style#emt-theme-reset');
     expect(styleNodes.length).toBe(1);
     expect(styleNodes[0]?.textContent).toMatch(/box-sizing: border-box/);
+    // Components layer is injected alongside the reset.
+    expect(styleNodes[0]?.textContent).toMatch(/\.emt-button/);
+    expect(styleNodes[0]?.textContent).toMatch(/\.emt-fab/);
 
     first.unmount();
     expect(document.querySelectorAll('style#emt-theme-reset').length).toBe(1);

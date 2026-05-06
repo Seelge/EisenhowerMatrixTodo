@@ -1,0 +1,156 @@
+/**
+ * Component CSS as a string constant for runtime injection by `<ThemeProvider>`.
+ *
+ * The canonical source is `components.css`; this constant must be kept identical.
+ * `test/components.test.ts` enforces that with a byte-comparison drift check.
+ */
+export const COMPONENT_CSS = `/*
+ * Component styles for the design system.
+ *
+ * Mirrored verbatim by the COMPONENT_CSS constant in \`components.ts\`; a drift
+ * test (\`test/components.test.ts\`) asserts the two are byte-identical so the
+ * runtime ThemeProvider injection and bundler-side @import paths agree.
+ *
+ * Material 3 behaviors (state layers, motion durations, ≥48 px touch targets)
+ * with the project's dark-only palette.
+ */
+
+.emt-button,
+.emt-icon-button,
+.emt-fab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-family-sans);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--motion-duration-short) var(--motion-easing-standard),
+    color var(--motion-duration-short) var(--motion-easing-standard),
+    filter var(--motion-duration-short) var(--motion-easing-standard),
+    transform var(--motion-duration-short) var(--motion-easing-standard),
+    box-shadow var(--motion-duration-short) var(--motion-easing-standard);
+}
+
+.emt-button:disabled,
+.emt-icon-button:disabled,
+.emt-fab:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.emt-button {
+  min-height: 48px;
+  min-width: 48px;
+  gap: var(--space-sm);
+  padding: 0 var(--space-md);
+  border-radius: var(--radius-pill);
+  border: none;
+  font-size: var(--font-size-md);
+  line-height: 1;
+}
+
+.emt-button--filled {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+.emt-button--filled:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.emt-button--filled:active:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.emt-button--tonal {
+  background: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+}
+.emt-button--tonal:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+.emt-button--tonal:active:not(:disabled) {
+  filter: brightness(0.95);
+}
+
+.emt-button--outlined {
+  background: transparent;
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+}
+.emt-button--outlined:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--color-accent), transparent 92%);
+}
+.emt-button--outlined:active:not(:disabled) {
+  background: color-mix(in oklab, var(--color-accent), transparent 86%);
+}
+
+.emt-button--text {
+  background: transparent;
+  color: var(--color-accent);
+  padding: 0 var(--space-sm);
+}
+.emt-button--text:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--color-accent), transparent 92%);
+}
+.emt-button--text:active:not(:disabled) {
+  background: color-mix(in oklab, var(--color-accent), transparent 86%);
+}
+
+.emt-icon-button {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary);
+}
+.emt-icon-button:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--color-text-primary), transparent 92%);
+}
+.emt-icon-button:active:not(:disabled) {
+  background: color-mix(in oklab, var(--color-text-primary), transparent 86%);
+}
+
+.emt-fab {
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  min-height: 56px;
+  border-radius: var(--radius-lg);
+  border: none;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  box-shadow: var(--glow-accent);
+}
+.emt-fab:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+}
+.emt-fab:active:not(:disabled) {
+  filter: brightness(0.95);
+  transform: translateY(0);
+}
+
+.emt-card {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .emt-button,
+  .emt-icon-button,
+  .emt-fab {
+    transition: none;
+  }
+  .emt-fab:hover:not(:disabled),
+  .emt-fab:active:not(:disabled) {
+    transform: none;
+  }
+}
+`;

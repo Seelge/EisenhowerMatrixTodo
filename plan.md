@@ -345,7 +345,7 @@ Depends on Step 1.6 and Phase 0.
 **Outputs.** `Glow.tsx` + tests for the four quadrant colors.
 **Done when.** Visual snapshot per color.
 
-### Step 3.3 — Buttons, IconButton, FAB, Card
+### Step ✅ 3.3 — Buttons, IconButton, FAB, Card
 **Goal.** Material-3-behaving button family with custom styling.
 **Outputs.** Components + a11y tests (focus ring, role, aria-label requirement on icon-only).
 **Done when.** Tests green; jsx-a11y lint clean.
