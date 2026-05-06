@@ -6,19 +6,15 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 3.1 — Theme provider + CSS reset.
+**Last completed:** Step 3.2 — Glow border primitive.
 
-`packages/design-system/src/ThemeProvider.tsx` (new): React component that wraps `children` in a `<div data-emt-theme="dark">` whose inline style carries every design token as a CSS custom property (`--color-bg`, `--color-q1…q4`, `--space-*`, `--font-*`, `--motion-*`, `--glow-*`, `--layer-*`) plus `color-scheme: dark`. The variables flow to descendants via the cascade. On mount, the component appends a single `<style id="emt-theme-reset">` to `document.head` containing the reset rules; mounts are ref-counted so multiple `<ThemeProvider>` instances share one stylesheet, and the last unmount removes it. SSR-safe (`typeof document` guard).
+`packages/design-system/src/Glow.tsx` (new): tiny decorative wrapper. `<Glow color="q1|q2|q3|q4|accent">` renders a `<div data-emt-glow={color}>` with inline `box-shadow: var(--glow-${color})` and a default `border-radius: var(--radius-md)`. Both defaults compose with consumer `style` (consumer wins via spread order) and `className`/`aria-*`/etc. forward through `Omit<HTMLAttributes<HTMLDivElement>, 'color'>` (the `color` HTML attribute is replaced by the strict `Quadrant | 'accent'` prop). The component reads tokens via CSS variables — not by hardcoding `tokens.glow[color]` — so a future light-mode `<ThemeProvider>` re-skin works without prop changes. Exported from `src/index.ts` as `Glow`, `GlowColor`, `GlowProps`.
 
-`packages/design-system/src/reset.css` (new): minimal modern reset — `box-sizing: border-box`, zero margins/padding, full-height `html/body/#root`, body uses the token vars (`--font-family-sans`, `--color-bg`, `--color-text-primary`), block media, focus-visible ring sourced from `--color-accent`. `packages/design-system/src/reset.ts` (new) exports `RESET_CSS` as a string mirror, used at runtime by `ThemeProvider`. The two are kept byte-identical by `test/reset.test.ts` (drift guard, forced `// @vitest-environment node` because happy-dom rewrites `import.meta.url` to a non-file scheme).
+`packages/design-system/test/glow.test.tsx` (new): five color cases (q1–q4 + accent) parameterized over a `COLORS` array. Each case asserts the inline `boxShadow` is the matching `var(--glow-${color})` string, the default `borderRadius` is `var(--radius-md)`, the `data-emt-glow` attribute mirrors the color, and children render through. Two further cases: consumer `style.borderRadius` overrides the default; arbitrary div props (`className`, `aria-label`) forward to the rendered DOM. Reuses `test/render.ts` (React 18 `createRoot` + `act` helper) — no library dependency added.
 
-`packages/design-system/test/theme-provider.test.tsx` (new): integration test under `happy-dom`, using a tiny `test/render.ts` helper (React 18 `createRoot` + `act`, no `@testing-library/react` dependency). Asserts (1) a child wrapped in `<ThemeProvider>` finds `--color-bg`, `--color-q1…q4`, `--glow-q2` (multi-segment box-shadow with rgba commas survives intact), and `color-scheme: dark` on the wrapper, (2) two stacked `<ThemeProvider>`s mount only one `<style id="emt-theme-reset">` and the last unmount removes it.
+7 new tests; 115 total (was 108). Typecheck, lint, format clean. The Glow box-shadow is already exercised visually by `preview.html`'s glow grid (q1–q4 + accent), satisfying the Step 3.2 done-when criterion.
 
-`packages/design-system/vitest.config.ts`: switched to `environment: 'happy-dom'`. `package.json`: adds `react`/`react-dom`/`@types/react`/`@types/react-dom`/`happy-dom` as devDependencies and `react ^18.3.1` as a peerDependency.
-
-108 tests pass overall (was 105; +3 in design-system: 2 ThemeProvider, 1 drift guard); typecheck, lint, format clean. The token preview page (`packages/design-system/preview.html`) already renders in the dark palette via `tokens.css` at `:root`, satisfying the Step 3.1 done-when criterion.
-
-**Next:** Phase 3 — Step 3.2 — Glow border primitive: `<Glow color="q1|q2|q3|q4" />` (or a CSS utility) renders the futuristic glow border using `--glow-*`. Outputs: `Glow.tsx` + tests for the four quadrant colors. Done when visual snapshots per color exist.
+**Next:** Phase 3 — Step 3.3 — Buttons, IconButton, FAB, Card. Material-3-behaving button family with custom styling, plus `Card` for surfaces. Outputs: components + a11y tests (focus-visible ring, role, `aria-label` requirement on icon-only). Done when tests are green and `jsx-a11y` lint stays clean.
 
 ## Environment notes
 

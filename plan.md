@@ -340,7 +340,7 @@ Depends on Step 1.6 and Phase 0.
 **Outputs.** `ThemeProvider.tsx`, `reset.css`, integration test rendering a child that reads `--color-bg`.
 **Done when.** Token-preview page renders in the dark palette.
 
-### Step 3.2 — Glow border primitive
+### Step ✅ 3.2 — Glow border primitive
 **Goal.** `<Glow color="Q1" />` (or a CSS utility) renders the futuristic glow border.
 **Outputs.** `Glow.tsx` + tests for the four quadrant colors.
 **Done when.** Visual snapshot per color.
