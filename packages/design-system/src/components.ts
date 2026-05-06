@@ -253,6 +253,31 @@ export const COMPONENT_CSS = `/*
   border-color: transparent;
 }
 
+.emt-due-date-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.emt-due-date-picker__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.emt-due-date-picker__native {
+  width: 100%;
+  min-height: 48px;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-surface-elevated);
+  border-radius: var(--radius-md);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-md);
+  color-scheme: dark;
+}
+
 .emt-quadrant-picker__cell--q1[aria-checked='true'] {
   box-shadow: var(--glow-q1);
 }
