@@ -278,6 +278,56 @@ export const COMPONENT_CSS = `/*
   color-scheme: dark;
 }
 
+.emt-skeleton {
+  display: block;
+  background: linear-gradient(
+    90deg,
+    var(--color-surface) 0%,
+    var(--color-surface-elevated) 50%,
+    var(--color-surface) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radius-sm);
+  animation: emt-skeleton-shimmer 1.4s linear infinite;
+}
+
+.emt-skeleton--circle {
+  border-radius: 50%;
+}
+
+@keyframes emt-skeleton-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.emt-empty-note {
+  text-align: center;
+  color: var(--color-text-secondary);
+  padding: var(--space-lg);
+  font-size: var(--font-size-sm);
+  font-style: italic;
+}
+
+.emt-error-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: color-mix(in oklab, var(--color-error), transparent 88%);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-md);
+}
+
+.emt-error-banner__message {
+  flex: 1;
+  font-size: var(--font-size-sm);
+}
+
 .emt-quadrant-picker__cell--q1[aria-checked='true'] {
   box-shadow: var(--glow-q1);
 }
@@ -343,7 +393,8 @@ export const COMPONENT_CSS = `/*
   .emt-scrim,
   .emt-sheet,
   .emt-side-panel,
-  .emt-snackbar {
+  .emt-snackbar,
+  .emt-skeleton {
     animation: none;
   }
 }

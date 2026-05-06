@@ -370,7 +370,7 @@ Depends on Step 1.6 and Phase 0.
 **Outputs.** `DueDatePicker.tsx`.
 **Done when.** Test for each preset; locale-aware "weekend" computation has a unit test (Saturday upcoming).
 
-### Step 3.8 — Loading / empty / error primitives
+### Step ✅ 3.8 — Loading / empty / error primitives
 **Goal.** Standardized states.
 **Outputs.** `Skeleton.tsx`, `EmptyNote.tsx` (the muted-grey "empty" note from view2), `ErrorBanner.tsx`.
 **Done when.** Component tests pass.
