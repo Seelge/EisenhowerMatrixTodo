@@ -1,5 +1,6 @@
 import { useEffect, useMemo, type CSSProperties, type ReactNode } from 'react';
 
+import { COMPONENT_CSS } from './components.js';
 import { RESET_CSS } from './reset.js';
 import { tokens } from './tokens.js';
 
@@ -13,7 +14,9 @@ function attachReset(): void {
   if (mountCount > 1) return;
   styleElement = document.createElement('style');
   styleElement.id = STYLE_ELEMENT_ID;
-  styleElement.textContent = RESET_CSS;
+  // Reset first, then component layer — order lets components override the
+  // reset where needed (e.g., the reset's bare `button` rule).
+  styleElement.textContent = `${RESET_CSS}\n${COMPONENT_CSS}`;
   document.head.append(styleElement);
 }
 
