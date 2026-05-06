@@ -350,7 +350,7 @@ Depends on Step 1.6 and Phase 0.
 **Outputs.** Components + a11y tests (focus ring, role, aria-label requirement on icon-only).
 **Done when.** Tests green; jsx-a11y lint clean.
 
-### Step 3.4 — Sheet & SidePanel + responsive container
+### Step ✅ 3.4 — Sheet & SidePanel + responsive container
 **Goal.** Bottom sheet (mobile), right-side panel (~480 px desktop), with focus trap and Esc-close.
 **Outputs.** `Sheet.tsx`, `SidePanel.tsx`, `ResponsiveSurface.tsx` (picks one by viewport).
 **Done when.** Tests for both breakpoints pass; reduced-motion path gives instant open/close.
