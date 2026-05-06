@@ -3,6 +3,7 @@ export { Card, type CardProps } from './Card.js';
 export { Fab, type FabProps } from './Fab.js';
 export { Glow, type GlowColor, type GlowProps } from './Glow.js';
 export { IconButton, type IconButtonProps } from './IconButton.js';
+export { QuadrantPicker, type QuadrantPickerProps } from './QuadrantPicker.js';
 export { ResponsiveSurface, type ResponsiveSurfaceProps } from './ResponsiveSurface.js';
 export { Sheet, type SheetProps } from './Sheet.js';
 export { SidePanel, type SidePanelProps } from './SidePanel.js';
