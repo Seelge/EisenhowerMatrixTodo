@@ -375,7 +375,7 @@ Depends on Step 1.6 and Phase 0.
 **Outputs.** `Skeleton.tsx`, `EmptyNote.tsx` (the muted-grey "empty" note from view2), `ErrorBanner.tsx`.
 **Done when.** Component tests pass.
 
-### Step 3.9 — `useReducedMotion` hook
+### Step ✅ 3.9 — `useReducedMotion` hook
 **Goal.** Centralize `prefers-reduced-motion` detection.
 **Outputs.** `useReducedMotion.ts` + test using mocked media query.
 **Done when.** Both branches covered.
