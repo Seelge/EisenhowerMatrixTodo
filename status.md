@@ -6,21 +6,17 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 3.8 — Loading / empty / error primitives.
+**Last completed:** Step 3.9 — `useReducedMotion` hook. **Closes Phase 3.**
 
-`packages/design-system/src/Skeleton.tsx` (new): `<Skeleton width? height? variant?>` — decorative `<div aria-hidden="true" class="emt-skeleton">`. `width`/`height` accept `string | number` (numbers coerce to `px`); `variant="circle"` adds `emt-skeleton--circle` (full-radius). When width/height are omitted, no inline style is emitted (so callers can size via the parent's flex/grid). The shimmer is a CSS background-position keyframe and is zeroed out by the `prefers-reduced-motion` block.
+`packages/design-system/src/useReducedMotion.ts` (new): tiny hook over `useSyncExternalStore` that subscribes to `window.matchMedia('(prefers-reduced-motion: reduce)')` and returns the current `matches` value. Same subscribe / getSnapshot / SSR-snapshot triple as `ResponsiveSurface`'s `useMatchMedia`. The SSR snapshot is `false` ("animations on") — the conservative default for first paint, since no user preference is available yet, and matches the design-input intent that the reduced-motion path is opt-in. The hook is the JS counterpart to the `@media (prefers-reduced-motion: reduce)` blocks already in `components.css`; pure CSS animations should keep using those blocks, but JS-driven motion (e.g., the view1↔view2 zoom morph in Phase 5) needs a runtime check.
 
-`packages/design-system/src/EmptyNote.tsx` (new): `<EmptyNote>...</EmptyNote>` renders as a `<p class="emt-empty-note">` — centered, italic, secondary-text color. The "muted-grey 'nothing here yet' note" called out in design-input §view2.
+`packages/design-system/test/use-reduced-motion.test.tsx` (new, 4 cases): matches=false branch returns `false`; matches=true branch returns `true`; the live-flip case fires a synthetic `change` event into the listener registry and asserts the next render reads `true`; the unmount case asserts the listener set is empty (the hook unsubscribes cleanly). Uses the same controllable `window.matchMedia` stub introduced for `ResponsiveSurface` tests — happy-dom's stub always reports `matches: false` and ignores listeners, so we override.
 
-`packages/design-system/src/ErrorBanner.tsx` (new): `<ErrorBanner message onRetry? retryLabel?>` renders `<div role="alert" class="emt-error-banner">` so AT announces it the moment it appears; the message lives in `.emt-error-banner__message`; when `onRetry` is provided, a tonal Retry button (`<Button variant="tonal">`) is rendered alongside, label overridable via `retryLabel`. The background is the error color tinted into the surface (`color-mix(in oklab, var(--color-error), transparent 88%)`) plus a 1 px error-color border — destructive-feeling but not opaque.
+202 tests pass (was 198; +4). Typecheck, lint, format, secret scan clean.
 
-`packages/design-system/src/components.css` + `components.ts`: extended with `.emt-skeleton` (linear-gradient shimmer + 1.4 s keyframe), `.emt-skeleton--circle`, `.emt-empty-note`, `.emt-error-banner` + `__message`. The reduced-motion block adds `.emt-skeleton` to the `animation: none` selector list. Drift guard kept byte-identical.
+**Phase 3 exit:** primitives ready (`Glow`, `Button`/`IconButton`/`Fab`/`Card`, `Sheet`/`SidePanel`/`ResponsiveSurface`, `Snackbar`, `QuadrantPicker`, `DueDatePicker`, `Skeleton`/`EmptyNote`/`ErrorBanner`, `useReducedMotion`); 202 tests guarding them. Views can now compose them with no view-specific code yet.
 
-`packages/design-system/test/states.test.tsx` (new, 10 cases): Skeleton — `aria-hidden`, numeric coercion to `px`, raw CSS string passthrough, circle variant, no inline style without props, reduced-motion override at the COMPONENT_CSS string level. EmptyNote — renders as `<p>` with the class, forwards children, preserves caller className. ErrorBanner — `role="alert"` with the message, no button absent `onRetry`, Retry button fires `onRetry` and uses the tonal variant, custom `retryLabel` honored.
-
-198 tests pass (was 188; +10). Typecheck, lint, format, secret scan clean.
-
-**Next:** Phase 3 — Step 3.9 — `useReducedMotion` hook. Centralize `prefers-reduced-motion` detection. Outputs: `useReducedMotion.ts` + test using a mocked media query. Done when both branches (matches=true and matches=false) are covered. **Closes Phase 3** — primitives ready, views compose them with no view-specific code yet.
+**Next:** Phase 4 — Step 4.1 — Root shell. `<App />` mounts `<ThemeProvider>` → `<QueryClientProvider>` → `<Router>` → `<ErrorBoundary>` → `<I18nProvider>` → `<Routes>`. Outputs: `packages/app/src/App.tsx`, `packages/app/src/i18n/{provider.tsx,strings.en.ts,t.ts}`. Done when the app renders a placeholder home page with the dark theme applied.
 
 ## Environment notes
 
