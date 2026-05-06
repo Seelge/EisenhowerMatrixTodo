@@ -179,6 +179,29 @@ export const COMPONENT_CSS = `/*
   animation: emt-slide-left var(--motion-duration-medium) var(--motion-easing-emphasized);
 }
 
+.emt-snackbar {
+  position: fixed;
+  bottom: var(--space-lg);
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-md);
+  max-width: calc(100vw - var(--space-lg) * 2);
+  background: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  z-index: var(--layer-snackbar);
+  animation: emt-snackbar-in var(--motion-duration-medium) var(--motion-easing-emphasized);
+}
+
+.emt-snackbar__message {
+  flex: 1;
+  font-size: var(--font-size-sm);
+}
+
 @keyframes emt-fade-in {
   from {
     opacity: 0;
@@ -206,6 +229,17 @@ export const COMPONENT_CSS = `/*
   }
 }
 
+@keyframes emt-snackbar-in {
+  from {
+    transform: translate(-50%, 100%);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .emt-button,
   .emt-icon-button,
@@ -218,7 +252,8 @@ export const COMPONENT_CSS = `/*
   }
   .emt-scrim,
   .emt-sheet,
-  .emt-side-panel {
+  .emt-side-panel,
+  .emt-snackbar {
     animation: none;
   }
 }

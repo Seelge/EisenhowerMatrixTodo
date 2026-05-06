@@ -6,23 +6,29 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 3.4 — Sheet & SidePanel + responsive container.
+**Last completed:** Step 3.5 — Snackbar with undo.
 
-`packages/design-system/src/dialog-behavior.ts` (new): the `useDialogBehavior(open, onClose, ref)` hook is the shared modal contract used by both `<Sheet>` and `<SidePanel>`. On open it captures `document.activeElement`, moves focus to the first focusable inside the dialog (or the dialog root via its `tabIndex={-1}` if there is none), then registers a `document` keydown listener that (a) closes on `Escape` and (b) traps `Tab` / `Shift+Tab` to wrap between the first and last focusables. On close (effect cleanup) it restores focus to the previously-focused element if it's still in the DOM. `onClose` is read through a ref so a parent re-rendering with a fresh inline lambda doesn't re-run the trap effect and stomp focus — the ref is synced via a *separate* effect (lint-clean: no ref-write during render). The focusable selector list mirrors the WAI-ARIA recipe (`a[href]`, enabled `button`/`input`/`select`/`textarea`, `[tabindex]:not([tabindex="-1"])`).
+`packages/design-system/src/Snackbar.tsx` (new): visual primitive — `<div role="status" aria-live="polite" class="emt-snackbar">` with `.emt-snackbar__message` and an Undo CTA rendered as `<Button variant="text">` only when `onUndo` is provided. `undoLabel` defaults to `"Undo"`; can be overridden for i18n.
 
-`packages/design-system/src/Sheet.tsx` (new): renders nothing while `open=false`. While open, mounts a `.emt-scrim` overlay + a `.emt-sheet` `<div role="dialog" aria-modal="true" tabIndex={-1}>` containing the children. The scrim's `onClick={onClose}` is a redundant pointer convenience for the canonical keyboard `Esc`-close, so the two `jsx-a11y` rules (`click-events-have-key-events`, `no-static-element-interactions`) are disabled at that line with a comment explaining the rationale. `aria-label` is required at the type level via `Omit<HTMLAttributes<…>, 'aria-label' | 'role' | 'aria-modal'> & { 'aria-label': string }` — same pattern as `IconButton`.
+`packages/design-system/src/SnackbarProvider.tsx` (new): owns a queue-of-one. `show({ message, onCommit, onUndo, duration?, undoLabel? })` is the public API; `dismiss()` is also exposed for explicit-close paths that should fire neither callback. State machine:
+  - **Timeout (default 5000 ms) without Undo** → `onCommit` fires, `onUndo` does not.
+  - **Undo button click within window** → `onUndo` fires, `onCommit` is suppressed; the originally-scheduled timer is cleared.
+  - **Superseding `show()`** → previous item's `onCommit` fires immediately (the user has implicitly forfeited their undo window by triggering the next action), and the new item replaces it.
+  - **`dismiss()`** → fires neither callback; the snackbar just disappears.
+  - **Provider unmount** → cleans up the pending timer; does *not* fire `onCommit` (the host is tearing down, not accepting the action).
 
-`packages/design-system/src/SidePanel.tsx` (new): mirror of `Sheet` but renders the `.emt-side-panel` `<div role="dialog">` only — *no scrim*. Per design-input §view3: "the panel does not fully obscure the underlying matrix." 480 px wide (clamped to 100 vw), slides in from the right.
+The active item is React state (so render reflects it without reading a ref); a parallel `optsRef` keeps the latest opts available to the timeout callback so it never reads a stale closure. `useSnackbar()` returns `{ show, dismiss }` and throws a clear error if used outside `<SnackbarProvider>`.
 
-`packages/design-system/src/ResponsiveSurface.tsx` (new): picks `<SidePanel>` (≥ breakpoint) or `<Sheet>` (below) using `useSyncExternalStore` over `window.matchMedia('(min-width: ${breakpoint}px)')`. Default breakpoint 768 px. Subscribes to the `change` event so the surface flips live when the viewport crosses the breakpoint. SSR-safe (server snapshot is `false`).
+`packages/design-system/src/components.css` + `components.ts`: extended with `.emt-snackbar` (fixed-bottom, centered, elevated surface, 4 px shadow, layer `var(--layer-snackbar)`), `.emt-snackbar__message`, the `emt-snackbar-in` keyframe (translate-up + fade), and the reduced-motion block now also zeroes out `.emt-snackbar` animation. Drift guard (`components.test.ts`) keeps the two byte-identical.
 
-`packages/design-system/src/components.css` + `components.ts`: extended with `.emt-scrim`, `.emt-sheet`, `.emt-side-panel`, three `@keyframes` (fade-in, slide-up, slide-left), and the reduced-motion block now also zeroes out their `animation`. Drift guard (`components.test.ts`) keeps the two byte-identical.
+`packages/design-system/test/snackbar.test.tsx` (new, 11 cases). The two done-when cases are the heart of the suite:
+  - **Undo within 5 s** — `vi.useFakeTimers()` advances 4 s, the Undo button is clicked, `onUndo` fires once, `onCommit` is *not* called even after advancing another 10 s.
+  - **Timeout without undo** — advance 5 s, `onCommit` fires once, `onUndo` does not.
+Plus: aria-live attributes; Undo only renders when `onUndo` is set; custom `undoLabel`; custom `duration`; superseding `show()` commits the previous; explicit `dismiss()` fires neither callback; `useSnackbar` outside provider throws; reduced-motion override is asserted at the `COMPONENT_CSS` string level. The Harness component captures the `useSnackbar()` API into a closure variable so tests can drive `show`/`dismiss` from outside React's render cycle, all wrapped in `act()`.
 
-`packages/design-system/test/sheet.test.tsx` (new, 11 cases): Sheet — null when `open=false`; renders `role="dialog" aria-modal aria-label` + scrim when open; Esc closes; scrim click closes; focus moves into dialog and Tab/Shift+Tab wrap between first/last focusable; focus restores to the previously-focused button after unmount. SidePanel — renders without scrim and Esc-closes; null when closed. ResponsiveSurface — uses a per-test `window.matchMedia` mock with a controllable `matches` flag and a listener registry; below-breakpoint renders `.emt-sheet`, at-or-above renders `.emt-side-panel`. Reduced-motion — asserts the `@media (prefers-reduced-motion: reduce)` block in `COMPONENT_CSS` lists `.emt-sheet`, `.emt-side-panel`, `.emt-scrim` with `animation: none`.
+152 tests pass (was 141; +11). Typecheck, lint, format, secret scan clean.
 
-141 tests pass (was 130; +11). Typecheck, lint, format, secret scan clean.
-
-**Next:** Phase 3 — Step 3.5 — Snackbar with undo. `Snackbar` primitive with optional 5 s undo CTA; `SnackbarProvider` + `useSnackbar` hook. Done when test asserts undo within 5 s cancels the callback; otherwise it commits.
+**Next:** Phase 3 — Step 3.6 — Quadrant picker (2 × 2). Reusable picker honoring per-quadrant glow colors and the current selection. Outputs: `QuadrantPicker.tsx`. Done when component test covers selection change + keyboard navigation.
 
 ## Environment notes
 
