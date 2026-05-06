@@ -360,7 +360,7 @@ Depends on Step 1.6 and Phase 0.
 **Outputs.** `Snackbar.tsx`, `SnackbarProvider`, `useSnackbar` hook.
 **Done when.** Test: undo within 5 s cancels callback; otherwise commits.
 
-### Step 3.6 — Quadrant picker (2 × 2)
+### Step ✅ 3.6 — Quadrant picker (2 × 2)
 **Goal.** Reusable 2 × 2 picker honoring per-quadrant glow colors and the current selection.
 **Outputs.** `QuadrantPicker.tsx`.
 **Done when.** Component test for selection change + keyboard navigation.

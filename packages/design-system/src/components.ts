@@ -202,6 +202,70 @@ export const COMPONENT_CSS = `/*
   font-size: var(--font-size-sm);
 }
 
+.emt-quadrant-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  grid-template-areas:
+    'q2 q1'
+    'q4 q3';
+  gap: var(--space-sm);
+  width: 100%;
+  max-width: 240px;
+  aspect-ratio: 1;
+}
+
+.emt-quadrant-picker__cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-surface-elevated);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    box-shadow var(--motion-duration-short) var(--motion-easing-standard),
+    color var(--motion-duration-short) var(--motion-easing-standard),
+    border-color var(--motion-duration-short) var(--motion-easing-standard);
+}
+
+.emt-quadrant-picker__cell--q1 {
+  grid-area: q1;
+}
+.emt-quadrant-picker__cell--q2 {
+  grid-area: q2;
+}
+.emt-quadrant-picker__cell--q3 {
+  grid-area: q3;
+}
+.emt-quadrant-picker__cell--q4 {
+  grid-area: q4;
+}
+
+.emt-quadrant-picker__cell[aria-checked='true'] {
+  color: var(--color-text-primary);
+  border-color: transparent;
+}
+
+.emt-quadrant-picker__cell--q1[aria-checked='true'] {
+  box-shadow: var(--glow-q1);
+}
+.emt-quadrant-picker__cell--q2[aria-checked='true'] {
+  box-shadow: var(--glow-q2);
+}
+.emt-quadrant-picker__cell--q3[aria-checked='true'] {
+  box-shadow: var(--glow-q3);
+}
+.emt-quadrant-picker__cell--q4[aria-checked='true'] {
+  box-shadow: var(--glow-q4);
+}
+
 @keyframes emt-fade-in {
   from {
     opacity: 0;
@@ -243,7 +307,8 @@ export const COMPONENT_CSS = `/*
 @media (prefers-reduced-motion: reduce) {
   .emt-button,
   .emt-icon-button,
-  .emt-fab {
+  .emt-fab,
+  .emt-quadrant-picker__cell {
     transition: none;
   }
   .emt-fab:hover:not(:disabled),
