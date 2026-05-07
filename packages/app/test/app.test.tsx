@@ -29,8 +29,8 @@ describe('<App />', () => {
     expect(themeWrapper).not.toBeNull();
     expect(themeWrapper!.style.getPropertyValue('--color-bg')).not.toBe('');
 
-    expect(container.querySelector('h1')?.textContent).toBe(strings['app.home.heading']);
-    expect(container.querySelector('p')?.textContent).toBe(strings['app.home.placeholder']);
+    expect(container.querySelector('h1')?.textContent).toBe(strings['app.matrix.heading']);
+    expect(container.querySelector('p')?.textContent).toBe(strings['app.matrix.placeholder']);
   });
 
   it('ErrorBoundary surfaces the translated fallback when a child throws', async () => {

@@ -15,26 +15,26 @@ describe('i18n', () => {
   });
 
   it('default t() resolves a known key', () => {
-    expect(t('app.home.heading')).toBe(strings['app.home.heading']);
+    expect(t('app.matrix.heading')).toBe(strings['app.matrix.heading']);
     expect(t('app.error.fallback.retry')).toBe(strings['app.error.fallback.retry']);
   });
 
   it('useT() outside the provider falls back to the English translator', async () => {
     function Probe(): React.ReactNode {
       const tr = useT();
-      return <span data-testid="probe">{tr('app.home.heading')}</span>;
+      return <span data-testid="probe">{tr('app.matrix.heading')}</span>;
     }
     const { container, unmount } = await renderToContainer(<Probe />);
     teardown = unmount;
     expect(container.querySelector('[data-testid="probe"]')?.textContent).toBe(
-      strings['app.home.heading'],
+      strings['app.matrix.heading'],
     );
   });
 
   it('useT() inside I18nProvider with a stub returns the stubbed value', async () => {
     function Probe(): React.ReactNode {
       const tr = useT();
-      return <span data-testid="probe">{tr('app.home.heading')}</span>;
+      return <span data-testid="probe">{tr('app.matrix.heading')}</span>;
     }
     const { container, unmount } = await renderToContainer(
       <I18nProvider translator={() => 'STUB'}>

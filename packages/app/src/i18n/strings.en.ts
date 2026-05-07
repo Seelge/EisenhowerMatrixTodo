@@ -10,8 +10,12 @@
  */
 export const strings = {
   'app.title': 'Eisenhower Matrix Todo',
-  'app.home.heading': 'Eisenhower Matrix',
-  'app.home.placeholder': 'The matrix view is not built yet.',
+  'app.matrix.heading': 'Eisenhower Matrix',
+  'app.matrix.placeholder': 'The matrix view is not built yet.',
+  'app.quadrant.heading': 'Quadrant',
+  'app.quadrant.placeholder': 'The quadrant view is not built yet.',
+  'app.task.heading': 'Task',
+  'app.task.placeholder': 'The task focus view is not built yet.',
   'app.error.fallback.message': 'Something went wrong.',
   'app.error.fallback.retry': 'Reload',
 } as const satisfies Record<string, string>;
