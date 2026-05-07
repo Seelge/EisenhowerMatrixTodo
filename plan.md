@@ -443,7 +443,7 @@ The full-matrix view. Depends on Phase 4 (router, queries, theme) and Phase 3.
 **Outputs.** `packages/app/src/views/matrix/MatrixView.tsx`, `MatrixCell.tsx`.
 **Done when.** Snapshot test: empty matrix renders all four cells with correct labels and palette.
 
-### Step 5.2 — Task card
+### Step ✅ 5.2 — Task card
 **Goal.** Card showing title, full due date, priority dot, tags. Click/tap opens view3.
 **Inputs.** Step 1.1 (`Task`).
 **Outputs.** `packages/app/src/views/matrix/TaskCard.tsx` + tests.
