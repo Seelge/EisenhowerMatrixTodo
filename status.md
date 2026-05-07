@@ -6,7 +6,31 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 4.4 — First-run flow.
+**Last completed:** Step 4.5 — PWA finalization. **Closes Phase 4.**
+
+`packages/app/public/icons/{192,512,maskable-512}.png` (regenerated): real placeholder art instead of the previous near-blank single-color blocks. Each icon is a 2×2 quadrant grid in the brand colors (Q1 red top-left, Q3 amber top-right, Q2 cyan bottom-left, Q4 gray bottom-right) on the dark theme background, with the cells separated by thin background-colored gutters. The 192/512 variants reserve a 12% transparent margin so launchers' rounded-corner masks don't clip the grid; the maskable-512 is full-bleed for the platform-applied safe-area mask.
+
+`packages/app/scripts/generate-icons.mjs` (new): self-contained icon generator. Pure Node + built-ins (`zlib`, `Buffer`) — no PNG library dependency. Renders the quadrant grid pixel-by-pixel into an RGBA buffer and emits a minimal IHDR/IDAT/IEND PNG. Re-run by hand if the brand colors change. Sourcing the icons from a script (rather than checking in opaque binaries with no provenance) keeps them reproducible.
+
+`packages/app/pwa-manifest.ts` (new): the PWA web-app manifest extracted into a typed module. Carries all Lighthouse-required fields plus `id` (stable install identity, decoupled from `start_url`), `lang: 'en'`, `dir: 'ltr'`, and `categories: ['productivity', 'utilities']`. `start_url` and `scope` are relative `.` so they track Vite's `base` automatically — no env-specific override needed for the GitHub-Pages prefix. `vite.config.ts` imports it; `test/pwa-manifest.test.ts` asserts the field set so a future edit can't silently drop a Lighthouse-required key.
+
+`packages/app/vite.config.ts`: workbox config fleshed out:
+- `globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}']` (explicit precache surface).
+- `navigateFallback: 'index.html'` — any navigation that misses the precache returns the precached shell, so offline reload + offline deep-links keep working.
+- `clientsClaim: true`, `skipWaiting: true` (matches `registerType: 'autoUpdate'`).
+- `runtimeCaching` entry for future cross-origin remote-backend requests (`*.googleapis.com`, `graph.microsoft.com`): `NetworkFirst` with a 5-second timeout, cache-name `remote-backends`, 24-hour expiration, only caches 0/200 responses. Phase 8+ adapters will hit those origins; the strategy is in place so connectivity loss doesn't make the app feel broken.
+
+`packages/app/e2e/pwa.spec.ts` (new) + `playwright.config.ts` (updated): e2e suite for the "Done when" criteria. Three tests: manifest is served and parses with the right fields; a service worker registers and reaches the `activated` state; with the network blocked, a reload still serves the precached shell. The playwright config now has a `webServer` block that runs `VITE_BASE_PATH=/ pnpm build && pnpm preview --strictPort` so the suite can build, serve, and tear down on its own. `reuseExistingServer: !CI` lets local iteration skip rebuilds.
+
+`eslint.config.js`: added a config block for `packages/*/scripts/**/*.{js,mjs,cjs}` plus `**/vite.config.ts` / `**/vitest.config.ts` so they get Node globals (Buffer, console, …) — the React-package override below them strips those by default.
+
+Tests: `test/pwa-manifest.test.ts` (2 cases) — declares the core install fields; ships 192, 512, and a maskable icon. The e2e PWA spec is `pnpm e2e` only (the vitest run intentionally skips it; `e2e/` is outside the vitest include glob).
+
+238 vitest tests pass (was 236; +2). Typecheck clean, lint clean, format clean. Production build precaches 11 entries (~201 KB) with the new manifest, finalized icons, and runtime-caching strategy.
+
+**Phase 4 exit:** the app boots from a clean install, applies the dark theme, projects the URL into a Zustand-mirrored `ViewState`, lets the placeholder views deep-link via `/` and `/q/:Q`, seeds three sample tasks on first run, shows a dismissible Google/Microsoft connect banner, exposes a dev-only `/__debug` page that tree-shakes out of production, and ships an installable, offline-capable PWA shell. No real views yet — those land in phases 5–9.
+
+**Next:** Step 5.1 — Matrix layout shell (the start of Phase 5, view1: Eisenhower matrix). Outputs: matrix layout component(s) under `packages/app/src/views/matrix/`. Done when the matrix view renders four labeled quadrants in a 2×2 CSS grid that fills the viewport at the breakpoints from `design-input.md` (`Q1 ↑·← important` / `Q3 ↑·→ urgent` / `Q2 ↓·← important` / `Q4 ↓·→ urgent`).
 
 `packages/app/src/onboarding/first-run.ts` (new): `runFirstRunSeed()` reads a meta flag (`META_FIRST_RUN_KEY = 'firstRunCompleted'`); on absence, inserts three sample tasks (Q1 high-priority open, Q2 normal-priority open, Q4 done with a `completedAt`) via the registry's default adapter, then writes the flag. Idempotency layered: a module-level `inFlight` promise guard coalesces concurrent calls within a single page load (matters because React StrictMode double-mounts the effect in dev), and the meta flag handles the across-reload case. On error the in-flight cache is dropped so a later call can retry — the meta flag was never written, so re-running is safe. `__resetFirstRunForTesting()` resets the guard for tests.
 
