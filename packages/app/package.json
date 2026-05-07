@@ -14,11 +14,14 @@
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^6.0.1",
+    "happy-dom": "^20.0.10",
     "vite": "^8.0.10",
     "vite-plugin-pwa": "^1.2.0"
   },
   "dependencies": {
     "@emt/backend-core": "workspace:*",
+    "@emt/design-system": "workspace:*",
+    "@tanstack/react-query": "^5.62.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   }

@@ -1,3 +1,50 @@
-export function App() {
-  return <div>Loading…</div>;
+/**
+ * Root composition. Mounts the provider chain spelled out in plan
+ * step 4.1 so views can rely on theme tokens, the query client, the
+ * router, an error boundary, and the i18n translator without having
+ * to wire any of them themselves.
+ *
+ * Order rationale:
+ *  - ThemeProvider injects the global reset + tokens; everything
+ *    rendered below it (including the error fallback) uses the dark
+ *    palette.
+ *  - QueryClientProvider wraps the router so route-driven query
+ *    suspensions are retained across navigations.
+ *  - Router projects the URL into ViewState (placeholder until 4.2).
+ *  - ErrorBoundary sits inside the router so a thrown render error
+ *    leaves the URL intact and the boundary can still navigate.
+ *  - I18nProvider is the innermost provider — only views need it; the
+ *    fallback uses the default translator from the context default.
+ */
+import { ThemeProvider } from '@emt/design-system';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useState, type ReactNode } from 'react';
+
+import { ErrorBoundary } from './ErrorBoundary.js';
+import { I18nProvider } from './i18n/provider.js';
+import { Router } from './Router.js';
+import { Routes } from './Routes.js';
+
+export function App(): ReactNode {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: { retry: false, refetchOnWindowFocus: false },
+        },
+      }),
+  );
+  return (
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <ErrorBoundary>
+            <I18nProvider>
+              <Routes />
+            </I18nProvider>
+          </ErrorBoundary>
+        </Router>
+      </QueryClientProvider>
+    </ThemeProvider>
+  );
 }

@@ -390,7 +390,7 @@ Wire the design system, the backend stack, and the routing contract into a runni
 
 Depends on Phases 1, 2, 3.
 
-### Step 4.1 — Root shell
+### Step ✅ 4.1 — Root shell
 **Goal.** `<App />` mounts: `<ThemeProvider>` → `<QueryClientProvider>` → `<Router>` → `<ErrorBoundary>` → `<I18nProvider>` → `<Routes>`.
 **Outputs.** `packages/app/src/App.tsx`, `packages/app/src/i18n/{provider.tsx,strings.en.ts,t.ts}`.
 **Done when.** App renders a placeholder home page with the dark theme applied.
