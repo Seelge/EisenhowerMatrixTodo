@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     name: 'app',
     environment: 'happy-dom',
+    setupFiles: ['./test/setup.ts'],
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'test/**/*.test.ts', 'test/**/*.test.tsx'],
   },
 });

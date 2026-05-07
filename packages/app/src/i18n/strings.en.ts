@@ -18,6 +18,10 @@ export const strings = {
   'app.task.placeholder': 'The task focus view is not built yet.',
   'app.error.fallback.message': 'Something went wrong.',
   'app.error.fallback.retry': 'Reload',
+  'app.connect.banner.label': 'Connect a sync backend',
+  'app.connect.banner.message':
+    'Connect Google Tasks or Microsoft To-Do to sync your tasks across devices.',
+  'app.connect.banner.dismiss': 'Dismiss',
 } as const satisfies Record<string, string>;
 
 export type StringKey = keyof typeof strings;
