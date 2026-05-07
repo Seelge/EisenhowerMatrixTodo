@@ -50,6 +50,9 @@ importers:
       '@emt/backend-core':
         specifier: workspace:*
         version: link:../backend-core
+      '@emt/backend-local-indexeddb':
+        specifier: workspace:*
+        version: link:../backend-local-indexeddb
       '@emt/design-system':
         specifier: workspace:*
         version: link:../design-system
@@ -81,6 +84,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^6.0.1
         version: 6.0.1(vite@8.0.10(@types/node@25.6.0)(terser@5.46.2))
+      fake-indexeddb:
+        specifier: ^6.2.5
+        version: 6.2.5
       happy-dom:
         specifier: ^20.0.10
         version: 20.9.0

@@ -43,6 +43,14 @@ function toExternalPath(internal: string): string {
 
 export interface ViewStateStore {
   state: ViewState;
+  /**
+   * Raw internal path (with query string), base-prefix stripped. Kept
+   * alongside the projected `ViewState` so out-of-band routes (the
+   * dev-only `/__debug` page, future view4 `/options/*` sub-router,
+   * etc.) can match against it reactively without their own popstate
+   * subscription.
+   */
+  internalPath: string;
   /** Push a new history entry and update the store. */
   navigate: (next: ViewState) => void;
   /** Replace the current history entry and update the store. */
@@ -57,27 +65,36 @@ export const useViewStateStore = create<ViewStateStore>((set) => ({
   // matrix view for one frame. Tests can call `syncFromUrl` after
   // mutating `window.location` to re-seed.
   state: typeof window !== 'undefined' ? parseUrl(readInternalPath()) : defaultViewState,
+  internalPath: typeof window !== 'undefined' ? readInternalPath() : '/',
   navigate: (next) => {
+    const internal = serializeUrl(next);
     if (typeof window !== 'undefined') {
-      window.history.pushState(null, '', toExternalPath(serializeUrl(next)));
+      window.history.pushState(null, '', toExternalPath(internal));
     }
-    set({ state: next });
+    set({ state: next, internalPath: internal });
   },
   replace: (next) => {
+    const internal = serializeUrl(next);
     if (typeof window !== 'undefined') {
-      window.history.replaceState(null, '', toExternalPath(serializeUrl(next)));
+      window.history.replaceState(null, '', toExternalPath(internal));
     }
-    set({ state: next });
+    set({ state: next, internalPath: internal });
   },
   syncFromUrl: () => {
     if (typeof window === 'undefined') return;
-    set({ state: parseUrl(readInternalPath()) });
+    const internal = readInternalPath();
+    set({ state: parseUrl(internal), internalPath: internal });
   },
 }));
 
 /** Read-only hook: the current `ViewState`. */
 export function useViewState(): ViewState {
   return useViewStateStore((s) => s.state);
+}
+
+/** Read-only hook: the current internal path (base-prefix stripped). */
+export function useInternalPath(): string {
+  return useViewStateStore((s) => s.internalPath);
 }
 
 /** Hook: a stable reference to `navigate`. */
