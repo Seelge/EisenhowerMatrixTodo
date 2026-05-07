@@ -22,6 +22,7 @@ import { useState, type ReactNode } from 'react';
 
 import { ErrorBoundary } from './ErrorBoundary.js';
 import { I18nProvider } from './i18n/provider.js';
+import { FirstRun } from './onboarding/FirstRun.js';
 import { Router } from './routes/Router.js';
 import { Routes } from './routes/Routes.js';
 
@@ -37,6 +38,7 @@ export function App(): ReactNode {
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
+        <FirstRun />
         <Router>
           <ErrorBoundary>
             <I18nProvider>

@@ -6,7 +6,29 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 4.3 — Backend wiring + queries.
+**Last completed:** Step 4.4 — First-run flow.
+
+`packages/app/src/onboarding/first-run.ts` (new): `runFirstRunSeed()` reads a meta flag (`META_FIRST_RUN_KEY = 'firstRunCompleted'`); on absence, inserts three sample tasks (Q1 high-priority open, Q2 normal-priority open, Q4 done with a `completedAt`) via the registry's default adapter, then writes the flag. Idempotency layered: a module-level `inFlight` promise guard coalesces concurrent calls within a single page load (matters because React StrictMode double-mounts the effect in dev), and the meta flag handles the across-reload case. On error the in-flight cache is dropped so a later call can retry — the meta flag was never written, so re-running is safe. `__resetFirstRunForTesting()` resets the guard for tests.
+
+`packages/app/src/onboarding/FirstRun.tsx` (new): tiny invisible mount that calls `runFirstRunSeed()` in a `useEffect` and, if anything was seeded, invalidates the `['tasks']` query subtree so the next `useTasks()` re-fetch picks up the new rows. Mounted as a child of `<QueryClientProvider>` in `App.tsx`.
+
+`packages/app/src/onboarding/ConnectBanner.tsx` (new): three-state banner (`loading` → `visible` | `dismissed`). On mount, reads `META_CONNECT_BANNER_DISMISSED_KEY = 'connectBannerDismissed'`; renders nothing until the read resolves (avoids a flash of banner content the user already dismissed). Dismiss handler updates local state synchronously *and* writes the meta flag in the background, so a remount after dismiss stays hidden. CTA is intentionally just "Dismiss" until view4 (Options / Backends panel) lands in phase 9 — at that point the banner can grow a "Connect" CTA that navigates there. Mounted in `Routes.tsx` above the matrix/quadrant placeholders so it sits at the top of the main views and self-hides on `/__debug` (which short-circuits before the banner) and the task overlay alone (which only renders when there's also a matrix/quadrant view underneath).
+
+`state/backends.ts`: added `meta` to the `AppBackends` shape so onboarding code can reuse the existing IDB-backed `MetaStore` (the registry already takes it as a constructor option). The shared store keeps app-level flags in the same database as the default-backend id, with no extra storage layer.
+
+i18n: three new keys — `app.connect.banner.label` ("Connect a sync backend"), `app.connect.banner.message`, `app.connect.banner.dismiss`. The label is the `aria-label` on the banner's `role="region"`.
+
+App composition: `<App />` now mounts `<FirstRun />` inside `<QueryClientProvider>` (siblinged with `<Router>`); `Routes.tsx` renders `<ConnectBanner />` at the top of its main return.
+
+Test infra: added `packages/app/test/setup.ts` (just `import 'fake-indexeddb/auto';`) and wired it up via `setupFiles` in `vitest.config.ts`. Reason: with `<ConnectBanner />` mounted in `Routes.tsx` and `<FirstRun />` mounted in `App.tsx`, *every* test that mounts these (router.test.tsx, app.test.tsx) now opens IndexedDB transitively. happy-dom doesn't ship an IDB stub, so the global setup gives every test a working factory.
+
+Tests:
+- `test/first-run.test.ts` (3 cases): seeds on empty IDB and sets the flag; second call is a no-op (`seeded: false`); concurrent `Promise.all([seed, seed, seed])` shares one in-flight promise so only one seed runs (asserted via the final task count, which is 3 not 9).
+- `test/connect-banner.test.tsx` (2 cases): banner appears after the dismissed-flag read resolves; clicking Dismiss hides it immediately and persists `connectBannerDismissed=true`; a remount with the flag pre-set stays hidden.
+
+236 tests pass (was 231; +5). Typecheck clean, lint clean, format clean. Production build is 198 KB (from 185 KB; +13 KB for the onboarding mounts and their string table). Debug page still tree-shakes out — the `'Reply to the urgent'` string in the bundle is the first-run sample task title, which is supposed to ship.
+
+**Next:** Step 4.5 — PWA finalization. Final manifest, service worker, real placeholder icons, offline shell. Outputs: real (still placeholder-art) icons sized 192/512/maskable; `vite-plugin-pwa` config with workbox runtime caching strategy (precache app shell, NetworkFirst for any future API calls); `manifest.webmanifest` finalized: name, short_name, theme_color, background_color, display `standalone`, scope, start_url. Done when Lighthouse PWA audit (installable + offline) passes and offline reload still serves the shell. **Closes Phase 4.**
 
 `packages/app/src/state/backends.ts` (new): cached singleton bootstrap. Opens the sync IDB once via `openSyncDb()`, builds `MetaStore` / `OutboxStore` / `CursorStore` from it, instantiates `BackendRegistry({ meta })`, calls `registry.load()` to hydrate any persisted default-backend id, registers `LocalIndexedDbAdapter`, and constructs `DefaultSyncEngine`. The persisted default is intentionally not clobbered if it points at a not-yet-registered backend (Google / Microsoft will register in phase 8+); `getDefault()` falls back to the first registered adapter (local) until then. `__resetBackendsCacheForTesting()` is the explicit reset hook for tests, which combine it with `globalThis.indexedDB = new IDBFactory()` to start each case from clean storage.
 

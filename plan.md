@@ -410,7 +410,7 @@ Depends on Phases 1, 2, 3.
 - A throwaway debug page at `/__debug` listing tasks and offering create/delete buttons (gated to dev builds).
 **Done when.** Debug page can list, create, update, and delete tasks against IndexedDB.
 
-### Step 4.4 — First-run flow
+### Step ✅ 4.4 — First-run flow
 **Goal.** On empty IDB, seed three sample tasks (one in Q1, one in Q2, one done in Q4) and show a dismissible banner suggesting Google / Microsoft connect. Subsequent loads do not reseed.
 **Outputs.**
 - `packages/app/src/onboarding/first-run.ts` (idempotent seeding with a meta flag).

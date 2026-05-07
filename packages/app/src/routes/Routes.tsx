@@ -14,6 +14,7 @@ import type { ReactNode } from 'react';
 
 import { DebugPage } from '../debug/DebugPage.js';
 import { useT } from '../i18n/provider.js';
+import { ConnectBanner } from '../onboarding/ConnectBanner.js';
 import { useInternalPath, useViewState } from '../state/view-state.js';
 
 // Vite substitutes `import.meta.env.DEV` with the literal `true` in dev
@@ -38,6 +39,7 @@ export function Routes(): ReactNode {
 
   return (
     <>
+      <ConnectBanner />
       {state.zoom === 'matrix' && <MatrixPlaceholder />}
       {state.zoom === 'quadrant' && state.focusedQuadrant !== undefined && (
         <QuadrantPlaceholder quadrant={state.focusedQuadrant} />

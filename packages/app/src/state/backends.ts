@@ -24,6 +24,7 @@ import {
   createIdbOutboxStore,
   DefaultSyncEngine,
   openSyncDb,
+  type MetaStore,
   type SyncEngine,
 } from '@emt/backend-core';
 import { createLocalIndexedDbAdapter } from '@emt/backend-local-indexeddb';
@@ -31,6 +32,12 @@ import { createLocalIndexedDbAdapter } from '@emt/backend-local-indexeddb';
 export interface AppBackends {
   readonly registry: BackendRegistry;
   readonly syncEngine: SyncEngine;
+  /**
+   * Shared meta store backed by the sync IDB. Used by the registry for
+   * the default-backend id, and by app-level onboarding code (first-run
+   * seed flag, connect-banner-dismissed flag, …) for one-off settings.
+   */
+  readonly meta: MetaStore;
 }
 
 let cached: Promise<AppBackends> | undefined;
@@ -75,7 +82,7 @@ async function bootstrap(): Promise<AppBackends> {
     getAdapter: (id) => registry.get(id),
   });
 
-  return { registry, syncEngine };
+  return { registry, syncEngine, meta };
 }
 
 /** Drops the cached singleton. Tests only. */
