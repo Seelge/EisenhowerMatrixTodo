@@ -6,17 +6,25 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 3.9 — `useReducedMotion` hook. **Closes Phase 3.**
+**Last completed:** Step 4.1 — Root shell.
 
-`packages/design-system/src/useReducedMotion.ts` (new): tiny hook over `useSyncExternalStore` that subscribes to `window.matchMedia('(prefers-reduced-motion: reduce)')` and returns the current `matches` value. Same subscribe / getSnapshot / SSR-snapshot triple as `ResponsiveSurface`'s `useMatchMedia`. The SSR snapshot is `false` ("animations on") — the conservative default for first paint, since no user preference is available yet, and matches the design-input intent that the reduced-motion path is opt-in. The hook is the JS counterpart to the `@media (prefers-reduced-motion: reduce)` blocks already in `components.css`; pure CSS animations should keep using those blocks, but JS-driven motion (e.g., the view1↔view2 zoom morph in Phase 5) needs a runtime check.
+`packages/app/src/App.tsx` now composes the provider chain spelled out in the plan: `<ThemeProvider>` → `<QueryClientProvider>` → `<Router>` → `<ErrorBoundary>` → `<I18nProvider>` → `<Routes>`. The `QueryClient` is created lazily via `useState(() => new QueryClient(...))` so React StrictMode's double-invocation of the function body doesn't construct two clients; `retry: false` and `refetchOnWindowFocus: false` are set as conservative defaults to be revisited when real queries land in 4.3.
 
-`packages/design-system/test/use-reduced-motion.test.tsx` (new, 4 cases): matches=false branch returns `false`; matches=true branch returns `true`; the live-flip case fires a synthetic `change` event into the listener registry and asserts the next render reads `true`; the unmount case asserts the listener set is empty (the hook unsubscribes cleanly). Uses the same controllable `window.matchMedia` stub introduced for `ResponsiveSurface` tests — happy-dom's stub always reports `matches: false` and ignores listeners, so we override.
+`packages/app/src/i18n/strings.en.ts`, `t.ts`, `provider.tsx` (new): flat-key string table (`'app.home.heading'` style) typed `as const satisfies Record<string, string>`, a narrowly-typed `Translator = (key: StringKey) => string`, and an `I18nProvider` whose context default is the English `t`. That default matters — components rendered outside the provider (notably the ErrorBoundary fallback, which sits *outside* `I18nProvider` per the chain) still get translated strings, and tests can stub the translator without monkey-patching modules.
 
-202 tests pass (was 198; +4). Typecheck, lint, format, secret scan clean.
+`packages/app/src/ErrorBoundary.tsx` (new): class component using `getDerivedStateFromError` + `componentDidCatch`. The fallback renders the design-system `ErrorBanner` with a Reload action that calls `window.location.reload()`. Reload (rather than `setState({ error: null })` reset) is intentional at this stage: with no real state below the boundary yet, a full reload is the simplest "back to known-good" recovery; finer-grained reset can come with view5+.
 
-**Phase 3 exit:** primitives ready (`Glow`, `Button`/`IconButton`/`Fab`/`Card`, `Sheet`/`SidePanel`/`ResponsiveSurface`, `Snackbar`, `QuadrantPicker`, `DueDatePicker`, `Skeleton`/`EmptyNote`/`ErrorBanner`, `useReducedMotion`); 202 tests guarding them. Views can now compose them with no view-specific code yet.
+`packages/app/src/Router.tsx`, `Routes.tsx` (new): placeholders. `Router` is a structural pass-through (`<>{children}</>`); `Routes` renders an `<h1>`/`<p>` home placeholder driven by `useT`. Step 4.2 replaces both bodies.
 
-**Next:** Phase 4 — Step 4.1 — Root shell. `<App />` mounts `<ThemeProvider>` → `<QueryClientProvider>` → `<Router>` → `<ErrorBoundary>` → `<I18nProvider>` → `<Routes>`. Outputs: `packages/app/src/App.tsx`, `packages/app/src/i18n/{provider.tsx,strings.en.ts,t.ts}`. Done when the app renders a placeholder home page with the dark theme applied.
+`packages/app/src/main.tsx`: unchanged — already mounted `<App />` inside `<StrictMode>`.
+
+Wiring changes: added `@emt/design-system` (workspace) and `@tanstack/react-query@^5.62.7` to `packages/app/package.json` deps; added `happy-dom@^20.0.10` to dev deps; flipped `packages/app/vitest.config.ts` to `environment: 'happy-dom'`. Added `main` / `types` / `exports` / `files` fields to `packages/design-system/package.json` so workspace consumers can import it as a normal package (it had only `name` + `type: "module"` before, which is enough for tooling that walks `src/` but not for `import { ThemeProvider } from '@emt/design-system'`).
+
+Tests: `packages/app/test/render.ts` (mirror of the design-system one), `i18n.test.tsx` (3 cases: default `t` resolves a known key; `useT` outside the provider falls back to English; `useT` inside the provider returns the stubbed translator), `app.test.tsx` (2 cases: `<App />` mounts the dark theme and renders the home placeholder; `<ErrorBoundary>` surfaces the translated fallback when a child throws — `console.error` is suppressed inside the throw to keep CI logs clean).
+
+207 tests pass (was 202; +5). Typecheck clean (root `tsc -b` plus `pnpm --filter @emt/app exec tsc`), lint clean, format clean, Vite build clean (181 KB main chunk, 7 PWA precache entries), secret scan clean.
+
+**Next:** Step 4.2 — Router & view-state coordinator. Implement routes from Step 1.7 with a Zustand store mirroring `ViewState`; URL is the source of truth, store is the projection. Outputs: `packages/app/src/routes/`, `packages/app/src/state/view-state.ts`. Done when browser back/forward preserves state and `/q/Q2?task=abc` deep-links into view3 over view2/Q2.
 
 ## Environment notes
 
