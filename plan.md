@@ -420,7 +420,7 @@ Depends on Phases 1, 2, 3.
 - Reload → no duplicates.
 - Banner dismiss persists.
 
-### Step 4.5 — PWA finalization
+### Step ✅ 4.5 — PWA finalization
 **Goal.** Final manifest, service worker, real placeholder icons, offline shell.
 **Outputs.**
 - Real (still placeholder-art) icons sized 192/512/maskable.

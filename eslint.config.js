@@ -46,6 +46,17 @@ export default tseslint.config(
   },
 
   {
+    // Build / tooling scripts run in Node, not the browser. Re-add
+    // node globals that the React-package override below strips.
+    files: ['packages/*/scripts/**/*.{js,mjs,cjs}', '**/vite.config.ts', '**/vitest.config.ts'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+
+  {
     files: ['packages/app/**/*.{ts,tsx}', 'packages/design-system/**/*.{ts,tsx}'],
     plugins: {
       react: reactPlugin,
