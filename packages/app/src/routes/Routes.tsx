@@ -16,6 +16,7 @@ import { DebugPage } from '../debug/DebugPage.js';
 import { useT } from '../i18n/provider.js';
 import { ConnectBanner } from '../onboarding/ConnectBanner.js';
 import { useInternalPath, useViewState } from '../state/view-state.js';
+import { MatrixView } from '../views/matrix/MatrixView.js';
 
 // Vite substitutes `import.meta.env.DEV` with the literal `true` in dev
 // and `false` in production. Using the canonical form (no optional
@@ -40,7 +41,7 @@ export function Routes(): ReactNode {
   return (
     <>
       <ConnectBanner />
-      {state.zoom === 'matrix' && <MatrixPlaceholder />}
+      {state.zoom === 'matrix' && <MatrixView />}
       {state.zoom === 'quadrant' && state.focusedQuadrant !== undefined && (
         <QuadrantPlaceholder quadrant={state.focusedQuadrant} />
       )}
@@ -52,16 +53,6 @@ export function Routes(): ReactNode {
 function stripQuery(path: string): string {
   const i = path.indexOf('?');
   return i === -1 ? path : path.slice(0, i);
-}
-
-function MatrixPlaceholder(): ReactNode {
-  const t = useT();
-  return (
-    <main data-view="matrix">
-      <h1>{t('app.matrix.heading')}</h1>
-      <p>{t('app.matrix.placeholder')}</p>
-    </main>
-  );
 }
 
 function QuadrantPlaceholder({ quadrant }: { quadrant: Quadrant }): ReactNode {

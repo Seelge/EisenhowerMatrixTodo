@@ -21,7 +21,7 @@ describe('<App />', () => {
     teardown = undefined;
   });
 
-  it('mounts the dark theme and renders the placeholder home page', async () => {
+  it('mounts the dark theme and renders the matrix view at the root', async () => {
     const { container, unmount } = await renderToContainer(<App />);
     teardown = unmount;
 
@@ -29,8 +29,10 @@ describe('<App />', () => {
     expect(themeWrapper).not.toBeNull();
     expect(themeWrapper!.style.getPropertyValue('--color-bg')).not.toBe('');
 
-    expect(container.querySelector('h1')?.textContent).toBe(strings['app.matrix.heading']);
-    expect(container.querySelector('p')?.textContent).toBe(strings['app.matrix.placeholder']);
+    const matrix = container.querySelector<HTMLElement>('[data-view="matrix"]');
+    expect(matrix).not.toBeNull();
+    expect(matrix!.getAttribute('aria-label')).toBe(strings['app.matrix.heading']);
+    expect(matrix!.querySelectorAll('[data-quadrant]').length).toBe(4);
   });
 
   it('ErrorBoundary surfaces the translated fallback when a child throws', async () => {
