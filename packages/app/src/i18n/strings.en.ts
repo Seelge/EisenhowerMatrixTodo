@@ -11,7 +11,12 @@
 export const strings = {
   'app.title': 'Eisenhower Matrix Todo',
   'app.matrix.heading': 'Eisenhower Matrix',
-  'app.matrix.placeholder': 'The matrix view is not built yet.',
+  'app.matrix.cell.q1.label': 'Do',
+  'app.matrix.cell.q2.label': 'Schedule',
+  'app.matrix.cell.q3.label': 'Delegate',
+  'app.matrix.cell.q4.label': 'Delete',
+  'app.matrix.axis.important': 'Important',
+  'app.matrix.axis.urgent': 'Urgent',
   'app.quadrant.heading': 'Quadrant',
   'app.quadrant.placeholder': 'The quadrant view is not built yet.',
   'app.task.heading': 'Task',

@@ -438,7 +438,7 @@ Depends on Phases 1, 2, 3.
 
 The full-matrix view. Depends on Phase 4 (router, queries, theme) and Phase 3.
 
-### Step 5.1 — Matrix layout shell
+### Step ✅ 5.1 — Matrix layout shell
 **Goal.** 2 × 2 grid with quadrant headers ("Do / Schedule / Delegate / Delete") and faint axis labels ("Important ↑", "Urgent →") on the outer edges. Each cell renders the colored glow border from Step 3.2.
 **Outputs.** `packages/app/src/views/matrix/MatrixView.tsx`, `MatrixCell.tsx`.
 **Done when.** Snapshot test: empty matrix renders all four cells with correct labels and palette.

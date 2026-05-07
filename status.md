@@ -6,7 +6,31 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 4.5 — PWA finalization. **Closes Phase 4.**
+**Last completed:** Step 5.1 — Matrix layout shell. **Opens Phase 5.**
+
+`packages/app/src/views/matrix/MatrixView.tsx` (new): the view1 root. Renders `<main data-view="matrix">` (preserves the selector the router test asserts against), with a 2 × 2 grid of `<MatrixCell>`s and two faint `aria-hidden` axis labels (`Important ↑` on the left edge, `Urgent →` along the bottom edge). The `<main>` carries `aria-label={t('app.matrix.heading')}` so the page still has an accessible name now that the placeholder `<h1>` is gone.
+
+`packages/app/src/views/matrix/MatrixCell.tsx` (new): per-quadrant cell. Wraps the design-system `Glow` primitive (Step 3.2) in the matching color (`q1`–`q4`) with `data-quadrant` (`Q1`–`Q4`), `role="region"`, and `aria-label={verb}`. The visible label is an `<h2 class="emt-matrix__cell-title">` carrying the i18n verb (Do/Schedule/Delegate/Delete). Step 5.3 fills the cell body with the per-quadrant task list; Step 5.5 wraps it in `useDroppable`.
+
+`packages/app/src/views/matrix/matrix.css` (new): grid + axis-label styling. `grid-template-areas: 'q2 q1' / 'q4 q3'` matches the canonical Eisenhower layout (Q1 top-right, Q4 bottom-left). Cell mapping by `data-quadrant` selectors. Outer container has asymmetric padding so the rotated `Important ↑` label fits on the left without crowding the right edge. Pulls every value from CSS variables — re-skinning is a token edit, not a CSS change.
+
+`packages/app/package.json`: `"sideEffects"` flipped from `false` to `["**/*.css"]`. Reason: a bare `import './matrix.css';` is a side-effect-only import; `sideEffects: false` would let rollup tree-shake it, leaving the matrix unstyled in production. The narrower allowlist preserves the JS tree-shake (debug page still drops out of prod) while keeping CSS imports intact. Build confirms: a 1.35 KB CSS asset is now emitted; main JS bundle is 199.74 KB (was 201 KB; the unstyled removed h1/p in the old placeholder more than offset the new components).
+
+`packages/app/src/i18n/strings.en.ts`: dropped `app.matrix.placeholder`; added `app.matrix.cell.{q1..q4}.label` (`Do` / `Schedule` / `Delegate` / `Delete`) and `app.matrix.axis.{important,urgent}`. `app.matrix.heading` stays — still used by the i18n test and as the matrix `aria-label`.
+
+`packages/app/src/routes/Routes.tsx`: replaced inline `MatrixPlaceholder` with `<MatrixView />`. Quadrant + task placeholders untouched (Phase 6 / 8).
+
+Tests:
+- `test/matrix-view.test.tsx` (3 cases, new): the Step 5.1 "Done when" snapshot. Asserts (a) all four cells exist with the right `data-quadrant`, glow color (`data-emt-glow`), inline `box-shadow: var(--glow-q*)`, verb `aria-label`, h2 label, and `role="region"`; (b) document order in the grid is `Q2, Q1, Q4, Q3` (so the CSS `grid-template-areas` puts Q1 top-right and Q4 bottom-left); (c) both axis labels render with `aria-hidden="true"` and the right glyph (`↑` / `→`).
+- `test/app.test.tsx`: smoke test rewritten — checks `[data-view="matrix"]` exists with the heading as `aria-label` and four `[data-quadrant]` cells, instead of asserting the now-removed placeholder text.
+
+241 vitest tests pass (was 238; +3). Typecheck clean, lint clean, format clean. Production build is 199.74 KB JS + 1.35 KB CSS (12 PWA precache entries, was 11 — the new CSS asset).
+
+**Next:** Step 5.2 — Task card. Output `packages/app/src/views/matrix/TaskCard.tsx`. Component shows title, full due date, priority dot, tags; click/tap opens view3. Done when component test renders all field permutations (no due, all priorities, multiple tags, long titles → ellipsis after 1 line). Inputs: Step 1.1 `Task` from `@emt/backend-core`.
+
+---
+
+**Last completed (prev):** Step 4.5 — PWA finalization. **Closes Phase 4.**
 
 `packages/app/public/icons/{192,512,maskable-512}.png` (regenerated): real placeholder art instead of the previous near-blank single-color blocks. Each icon is a 2×2 quadrant grid in the brand colors (Q1 red top-left, Q3 amber top-right, Q2 cyan bottom-left, Q4 gray bottom-right) on the dark theme background, with the cells separated by thin background-colored gutters. The 192/512 variants reserve a 12% transparent margin so launchers' rounded-corner masks don't clip the grid; the maskable-512 is full-bleed for the platform-applied safe-area mask.
 
