@@ -6,7 +6,28 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 4.2 — Router & view-state coordinator.
+**Last completed:** Step 4.3 — Backend wiring + queries.
+
+`packages/app/src/state/backends.ts` (new): cached singleton bootstrap. Opens the sync IDB once via `openSyncDb()`, builds `MetaStore` / `OutboxStore` / `CursorStore` from it, instantiates `BackendRegistry({ meta })`, calls `registry.load()` to hydrate any persisted default-backend id, registers `LocalIndexedDbAdapter`, and constructs `DefaultSyncEngine`. The persisted default is intentionally not clobbered if it points at a not-yet-registered backend (Google / Microsoft will register in phase 8+); `getDefault()` falls back to the first registered adapter (local) until then. `__resetBackendsCacheForTesting()` is the explicit reset hook for tests, which combine it with `globalThis.indexedDB = new IDBFactory()` to start each case from clean storage.
+
+`packages/app/src/queries/tasks.ts` (new): `useTasks(quadrant?)`, `useTask(id)`, `useCreateTask`, `useUpdateTask`, `useDeleteTask`, `useMigrateTask`. Reads aggregate across all registered adapters so view1 / view2 don't have to know about backend topology; writes are scoped via the input (`backendId` for update / delete, the registry default for create, explicit source / target for migrate). All mutations invalidate the entire `['tasks']` subtree on success — blunt but correct for phase 4; optimistic updates can be layered when phase 5 surfaces real perceived latency.
+
+`packages/app/src/debug/DebugPage.tsx` (new): dev-only `/__debug` page. Title input + quadrant select + Create button, then a list of tasks with per-row Toggle (open/done) and Delete buttons. Strings are intentionally untranslated — this surface ships only in dev. Wired through the existing query hooks so it doubles as a manual integration check.
+
+Routing for `/__debug`: extended the view-state store with `internalPath` (the base-prefix-stripped pathname + query) so out-of-band routes can match against it reactively without their own popstate subscription. Added `useInternalPath()` hook. `Routes.tsx` short-circuits to `<DebugPage />` when `import.meta.env.DEV && stripQuery(internalPath) === '/__debug'`. Using the canonical `import.meta.env.DEV` (no optional chaining) is what makes Vite's substitution + rollup constant-folding fire — the production bundle ships at 185 KB instead of 211 KB because the debug page and its imports tree-shake out. `"sideEffects": false` was added to `@emt/app`, `@emt/design-system`, `@emt/backend-core`, and `@emt/backend-local-indexeddb` so cross-package tree-shaking works.
+
+New deps: `fake-indexeddb@^6.2.5` (dev) and `@emt/backend-local-indexeddb` (workspace) added to `packages/app/package.json`.
+
+Tests:
+- `test/backends.test.ts` (4 cases): bootstrap registers local; local is the fallback default; concurrent `getBackends()` calls share the same singleton; fresh bootstrap exposes an empty list. Each test resets `globalThis.indexedDB = new IDBFactory()` and calls `__resetBackendsCacheForTesting()` to isolate.
+- `test/tasks-queries.test.tsx` (6 cases): `useTasks` lists; `useTasks(quadrant)` filters; `useCreateTask` invalidates and re-fetches; `useUpdateTask` / `useDeleteTask` mutate end-to-end; an unknown backendId rejects. Probe components assign hook results into outer `let`s so the test can assert against the latest values; `waitFor` polls until invariants hold (TanStack Query's async refetch loop doesn't fit `act()` cleanly).
+- `test/debug-page.test.tsx` (2 cases): renders the create form + empty-list message; lists tasks already present in the registry. Verifies the page mounts under just `<QueryClientProvider>` (no theme / i18n / router needed for this surface).
+- `test/view-state.test.ts`: +1 case for the new `internalPath` field on `navigate` / `replace`.
+- `test/query-render.tsx` (new helper): wraps `renderToContainer` in a fresh `QueryClient` per call.
+
+231 tests pass (was 218; +13). Typecheck clean, lint clean, format clean. Production build is 185 KB (debug page + idb / sync engine code in production paths net the same as before; tree-shake cleanly drops the debug surface). Secret scan clean (the only "matches" were `data-task-id={taskId}` JSX attributes — false positive).
+
+**Next:** Step 4.4 — First-run flow. On empty IDB, seed three sample tasks (one in Q1, one in Q2, one done in Q4) and show a dismissible banner suggesting Google / Microsoft connect. Outputs: `packages/app/src/onboarding/first-run.ts` (idempotent seeding gated by a meta flag), `packages/app/src/onboarding/ConnectBanner.tsx`. Done when cleared IDB shows the 3 sample tasks, reload doesn't duplicate, and the banner dismiss persists.
 
 `packages/app/src/state/view-state.ts` (new): Zustand store of `ViewState` plus `navigate`, `replace`, `syncFromUrl` actions. Hook helpers `useViewState()` and `useNavigate()` are the consumer-facing surface. The store is initialized eagerly from `parseUrl(readInternalPath())` so deep-links (e.g. `/q/Q2?task=abc&from=quadrant`) hydrate the first render — without eager init the children would render the matrix view for one frame before the Router's `useEffect` could re-sync, which is visibly wrong on a deep-link load.
 

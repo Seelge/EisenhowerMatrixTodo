@@ -12,11 +12,30 @@
 import type { Quadrant, TaskId } from '@emt/backend-core';
 import type { ReactNode } from 'react';
 
+import { DebugPage } from '../debug/DebugPage.js';
 import { useT } from '../i18n/provider.js';
-import { useViewState } from '../state/view-state.js';
+import { useInternalPath, useViewState } from '../state/view-state.js';
+
+// Vite substitutes `import.meta.env.DEV` with the literal `true` in dev
+// and `false` in production. Using the canonical form (no optional
+// chaining) is what makes the substitution and downstream rollup
+// constant-folding fire — the dev-only DebugPage import then becomes
+// unreferenced and tree-shakes out of the production bundle.
+const DEBUG_ENABLED: boolean = import.meta.env.DEV;
 
 export function Routes(): ReactNode {
   const state = useViewState();
+  const internalPath = useInternalPath();
+
+  // Out-of-band routes that bypass the normal `ViewState` projection.
+  // The debug page is dev-only; Vite substitutes `import.meta.env.DEV`
+  // with the literal `false` in production builds, after which the
+  // branch is unreachable and rollup tree-shakes the component (and
+  // its import) out of the bundle.
+  if (DEBUG_ENABLED && stripQuery(internalPath) === '/__debug') {
+    return <DebugPage />;
+  }
+
   return (
     <>
       {state.zoom === 'matrix' && <MatrixPlaceholder />}
@@ -26,6 +45,11 @@ export function Routes(): ReactNode {
       {state.focusedTaskId !== undefined && <TaskFocusPlaceholder taskId={state.focusedTaskId} />}
     </>
   );
+}
+
+function stripQuery(path: string): string {
+  const i = path.indexOf('?');
+  return i === -1 ? path : path.slice(0, i);
 }
 
 function MatrixPlaceholder(): ReactNode {

@@ -402,7 +402,7 @@ Depends on Phases 1, 2, 3.
 - Browser back/forward preserves state.
 - Deep-link to `/q/Q2?task=abc` opens view3 over view2/Q2.
 
-### Step 4.3 — Backend wiring + queries
+### Step ✅ 4.3 — Backend wiring + queries
 **Goal.** Instantiate the backend registry with `LocalIndexedDbAdapter` registered as default; expose tasks through TanStack Query hooks.
 **Outputs.**
 - `packages/app/src/state/backends.ts` (registry + sync-engine singletons).

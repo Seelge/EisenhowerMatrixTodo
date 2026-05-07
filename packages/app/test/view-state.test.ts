@@ -69,4 +69,15 @@ describe('view-state store', () => {
     resetTo('/totally/unknown');
     expect(useViewStateStore.getState().state).toEqual(defaultViewState);
   });
+
+  it('exposes internalPath alongside the projected state', () => {
+    resetTo('/q/Q2?task=abc&from=quadrant');
+    expect(useViewStateStore.getState().internalPath).toBe('/q/Q2?task=abc&from=quadrant');
+
+    useViewStateStore.getState().navigate({ zoom: 'matrix' });
+    expect(useViewStateStore.getState().internalPath).toBe('/');
+
+    useViewStateStore.getState().replace({ zoom: 'quadrant', focusedQuadrant: 'Q4' });
+    expect(useViewStateStore.getState().internalPath).toBe('/q/Q4');
+  });
 });
