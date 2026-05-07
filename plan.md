@@ -395,7 +395,7 @@ Depends on Phases 1, 2, 3.
 **Outputs.** `packages/app/src/App.tsx`, `packages/app/src/i18n/{provider.tsx,strings.en.ts,t.ts}`.
 **Done when.** App renders a placeholder home page with the dark theme applied.
 
-### Step 4.2 — Router & view-state coordinator
+### Step ✅ 4.2 — Router & view-state coordinator
 **Goal.** Implement routes from Step 1.7 with a Zustand store mirroring `ViewState`; URL is the source of truth, store is the projection.
 **Outputs.** `packages/app/src/routes/`, `packages/app/src/state/view-state.ts`.
 **Done when.**

@@ -6,25 +6,31 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 4.1 — Root shell.
+**Last completed:** Step 4.2 — Router & view-state coordinator.
 
-`packages/app/src/App.tsx` now composes the provider chain spelled out in the plan: `<ThemeProvider>` → `<QueryClientProvider>` → `<Router>` → `<ErrorBoundary>` → `<I18nProvider>` → `<Routes>`. The `QueryClient` is created lazily via `useState(() => new QueryClient(...))` so React StrictMode's double-invocation of the function body doesn't construct two clients; `retry: false` and `refetchOnWindowFocus: false` are set as conservative defaults to be revisited when real queries land in 4.3.
+`packages/app/src/state/view-state.ts` (new): Zustand store of `ViewState` plus `navigate`, `replace`, `syncFromUrl` actions. Hook helpers `useViewState()` and `useNavigate()` are the consumer-facing surface. The store is initialized eagerly from `parseUrl(readInternalPath())` so deep-links (e.g. `/q/Q2?task=abc&from=quadrant`) hydrate the first render — without eager init the children would render the matrix view for one frame before the Router's `useEffect` could re-sync, which is visibly wrong on a deep-link load.
 
-`packages/app/src/i18n/strings.en.ts`, `t.ts`, `provider.tsx` (new): flat-key string table (`'app.home.heading'` style) typed `as const satisfies Record<string, string>`, a narrowly-typed `Translator = (key: StringKey) => string`, and an `I18nProvider` whose context default is the English `t`. That default matters — components rendered outside the provider (notably the ErrorBoundary fallback, which sits *outside* `I18nProvider` per the chain) still get translated strings, and tests can stub the translator without monkey-patching modules.
+URL ↔ store invariant: the URL is the source of truth. `navigate` calls `pushState` then `set({state})`; `replace` calls `replaceState` then `set({state})`; `syncFromUrl` re-reads from `window.location` and `set({state})`. Browsers do not fire `popstate` for `pushState`/`replaceState`, which is why the actions update the store themselves. `syncFromUrl` is what `popstate` calls.
 
-`packages/app/src/ErrorBoundary.tsx` (new): class component using `getDerivedStateFromError` + `componentDidCatch`. The fallback renders the design-system `ErrorBanner` with a Reload action that calls `window.location.reload()`. Reload (rather than `setState({ error: null })` reset) is intentional at this stage: with no real state below the boundary yet, a full reload is the simplest "back to known-good" recovery; finer-grained reset can come with view5+.
+Base-path handling: in production, Vite serves the app from `/EisenhowerMatrixTodo/`. The contract layer (`parseUrl`/`serializeUrl` in `routes/contract.ts`) only deals with internal paths (`/`, `/q/Q2`, …) so the store strips the `import.meta.env.BASE_URL` prefix on read and re-prefixes on write. That keeps the contract a pure function of the app's own URL space and avoids leaking the deployment base into route definitions. In dev/tests `BASE_URL` is `/`, so the prefix is empty and behavior is unchanged.
 
-`packages/app/src/Router.tsx`, `Routes.tsx` (new): placeholders. `Router` is a structural pass-through (`<>{children}</>`); `Routes` renders an `<h1>`/`<p>` home placeholder driven by `useT`. Step 4.2 replaces both bodies.
+`packages/app/src/routes/Router.tsx` (rewritten, moved from `src/Router.tsx`): one `useEffect` on mount that (a) calls `syncFromUrl()` to handle the case where the URL changed between module load and mount (relevant for tests), and (b) attaches/removes a `popstate` listener that calls `syncFromUrl()`. The body is still a `<>{children}</>` pass-through — there's no per-render projection because the store *is* the projection.
 
-`packages/app/src/main.tsx`: unchanged — already mounted `<App />` inside `<StrictMode>`.
+`packages/app/src/routes/Routes.tsx` (rewritten, moved from `src/Routes.tsx`): switch over `state.zoom` rendering inline `MatrixPlaceholder` / `QuadrantPlaceholder` / `TaskFocusPlaceholder` components. The task-focus overlay is rendered alongside (not instead of) the underlying view when `focusedTaskId` is set — that's the contract: `focusedTaskId` is an overlay flag, not a separate route. Each placeholder carries `data-view` / `data-quadrant` / `data-task-id` attributes so tests can assert structure without depending on the placeholder text. Phase 5+ replaces these bodies with the real views.
 
-Wiring changes: added `@emt/design-system` (workspace) and `@tanstack/react-query@^5.62.7` to `packages/app/package.json` deps; added `happy-dom@^20.0.10` to dev deps; flipped `packages/app/vitest.config.ts` to `environment: 'happy-dom'`. Added `main` / `types` / `exports` / `files` fields to `packages/design-system/package.json` so workspace consumers can import it as a normal package (it had only `name` + `type: "module"` before, which is enough for tooling that walks `src/` but not for `import { ThemeProvider } from '@emt/design-system'`).
+i18n updates: dropped `app.home.*` keys in favor of `app.matrix.*`, `app.quadrant.*`, `app.task.*` (heading + placeholder pairs). Existing tests updated.
 
-Tests: `packages/app/test/render.ts` (mirror of the design-system one), `i18n.test.tsx` (3 cases: default `t` resolves a known key; `useT` outside the provider falls back to English; `useT` inside the provider returns the stubbed translator), `app.test.tsx` (2 cases: `<App />` mounts the dark theme and renders the home placeholder; `<ErrorBoundary>` surfaces the translated fallback when a child throws — `console.error` is suppressed inside the throw to keep CI logs clean).
+`packages/app/src/App.tsx`: import paths updated to `./routes/Router.js` and `./routes/Routes.js`. Provider chain unchanged.
 
-207 tests pass (was 202; +5). Typecheck clean (root `tsc -b` plus `pnpm --filter @emt/app exec tsc`), lint clean, format clean, Vite build clean (181 KB main chunk, 7 PWA precache entries), secret scan clean.
+New deps: `zustand@^5.0.13` added to `packages/app/package.json`.
 
-**Next:** Step 4.2 — Router & view-state coordinator. Implement routes from Step 1.7 with a Zustand store mirroring `ViewState`; URL is the source of truth, store is the projection. Outputs: `packages/app/src/routes/`, `packages/app/src/state/view-state.ts`. Done when browser back/forward preserves state and `/q/Q2?task=abc` deep-links into view3 over view2/Q2.
+Tests:
+- `test/view-state.test.ts` (6 cases): `syncFromUrl` projects matrix root / quadrant route / deep-linked task overlay; `navigate` pushes a history entry and updates the store; `replace` swaps without growing the history stack; unknown paths degrade to the default state. Each test resets `window.location` via `replaceState` + `syncFromUrl` to isolate from the singleton store across runs.
+- `test/router.test.tsx` (5 cases): mounts `Router` + `I18nProvider` + `Routes` and asserts: matrix placeholder at `/`; quadrant placeholder at `/q/Q2` with the right `data-quadrant`; deep-link `/q/Q2?task=abc&from=quadrant` renders both quadrant and task-focus elements simultaneously (the explicit "Done when" check from the plan); `navigate()` re-renders without a reload and updates `window.location`; manual `replaceState` + dispatched `popstate` re-syncs the store.
+
+218 tests pass (was 207; +11). Typecheck clean, lint clean, format clean, Vite build clean (185 KB main chunk including zustand, 7 PWA precache entries), secret scan clean (the only "match" was a `data-task-id={taskId}` JSX attribute — false positive).
+
+**Next:** Step 4.3 — Backend wiring + queries. Instantiate the backend registry with `LocalIndexedDbAdapter` registered as default; expose tasks via TanStack Query hooks (`useTasks(quadrant?)`, `useTask(id)`, `useCreateTask`, `useUpdateTask`, `useDeleteTask`, `useMigrateTask`); add a dev-only `/__debug` page that lists tasks and offers create/delete buttons. Outputs: `packages/app/src/state/backends.ts`, `packages/app/src/queries/tasks.ts`, plus debug page wiring. Done when the debug page can list, create, update, and delete tasks against IndexedDB.
 
 ## Environment notes
 
