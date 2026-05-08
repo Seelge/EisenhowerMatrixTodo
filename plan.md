@@ -501,10 +501,11 @@ The full-matrix view. Depends on Phase 4 (router, queries, theme) and Phase 3.
 
 Single-quadrant view. Depends on Phase 4 and Phase 3.
 
-### Step 6.1 — Quadrant layout
+### Step ✅ 6.1 — Quadrant layout
 **Goal.** Render the focused quadrant fullscreen with its colored glow border; ~24 px strips along each edge representing the three neighbors (using their colors at reduced opacity).
 **Outputs.** `packages/app/src/views/quadrant/QuadrantView.tsx`, `NeighborEdge.tsx`.
 **Done when.** Visual test for each focused quadrant; neighbor strips are present on the correct edges.
+**Note:** the 2 × 2 matrix gives each focused quadrant exactly two orthogonal neighbors (one urgency-axis, one importance-axis). The two remaining sides face the matrix outside and intentionally render no strip — that matches `design-input.md`'s "shared edge" wording and the swipe contract from Step 6.3 which only handles axis flips. `NEIGHBORS` in `NeighborEdge.tsx` codifies the per-quadrant edge → neighbor mapping. Task list, header, and overflow handling reuse the same hooks (`useTasks`, `useTaskOrder`, `sortTasks`) and CSS pattern as `MatrixCell` so a card has the same identity in view1 and view2 — sets up Phase 7's shared-`layoutId` morph cleanly. Routes.tsx replaces `QuadrantPlaceholder` with `<QuadrantView>` and the placeholder-only i18n keys (`app.quadrant.heading`, `app.quadrant.placeholder`) are dropped.
 
 ### Step 6.2 — Drop-on-edge to move
 **Goal.** Dragging a task onto a neighbor edge moves it to that quadrant. The current quadrant stays focused after drop.

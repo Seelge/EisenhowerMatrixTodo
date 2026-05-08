@@ -9,7 +9,7 @@
  * (quadrant) when `zoom === 'quadrant'`. That matches the contract:
  * `focusedTaskId` is an overlay flag, not a separate route.
  */
-import type { Quadrant, TaskId } from '@emt/backend-core';
+import type { TaskId } from '@emt/backend-core';
 import type { ReactNode } from 'react';
 
 import { DebugPage } from '../debug/DebugPage.js';
@@ -17,6 +17,7 @@ import { useT } from '../i18n/provider.js';
 import { ConnectBanner } from '../onboarding/ConnectBanner.js';
 import { useInternalPath, useViewState } from '../state/view-state.js';
 import { MatrixView } from '../views/matrix/MatrixView.js';
+import { QuadrantView } from '../views/quadrant/QuadrantView.js';
 
 // Vite substitutes `import.meta.env.DEV` with the literal `true` in dev
 // and `false` in production. Using the canonical form (no optional
@@ -43,7 +44,7 @@ export function Routes(): ReactNode {
       <ConnectBanner />
       {state.zoom === 'matrix' && <MatrixView />}
       {state.zoom === 'quadrant' && state.focusedQuadrant !== undefined && (
-        <QuadrantPlaceholder quadrant={state.focusedQuadrant} />
+        <QuadrantView quadrant={state.focusedQuadrant} />
       )}
       {state.focusedTaskId !== undefined && <TaskFocusPlaceholder taskId={state.focusedTaskId} />}
     </>
@@ -53,18 +54,6 @@ export function Routes(): ReactNode {
 function stripQuery(path: string): string {
   const i = path.indexOf('?');
   return i === -1 ? path : path.slice(0, i);
-}
-
-function QuadrantPlaceholder({ quadrant }: { quadrant: Quadrant }): ReactNode {
-  const t = useT();
-  return (
-    <main data-view="quadrant" data-quadrant={quadrant}>
-      <h1>
-        {t('app.quadrant.heading')} {quadrant}
-      </h1>
-      <p>{t('app.quadrant.placeholder')}</p>
-    </main>
-  );
 }
 
 function TaskFocusPlaceholder({ taskId }: { taskId: TaskId }): ReactNode {
