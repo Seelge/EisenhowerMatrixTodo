@@ -535,10 +535,11 @@ Single-quadrant view. Depends on Phase 4 and Phase 3.
 **Done when.** New task appears in the focused quadrant immediately.
 **Note.** `QuickComposer` grew a `showQuadrantPicker?: boolean` prop (default `true`, so view1's call site is unchanged). When `false`, the picker `<div>` is omitted and `onSubmit` reads the destination from the live `defaultQuadrant` prop instead of internal state — view2 has no UI to mutate the destination, and `<QuickComposer>` itself stays mounted across the surface's open/close cycles, so internal state could otherwise lock in a stale quadrant. `QuadrantView` adds a `<Fab>` + `<QuickComposer ... showQuadrantPicker={false} defaultQuadrant={quadrant}>` pair, anchored at `.emt-quadrant__fab` (absolute, bottom-right, `--layer-fab` z-index, safe-area inset — same rule as `.emt-matrix__fab` so Phase 7's morph keeps the FAB in place across views). The "Add task" label reuses `app.matrix.fab.add`; the FAB does the same thing in both views, so a separate i18n key would be premature scope.
 
-### Step 6.6 — Empty state
+### Step ✅ 6.6 — Empty state
 **Goal.** Empty focused quadrant renders normally with the muted-grey "empty" note from Step 3.8 (no illustration).
 **Outputs.** Branch in `QuadrantView` rendering `<EmptyNote>` when the list is empty.
 **Done when.** Visual test: empty Q3 renders the note centered, neighbor strips still present.
+**Note.** `QuadrantView` adds an `EmptyNote` import and a `tasks !== undefined && tasks.length === 0` branch inside the existing list `<div>` (after the loading-skeleton and error-banner branches so transient pending states don't flash the empty note). The new `app.quadrant.empty` i18n string ("Nothing here yet.") is the EmptyNote's text. CSS: `.emt-quadrant__empty { margin: auto; }` — the list is already a flex column, so `margin: auto` centers the note both vertically and horizontally inside the available space without affecting the card-stacking layout when the list is non-empty (the note is only rendered then). Test added: empty `QuadrantView quadrant="Q3"` renders the note + the Q3 neighbor strips (top → Q1, left → Q4) + FAB; populated quadrant does not render the note. `data-task-count="0"` is `0` during loading too (undefined → 0 fallback), so the test waits on `.emt-quadrant__skeleton` clearing as the actual query-resolved sentinel.
 
 **Phase 6 exit:** quadrant view is fully functional — view, swipe, drag-to-edge, create.
 

@@ -78,6 +78,16 @@
 }
 
 /*
+ * Empty-state note (Step 6.6). The list itself is a flex column, so
+ * `margin: auto` centers the note vertically inside the available
+ * space without disturbing how cards stack when the list is non-empty
+ * (the EmptyNote is only rendered when `tasks.length === 0`).
+ */
+.emt-quadrant__empty {
+  margin: auto;
+}
+
+/*
  * Neighbor strips. Reduced-opacity bands of the neighbor's quadrant
  * color, sitting flush to the matching side of the focused frame. Each
  * strip is a Step-6.2 dnd-kit droppable; on drag-over it lights up to

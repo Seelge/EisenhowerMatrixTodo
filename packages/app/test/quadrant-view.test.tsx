@@ -15,16 +15,24 @@
  *     change what the quadrant is called).
  */
 import 'fake-indexeddb/auto';
-import type { Quadrant } from '@emt/backend-core';
+import type { Quadrant, TaskDraft } from '@emt/backend-core';
 import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { I18nProvider } from '../src/i18n/provider.tsx';
 import { strings } from '../src/i18n/strings.en.ts';
-import { __resetBackendsCacheForTesting } from '../src/state/backends.ts';
+import { __resetBackendsCacheForTesting, getBackends } from '../src/state/backends.ts';
 import { QuadrantView } from '../src/views/quadrant/QuadrantView.tsx';
 
 import { renderWithQueryClient } from './query-render.tsx';
+
+async function waitFor(check: () => boolean | Promise<boolean>, timeoutMs = 1500): Promise<void> {
+  const start = Date.now();
+  while (!(await check())) {
+    if (Date.now() - start > timeoutMs) throw new Error('waitFor timed out');
+    await new Promise((r) => setTimeout(r, 10));
+  }
+}
 
 type Edge = 'top' | 'right' | 'bottom' | 'left';
 
@@ -150,4 +158,79 @@ describe('QuadrantView — Step 6.1 layout & neighbor edges', () => {
       }
     });
   }
+});
+
+describe('QuadrantView — Step 6.6 empty state', () => {
+  let teardown: (() => void) | undefined;
+
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    __resetBackendsCacheForTesting();
+  });
+
+  afterEach(() => {
+    teardown?.();
+    teardown = undefined;
+    __resetBackendsCacheForTesting();
+  });
+
+  const DRAFT: TaskDraft = {
+    title: 'visible',
+    notes: '',
+    priority: 'normal',
+    quadrant: 'Q1',
+    status: 'open',
+    tags: [],
+  };
+
+  it('renders the muted-grey empty note when the focused quadrant has no tasks', async () => {
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <QuadrantView quadrant="Q3" />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+
+    // Wait for the loading skeletons to clear — the `data-task-count`
+    // attribute is `0` even while pending (because `tasks?.length ?? 0`
+    // collapses undefined to 0), so the skeleton sentinel is the
+    // accurate signal that the query has resolved to an empty list.
+    await waitFor(() => container.querySelector('.emt-quadrant__skeleton') === null);
+
+    const note = container.querySelector<HTMLElement>('.emt-empty-note');
+    expect(note, 'empty note should be in the DOM when the list is empty').not.toBeNull();
+    expect(note!.textContent).toBe(strings['app.quadrant.empty']);
+
+    // Neighbor strips for Q3 (top → Q1, left → Q4) are still present —
+    // the empty state does not strip the frame chrome.
+    const stripTop = container.querySelector<HTMLElement>('.emt-quadrant__edge[data-edge="top"]');
+    const stripLeft = container.querySelector<HTMLElement>('.emt-quadrant__edge[data-edge="left"]');
+    expect(stripTop?.dataset['neighbor']).toBe('Q1');
+    expect(stripLeft?.dataset['neighbor']).toBe('Q4');
+
+    // The FAB stays rendered — empty quadrants are still where the user
+    // creates the first task.
+    expect(container.querySelector('.emt-quadrant__fab')).not.toBeNull();
+
+    // No task cards are rendered alongside the note.
+    expect(container.querySelector('.emt-task-card')).toBeNull();
+  });
+
+  it('does not render the empty note once the focused quadrant has tasks', async () => {
+    const { registry } = await getBackends();
+    const adapter = registry.list()[0]!;
+    await adapter.create({ ...DRAFT, title: 'one', quadrant: 'Q3' });
+
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <QuadrantView quadrant="Q3" />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+
+    // Wait for the card to land — the empty branch must not have fired.
+    await waitFor(() => container.querySelector('.emt-task-card') !== null);
+
+    expect(container.querySelector('.emt-empty-note')).toBeNull();
+  });
 });
