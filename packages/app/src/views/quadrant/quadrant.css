@@ -1,0 +1,133 @@
+/*
+ * view2 — single quadrant layout.
+ *
+ * The view fills the viewport. Inside, a `.emt-quadrant__frame` carries
+ * the focused quadrant's glow border (Step 3.2) and hosts the task
+ * list. Four corners of the frame are reserved for the neighbor strips
+ * — 24 px wide on the urgency-axis sides (left / right), 24 px tall on
+ * the importance-axis sides (top / bottom). Only the two shared edges
+ * actually render a strip; the other two sides face the matrix outside
+ * and stay clean.
+ */
+
+.emt-quadrant {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: var(--space-md);
+  background: var(--color-bg);
+  overflow: hidden;
+}
+
+.emt-quadrant__frame {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--color-surface);
+  /* Inner padding leaves room for the 24 px neighbor strips along the
+     edges of the frame so the task list never sits underneath one. */
+  padding: 24px;
+  overflow: hidden;
+}
+
+.emt-quadrant__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.emt-quadrant__title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  letter-spacing: 0.02em;
+}
+
+.emt-quadrant__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: var(--space-xs);
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-surface-elevated) transparent;
+}
+
+.emt-quadrant__list::-webkit-scrollbar {
+  width: 8px;
+}
+.emt-quadrant__list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.emt-quadrant__list::-webkit-scrollbar-thumb {
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius-pill);
+}
+.emt-quadrant__list::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}
+
+.emt-quadrant__skeleton {
+  border-radius: var(--radius-md);
+}
+
+/*
+ * Neighbor strips. Reduced-opacity bands of the neighbor's quadrant
+ * color, sitting flush to the matching side of the focused frame.
+ * Step 6.2 lifts the opacity (and adds a glow) when a card is dragged
+ * over the strip; until then they're decorative and `pointer-events`
+ * are disabled so they don't intercept clicks on the task list.
+ */
+.emt-quadrant__edge {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.4;
+  z-index: var(--layer-quadrant-edge);
+}
+
+.emt-quadrant__edge[data-emt-edge-color='q1'] {
+  background-color: var(--color-q1);
+}
+.emt-quadrant__edge[data-emt-edge-color='q2'] {
+  background-color: var(--color-q2);
+}
+.emt-quadrant__edge[data-emt-edge-color='q3'] {
+  background-color: var(--color-q3);
+}
+.emt-quadrant__edge[data-emt-edge-color='q4'] {
+  background-color: var(--color-q4);
+}
+
+.emt-quadrant__edge[data-edge='top'] {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 24px;
+}
+
+.emt-quadrant__edge[data-edge='bottom'] {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 24px;
+}
+
+.emt-quadrant__edge[data-edge='left'] {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 24px;
+}
+
+.emt-quadrant__edge[data-edge='right'] {
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 24px;
+}

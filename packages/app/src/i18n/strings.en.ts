@@ -25,8 +25,6 @@ export const strings = {
   'app.composer.quadrantLabel': 'Quadrant',
   'app.composer.cancel': 'Cancel',
   'app.composer.submit': 'Add',
-  'app.quadrant.heading': 'Quadrant',
-  'app.quadrant.placeholder': 'The quadrant view is not built yet.',
   'app.task.heading': 'Task',
   'app.task.placeholder': 'The task focus view is not built yet.',
   'app.task.menu.label': 'Task actions',
