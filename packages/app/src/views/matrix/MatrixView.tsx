@@ -20,8 +20,9 @@
  * inside `useUpdateTask` corrects any drift.
  */
 import { DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { Fab } from '@emt/design-system';
 import { useQueryClient } from '@tanstack/react-query';
-import { useMemo, type ReactNode } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 
 import { useT } from '../../i18n/provider.js';
 import { useSetTaskRank } from '../../queries/task-order.js';
@@ -30,6 +31,7 @@ import { useUpdateTask } from '../../queries/tasks.js';
 import './matrix.css';
 import { createDragEndHandler } from './dnd.js';
 import { MatrixCell } from './MatrixCell.js';
+import { QuickComposer } from './QuickComposer.js';
 
 export function MatrixView(): ReactNode {
   const t = useT();
@@ -52,6 +54,10 @@ export function MatrixView(): ReactNode {
     [queryClient, updateTask.mutate, setRank.mutate],
   );
 
+  const [composerOpen, setComposerOpen] = useState(false);
+  const openComposer = useCallback(() => setComposerOpen(true), []);
+  const closeComposer = useCallback(() => setComposerOpen(false), []);
+
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <main data-view="matrix" className="emt-matrix" aria-label={t('app.matrix.heading')}>
@@ -67,6 +73,16 @@ export function MatrixView(): ReactNode {
         <span className="emt-matrix__axis emt-matrix__axis--urgent" aria-hidden="true">
           {t('app.matrix.axis.urgent')} →
         </span>
+        <Fab
+          className="emt-matrix__fab"
+          aria-label={t('app.matrix.fab.add')}
+          aria-haspopup="dialog"
+          aria-expanded={composerOpen}
+          onClick={openComposer}
+        >
+          +
+        </Fab>
+        <QuickComposer open={composerOpen} onClose={closeComposer} />
       </main>
     </DndContext>
   );
