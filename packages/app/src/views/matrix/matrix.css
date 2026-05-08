@@ -24,6 +24,10 @@
   height: 100%;
   padding: var(--space-2xl) var(--space-md) var(--space-2xl) var(--space-2xl);
   background: var(--color-bg);
+  /* Matrix container itself never scrolls — overflow lives inside each
+     cell's task list. Pairs with the `overflow-y: auto` rule on
+     `.emt-matrix__cell-list` further down. */
+  overflow: hidden;
 }
 
 .emt-matrix__grid {
@@ -54,6 +58,37 @@
   gap: var(--space-xs);
   flex: 1;
   min-height: 0;
+  /*
+   * Each cell scrolls independently — the matrix container itself has
+   * `overflow: hidden` (above) and stays pinned to the viewport. The
+   * `min-height: 0` is what lets the flex child shrink below its
+   * intrinsic content size so this overflow rule actually kicks in.
+   */
+  overflow-y: auto;
+  /* A small inset so the scrollbar gutter doesn't crowd the cards. */
+  padding-right: var(--space-xs);
+  /* Firefox + standards-track scrollbar styling. The thumb uses the
+     elevated surface token so it sits above the cell background; the
+     track stays transparent for the dark-on-dark look. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-surface-elevated) transparent;
+}
+
+/* WebKit / Blink scrollbar styling (Chrome, Edge, Safari). Mirrors the
+   Firefox `scrollbar-color` declaration above so the look is consistent
+   across engines. */
+.emt-matrix__cell-list::-webkit-scrollbar {
+  width: 8px;
+}
+.emt-matrix__cell-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.emt-matrix__cell-list::-webkit-scrollbar-thumb {
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius-pill);
+}
+.emt-matrix__cell-list::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
 }
 
 .emt-matrix__cell-skeleton {
