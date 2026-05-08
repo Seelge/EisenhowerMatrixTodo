@@ -507,12 +507,13 @@ Single-quadrant view. Depends on Phase 4 and Phase 3.
 **Done when.** Visual test for each focused quadrant; neighbor strips are present on the correct edges.
 **Note:** the 2 × 2 matrix gives each focused quadrant exactly two orthogonal neighbors (one urgency-axis, one importance-axis). The two remaining sides face the matrix outside and intentionally render no strip — that matches `design-input.md`'s "shared edge" wording and the swipe contract from Step 6.3 which only handles axis flips. `NEIGHBORS` in `NeighborEdge.tsx` codifies the per-quadrant edge → neighbor mapping. Task list, header, and overflow handling reuse the same hooks (`useTasks`, `useTaskOrder`, `sortTasks`) and CSS pattern as `MatrixCell` so a card has the same identity in view1 and view2 — sets up Phase 7's shared-`layoutId` morph cleanly. Routes.tsx replaces `QuadrantPlaceholder` with `<QuadrantView>` and the placeholder-only i18n keys (`app.quadrant.heading`, `app.quadrant.placeholder`) are dropped.
 
-### Step 6.2 — Drop-on-edge to move
+### Step ✅ 6.2 — Drop-on-edge to move
 **Goal.** Dragging a task onto a neighbor edge moves it to that quadrant. The current quadrant stays focused after drop.
 **Outputs.** `NeighborEdge.tsx` becomes a `useDroppable`; same dnd-kit context as Step 5.5.
 **Done when.**
 - During a drag, the targeted edge brightens (uses Step 3.2 glow).
 - Drop moves the task and removes it from the current view.
+**Note:** the dnd-kit drop-data discriminator was widened from `DroppableCellData` to `DroppableTargetData = DroppableCellData | DroppableEdgeData`, both carrying a `quadrant`. `createDragEndHandler` now narrows on either, so view2's edge-drop reuses the exact optimistic-cache + adapter-write + manual-rank pipeline as view1's cross-cell drag — same `applyOptimisticMove`, same rollback, same `setRank` write. `QuadrantView` hoists its own `<DndContext>` with the same `PointerSensor (distance: 5)` + `KeyboardSensor` config as `MatrixView`; Phase 7's `ZoomController` will replace the two local contexts with one shared context. The strip's drop-active state uses the same `data-drop-active` attribute pattern as `.emt-matrix__cell`; on hit, opacity jumps to 1 and a `--glow-q{n}` halo lights the band. The strips keep `pointer-events: none` (the band overlays only the frame's inner padding, so the focus list isn't behind it; dnd-kit's collision detector works off droppable rects, not pointer events on the strip).
 
 ### Step 6.3 — Touch swipe to change focus
 **Goal.** Horizontal/vertical swipe (when not on a draggable card) switches focused quadrant.

@@ -9,15 +9,25 @@
  * matrix and have no neighbor — those edges intentionally render no
  * strip.
  *
- * Step 6.1 ships the strips as decorative (`aria-hidden`) markers
- * whose only state is "present in the right color on the right edge".
- * Step 6.2 turns each strip into a `useDroppable` so dragging a card
- * onto it moves the task to that quadrant; the brightening on
- * drag-over uses the existing Glow primitive.
+ * Step 6.2 turns each strip into a dnd-kit `useDroppable` whose data
+ * payload is `DroppableEdgeData`. `createDragEndHandler` accepts both
+ * cell and edge drops uniformly, so dropping a card onto a strip moves
+ * the task to that neighbor quadrant via the same optimistic-cache +
+ * adapter-write pipeline as view1's cross-cell drag (Step 5.5). The
+ * focused quadrant doesn't change after drop — the route stays put,
+ * and `applyOptimisticMove` removes the card from the now-source
+ * (focused) quadrant's bucket so the user sees it leave immediately.
+ *
+ * `data-drop-active` flips to `true` when a draggable is over the
+ * strip; `quadrant.css` brightens it (full opacity, neighbor-glow
+ * outline) so the user sees which neighbor will receive the drop.
  */
+import { useDroppable } from '@dnd-kit/core';
 import type { Quadrant } from '@emt/backend-core';
 import type { GlowColor } from '@emt/design-system';
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
+
+import type { DroppableEdgeData } from '../matrix/dnd.js';
 
 export type Edge = 'top' | 'right' | 'bottom' | 'left';
 
@@ -75,12 +85,16 @@ export interface NeighborEdgeProps {
 }
 
 export function NeighborEdge({ edge, neighbor }: NeighborEdgeProps): ReactNode {
+  const data: DroppableEdgeData = useMemo(() => ({ kind: 'edge', quadrant: neighbor }), [neighbor]);
+  const { setNodeRef, isOver } = useDroppable({ id: `edge-${neighbor}`, data });
   return (
     <div
+      ref={setNodeRef}
       className="emt-quadrant__edge"
       data-edge={edge}
       data-neighbor={neighbor}
       data-emt-edge-color={NEIGHBOR_COLOR[neighbor]}
+      data-drop-active={isOver ? 'true' : 'false'}
       aria-hidden="true"
     />
   );
