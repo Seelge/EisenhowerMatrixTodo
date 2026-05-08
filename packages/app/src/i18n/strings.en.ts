@@ -17,6 +17,7 @@ export const strings = {
   'app.matrix.cell.q4.label': 'Delete',
   'app.matrix.axis.important': 'Important',
   'app.matrix.axis.urgent': 'Urgent',
+  'app.matrix.cell.reset': 'Reset order',
   'app.quadrant.heading': 'Quadrant',
   'app.quadrant.placeholder': 'The quadrant view is not built yet.',
   'app.task.heading': 'Task',

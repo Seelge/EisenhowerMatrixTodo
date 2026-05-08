@@ -24,6 +24,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, type ReactNode } from 'react';
 
 import { useT } from '../../i18n/provider.js';
+import { useSetTaskRank } from '../../queries/task-order.js';
 import { useUpdateTask } from '../../queries/tasks.js';
 
 import './matrix.css';
@@ -34,6 +35,7 @@ export function MatrixView(): ReactNode {
   const t = useT();
   const queryClient = useQueryClient();
   const updateTask = useUpdateTask();
+  const setRank = useSetTaskRank();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -41,8 +43,13 @@ export function MatrixView(): ReactNode {
   );
 
   const handleDragEnd = useMemo(
-    () => createDragEndHandler({ queryClient, mutate: updateTask.mutate }),
-    [queryClient, updateTask.mutate],
+    () =>
+      createDragEndHandler({
+        queryClient,
+        mutate: updateTask.mutate,
+        setRank: setRank.mutate,
+      }),
+    [queryClient, updateTask.mutate, setRank.mutate],
   );
 
   return (
