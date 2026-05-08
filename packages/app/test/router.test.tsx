@@ -2,6 +2,8 @@
  * Integration tests for `Router` + `Routes`: deep-link rendering,
  * `popstate` re-sync, and `navigate()`-driven re-render.
  */
+import 'fake-indexeddb/auto';
+import { IDBFactory } from 'fake-indexeddb';
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -9,9 +11,10 @@ import { I18nProvider } from '../src/i18n/provider.tsx';
 import { strings } from '../src/i18n/strings.en.ts';
 import { Router } from '../src/routes/Router.tsx';
 import { Routes } from '../src/routes/Routes.tsx';
+import { __resetBackendsCacheForTesting } from '../src/state/backends.ts';
 import { useViewStateStore } from '../src/state/view-state.ts';
 
-import { renderToContainer } from './render.ts';
+import { renderWithQueryClient } from './query-render.tsx';
 
 function resetTo(internalPath: string): void {
   window.history.replaceState(null, '', internalPath);
@@ -32,18 +35,21 @@ describe('Router + Routes', () => {
   let teardown: (() => void) | undefined;
 
   beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    __resetBackendsCacheForTesting();
     resetTo('/');
   });
 
   afterEach(() => {
     teardown?.();
     teardown = undefined;
+    __resetBackendsCacheForTesting();
     resetTo('/');
   });
 
   it('renders the matrix placeholder at /', async () => {
     resetTo('/');
-    const { container, unmount } = await renderToContainer(<Tree />);
+    const { container, unmount } = await renderWithQueryClient(<Tree />);
     teardown = unmount;
     expect(container.querySelector('[data-view="matrix"]')).not.toBeNull();
     expect(container.querySelector('[data-view="quadrant"]')).toBeNull();
@@ -52,7 +58,7 @@ describe('Router + Routes', () => {
 
   it('renders the quadrant placeholder at /q/Q2', async () => {
     resetTo('/q/Q2');
-    const { container, unmount } = await renderToContainer(<Tree />);
+    const { container, unmount } = await renderWithQueryClient(<Tree />);
     teardown = unmount;
     const quadrant = container.querySelector<HTMLElement>('[data-view="quadrant"]');
     expect(quadrant).not.toBeNull();
@@ -62,7 +68,7 @@ describe('Router + Routes', () => {
 
   it('deep-links /q/Q2?task=abc into view3 over the quadrant view', async () => {
     resetTo('/q/Q2?task=abc&from=quadrant');
-    const { container, unmount } = await renderToContainer(<Tree />);
+    const { container, unmount } = await renderWithQueryClient(<Tree />);
     teardown = unmount;
     const quadrant = container.querySelector<HTMLElement>('[data-view="quadrant"]');
     const task = container.querySelector<HTMLElement>('[data-view="task"]');
@@ -73,7 +79,7 @@ describe('Router + Routes', () => {
 
   it('navigate() updates the rendered view without a full reload', async () => {
     resetTo('/');
-    const { container, unmount } = await renderToContainer(<Tree />);
+    const { container, unmount } = await renderWithQueryClient(<Tree />);
     teardown = unmount;
     expect(container.querySelector('[data-view="matrix"]')).not.toBeNull();
 
@@ -89,7 +95,7 @@ describe('Router + Routes', () => {
 
   it('popstate re-syncs the store after a manual URL change', async () => {
     resetTo('/');
-    const { container, unmount } = await renderToContainer(<Tree />);
+    const { container, unmount } = await renderWithQueryClient(<Tree />);
     teardown = unmount;
 
     await act(async () => {

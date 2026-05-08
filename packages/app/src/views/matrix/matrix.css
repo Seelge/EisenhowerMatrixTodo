@@ -48,6 +48,18 @@
   overflow: hidden;
 }
 
+.emt-matrix__cell-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  flex: 1;
+  min-height: 0;
+}
+
+.emt-matrix__cell-skeleton {
+  border-radius: var(--radius-md);
+}
+
 .emt-matrix__cell[data-quadrant='Q1'] {
   grid-area: q1;
 }

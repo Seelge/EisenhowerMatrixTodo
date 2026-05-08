@@ -449,7 +449,7 @@ The full-matrix view. Depends on Phase 4 (router, queries, theme) and Phase 3.
 **Outputs.** `packages/app/src/views/matrix/TaskCard.tsx` + tests.
 **Done when.** Component test renders all field permutations (no due, all priorities, multiple tags, long titles → ellipsis after 1 line).
 
-### Step 5.3 — Per-cell task list
+### Step ✅ 5.3 — Per-cell task list
 **Goal.** Each cell loads tasks for its quadrant via `useTasks(quadrant)`; renders cards in sort order from Step 5.7.
 **Outputs.** `MatrixCell.tsx` updated; integrates with TanStack Query.
 **Done when.** Tasks created via the Phase 4 debug page appear in their respective cells without reload.

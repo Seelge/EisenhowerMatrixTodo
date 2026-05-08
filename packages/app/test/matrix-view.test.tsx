@@ -7,14 +7,17 @@
  * (the palette mapping). Layout pixel-tightness is not checked here;
  * Playwright covers that separately.
  */
+import 'fake-indexeddb/auto';
 import type { Quadrant } from '@emt/backend-core';
-import { afterEach, describe, expect, it } from 'vitest';
+import { IDBFactory } from 'fake-indexeddb';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { I18nProvider } from '../src/i18n/provider.tsx';
 import { strings } from '../src/i18n/strings.en.ts';
+import { __resetBackendsCacheForTesting } from '../src/state/backends.ts';
 import { MatrixView } from '../src/views/matrix/MatrixView.tsx';
 
-import { renderToContainer } from './render.ts';
+import { renderWithQueryClient } from './query-render.tsx';
 
 interface CellExpectation {
   quadrant: Quadrant;
@@ -33,13 +36,19 @@ const CELLS: readonly CellExpectation[] = [
 describe('MatrixView', () => {
   let teardown: (() => void) | undefined;
 
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    __resetBackendsCacheForTesting();
+  });
+
   afterEach(() => {
     teardown?.();
     teardown = undefined;
+    __resetBackendsCacheForTesting();
   });
 
   it('renders the matrix shell with all four cells, labels, and palette', async () => {
-    const { container, unmount } = await renderToContainer(
+    const { container, unmount } = await renderWithQueryClient(
       <I18nProvider>
         <MatrixView />
       </I18nProvider>,
@@ -77,7 +86,7 @@ describe('MatrixView', () => {
     // puts importance ↑ on the top row and urgency → on the right
     // column, so Q1 (Do, top-right) and Q4 (Delete, bottom-left) end
     // up where users expect them.
-    const { container, unmount } = await renderToContainer(
+    const { container, unmount } = await renderWithQueryClient(
       <I18nProvider>
         <MatrixView />
       </I18nProvider>,
@@ -94,7 +103,7 @@ describe('MatrixView', () => {
   });
 
   it('renders both axis labels as decorative (aria-hidden) markers', async () => {
-    const { container, unmount } = await renderToContainer(
+    const { container, unmount } = await renderWithQueryClient(
       <I18nProvider>
         <MatrixView />
       </I18nProvider>,
