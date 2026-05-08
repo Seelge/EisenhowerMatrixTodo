@@ -469,7 +469,7 @@ The full-matrix view. Depends on Phase 4 (router, queries, theme) and Phase 3.
 - Visual drop indicator on the receiving cell.
 - Optimistic update + rollback on adapter error.
 
-### Step 5.6 — Keyboard alternative ("Move to")
+### Step ✅ 5.6 — Keyboard alternative ("Move to")
 **Goal.** Each task card has a focusable kebab menu offering "Move to → Q1/Q2/Q3/Q4" (excluding current). Required for a11y commitment.
 **Outputs.** `TaskCardMenu.tsx`.
 **Done when.** Keyboard-only test: focus card → activate menu → choose target → assertion task moved.

@@ -37,7 +37,6 @@ import { MatrixView } from '../src/views/matrix/MatrixView.tsx';
 import { TaskCard } from '../src/views/matrix/TaskCard.tsx';
 
 import { createTestQueryClient, renderWithQueryClient } from './query-render.tsx';
-import { renderToContainer } from './render.ts';
 
 const DRAFT: TaskDraft = {
   title: 'placeholder',
@@ -111,20 +110,21 @@ describe('Matrix drag-and-drop wiring (Step 5.5)', () => {
     __resetBackendsCacheForTesting();
   });
 
-  it('TaskCard publishes its dnd-kit draggable attributes on the rendered button', async () => {
+  it('TaskCard publishes its dnd-kit draggable attributes on the wrapper', async () => {
     const task = makeTask({ id: 'card-1' as TaskId });
-    const { container, unmount } = await renderToContainer(
+    const { container, unmount } = await renderWithQueryClient(
       <DndContext>
         <TaskCard task={task} />
       </DndContext>,
     );
     teardown = unmount;
-    const button = container.querySelector<HTMLButtonElement>('.emt-task-card')!;
+    const card = container.querySelector<HTMLElement>('.emt-task-card')!;
     // dnd-kit applies aria-roledescription="draggable" + tabindex via
-    // the `attributes` spread; their presence is the structural test.
-    expect(button.getAttribute('aria-roledescription')).toBe('draggable');
-    expect(button.tabIndex).toBe(0);
-    expect(button.dataset['dragging']).toBe('false');
+    // the `attributes` spread on the wrapper (no longer a button after
+    // Step 5.6's restructure — see `TaskCard.tsx` for the rationale).
+    expect(card.getAttribute('aria-roledescription')).toBe('draggable');
+    expect(card.tabIndex).toBe(0);
+    expect(card.dataset['dragging']).toBe('false');
   });
 
   it('MatrixCell registers as a droppable and exposes a drop-active flag', async () => {

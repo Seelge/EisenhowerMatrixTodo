@@ -1,16 +1,26 @@
 /**
  * Task card — single-row summary of a `Task`. Used by `MatrixCell` in
- * view1 and by `QuadrantView` in view2 (Phase 6). Click / tap opens
- * view3 by writing `focusedTaskId` and `openedFromZoom` into the
- * view-state store; the URL is the source of truth so the overlay
- * survives reload and the back button.
+ * view1 and by `QuadrantView` in view2 (Phase 6).
  *
- * Step 5.5 makes the card draggable via dnd-kit's `useDraggable`. The
- * `<DndContext>` configures the `PointerSensor` with a 5px activation
- * distance, so a tap that doesn't move past that threshold stays a
- * click and still opens view3. Once the threshold is crossed, dnd-kit
- * begins emitting transform updates and absorbs the pointer events —
- * the click handler does not fire.
+ * Anatomy (Step 5.6):
+ *
+ *   .emt-task-card                       (div: dnd-kit handle, drag listeners)
+ *   ├── .emt-task-card__open             (button: opens view3)
+ *   │   ├── priority dot (decorative)
+ *   │   ├── title
+ *   │   └── meta (due + tags)
+ *   └── TaskCardMenu                      (button + popover: keyboard "Move to")
+ *
+ * Why the wrapper is a div: native `<button>`s cannot be nested
+ * (HTML rejects it and accessibility trees flatten unpredictably), and
+ * Step 5.6 requires a focusable menu trigger inside the card. So the
+ * card wrapper drops its button role and the inner __open element
+ * becomes the semantic click target. The wrapper still hosts the
+ * dnd-kit ref + listeners so the whole visual area is draggable.
+ *
+ * Why the kebab calls `stopPropagation` on `pointerdown`: dnd-kit's
+ * `PointerSensor` listens at the wrapper. Without the stop, opening
+ * the menu would also start a drag once the pointer moved 5px.
  *
  * The priority dot is decorative (`aria-hidden`); the visible button
  * text — title, due date, and tags — carries the meaning for AT.
@@ -22,6 +32,7 @@ import { useCallback, useMemo, type CSSProperties, type ReactNode } from 'react'
 import { useViewStateStore } from '../../state/view-state.js';
 
 import type { DraggableTaskData } from './dnd.js';
+import { TaskCardMenu } from './TaskCardMenu.js';
 
 import './task-card.css';
 
@@ -88,39 +99,44 @@ export function TaskCard({ task }: TaskCardProps): ReactNode {
     transform !== null ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : {};
 
   return (
-    <button
+    <div
       ref={setNodeRef}
-      type="button"
       className="emt-task-card"
       data-task-id={task.id}
       data-priority={task.priority}
       data-status={task.status}
       data-dragging={isDragging ? 'true' : 'false'}
       style={dragStyle}
-      onClick={onOpen}
       {...attributes}
       {...listeners}
     >
-      <span className="emt-task-card__priority" data-priority={task.priority} aria-hidden="true" />
-      <span className="emt-task-card__title">{task.title}</span>
-      {hasMeta && (
-        <span className="emt-task-card__meta">
-          {dueLabel !== undefined && (
-            <time className="emt-task-card__due" dateTime={task.dueDate}>
-              {dueLabel}
-            </time>
-          )}
-          {task.tags.length > 0 && (
-            <span className="emt-task-card__tags">
-              {task.tags.map((tag) => (
-                <span key={tag} className="emt-task-card__tag">
-                  {tag}
-                </span>
-              ))}
-            </span>
-          )}
-        </span>
-      )}
-    </button>
+      <button type="button" className="emt-task-card__open" onClick={onOpen}>
+        <span
+          className="emt-task-card__priority"
+          data-priority={task.priority}
+          aria-hidden="true"
+        />
+        <span className="emt-task-card__title">{task.title}</span>
+        {hasMeta && (
+          <span className="emt-task-card__meta">
+            {dueLabel !== undefined && (
+              <time className="emt-task-card__due" dateTime={task.dueDate}>
+                {dueLabel}
+              </time>
+            )}
+            {task.tags.length > 0 && (
+              <span className="emt-task-card__tags">
+                {task.tags.map((tag) => (
+                  <span key={tag} className="emt-task-card__tag">
+                    {tag}
+                  </span>
+                ))}
+              </span>
+            )}
+          </span>
+        )}
+      </button>
+      <TaskCardMenu task={task} />
+    </div>
   );
 }

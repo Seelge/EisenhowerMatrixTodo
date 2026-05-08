@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { useViewStateStore } from '../src/state/view-state.ts';
 import { TaskCard } from '../src/views/matrix/TaskCard.tsx';
 
-import { renderToContainer } from './render.ts';
+import { renderWithQueryClient } from './query-render.tsx';
 
 function makeTask(overrides: Partial<Task> = {}): Task {
   const base: Task = {
@@ -49,14 +49,14 @@ describe('TaskCard', () => {
 
   for (const priority of ['none', 'low', 'normal', 'high'] as const satisfies readonly Priority[]) {
     it(`renders the ${priority} priority dot`, async () => {
-      const { container, unmount } = await renderToContainer(
+      const { container, unmount } = await renderWithQueryClient(
         <TaskCard task={makeTask({ priority })} />,
       );
       teardown = unmount;
-      const button = container.querySelector<HTMLButtonElement>('.emt-task-card');
-      expect(button).not.toBeNull();
-      expect(button!.dataset['priority']).toBe(priority);
-      const dot = button!.querySelector<HTMLElement>('.emt-task-card__priority');
+      const card = container.querySelector<HTMLElement>('.emt-task-card');
+      expect(card).not.toBeNull();
+      expect(card!.dataset['priority']).toBe(priority);
+      const dot = card!.querySelector<HTMLElement>('.emt-task-card__priority');
       expect(dot).not.toBeNull();
       expect(dot!.dataset['priority']).toBe(priority);
       // Decorative — the dot is a visual rank, not a fact AT needs to
@@ -66,7 +66,7 @@ describe('TaskCard', () => {
   }
 
   it('omits the due-date element when the task has no due date', async () => {
-    const { container, unmount } = await renderToContainer(
+    const { container, unmount } = await renderWithQueryClient(
       <TaskCard task={makeTask({ dueDate: undefined })} />,
     );
     teardown = unmount;
@@ -74,7 +74,7 @@ describe('TaskCard', () => {
   });
 
   it('renders the full date for a date-only due', async () => {
-    const { container, unmount } = await renderToContainer(
+    const { container, unmount } = await renderWithQueryClient(
       <TaskCard task={makeTask({ dueDate: '2026-12-31' })} />,
     );
     teardown = unmount;
@@ -88,7 +88,7 @@ describe('TaskCard', () => {
   });
 
   it('appends the time to the due-date label when both are set', async () => {
-    const { container, unmount } = await renderToContainer(
+    const { container, unmount } = await renderWithQueryClient(
       <TaskCard task={makeTask({ dueDate: '2026-12-31', dueTime: '14:30' })} />,
     );
     teardown = unmount;
@@ -99,7 +99,7 @@ describe('TaskCard', () => {
   });
 
   it('renders multiple tags as separate siblings', async () => {
-    const { container, unmount } = await renderToContainer(
+    const { container, unmount } = await renderWithQueryClient(
       <TaskCard task={makeTask({ tags: ['home', 'urgent', 'errands'] })} />,
     );
     teardown = unmount;
@@ -108,7 +108,7 @@ describe('TaskCard', () => {
   });
 
   it('omits the meta row entirely when there is no due and no tags', async () => {
-    const { container, unmount } = await renderToContainer(
+    const { container, unmount } = await renderWithQueryClient(
       <TaskCard task={makeTask({ dueDate: undefined, tags: [] })} />,
     );
     teardown = unmount;
@@ -118,7 +118,7 @@ describe('TaskCard', () => {
   it('long titles get the single-line ellipsis class', async () => {
     const long =
       'A really long task title that should overflow its row and clip with ellipsis '.repeat(4);
-    const { container, unmount } = await renderToContainer(
+    const { container, unmount } = await renderWithQueryClient(
       <TaskCard task={makeTask({ title: long })} />,
     );
     teardown = unmount;
@@ -131,22 +131,22 @@ describe('TaskCard', () => {
   });
 
   it('marks done tasks with a status attribute the CSS can target', async () => {
-    const { container, unmount } = await renderToContainer(
+    const { container, unmount } = await renderWithQueryClient(
       <TaskCard task={makeTask({ status: 'done', completedAt: '2026-05-07T12:00:00.000Z' })} />,
     );
     teardown = unmount;
-    const button = container.querySelector<HTMLButtonElement>('.emt-task-card');
-    expect(button!.dataset['status']).toBe('done');
+    const card = container.querySelector<HTMLElement>('.emt-task-card');
+    expect(card!.dataset['status']).toBe('done');
   });
 
   it('opens view3 over the matrix view on click', async () => {
-    const { container, unmount } = await renderToContainer(
+    const { container, unmount } = await renderWithQueryClient(
       <TaskCard task={makeTask({ id: 'task-abc' as TaskId })} />,
     );
     teardown = unmount;
-    const button = container.querySelector<HTMLButtonElement>('.emt-task-card')!;
+    const open = container.querySelector<HTMLButtonElement>('.emt-task-card__open')!;
     await act(async () => {
-      button.click();
+      open.click();
     });
     const state = useViewStateStore.getState().state;
     expect(state.zoom).toBe('matrix');
@@ -158,13 +158,13 @@ describe('TaskCard', () => {
 
   it('opens view3 over the quadrant view when zoomed in', async () => {
     resetViewState('/q/Q2');
-    const { container, unmount } = await renderToContainer(
+    const { container, unmount } = await renderWithQueryClient(
       <TaskCard task={makeTask({ id: 'task-xyz' as TaskId, quadrant: 'Q2' })} />,
     );
     teardown = unmount;
-    const button = container.querySelector<HTMLButtonElement>('.emt-task-card')!;
+    const open = container.querySelector<HTMLButtonElement>('.emt-task-card__open')!;
     await act(async () => {
-      button.click();
+      open.click();
     });
     const state = useViewStateStore.getState().state;
     expect(state.zoom).toBe('quadrant');
