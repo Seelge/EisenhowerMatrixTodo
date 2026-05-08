@@ -9,7 +9,16 @@
  * `useTasks(quadrant)`. The list is sorted by `createdAt` ascending —
  * this is the temporary fallback the plan calls for; Step 5.7 replaces
  * it with manual order + due-date secondary.
+ *
+ * Step 5.5 makes the cell a drop target via dnd-kit's `useDroppable`.
+ * The droppable ref is attached to the `Glow` (which now forwards its
+ * ref); `data-drop-active` toggles when a draggable is currently over
+ * the cell so CSS can show the "you can drop here" highlight. The
+ * data payload (`kind: 'cell'`, `quadrant`) is what `MatrixView`'s
+ * `onDragEnd` reads to compute the destination quadrant — see
+ * `dnd.ts` for the type guards.
  */
+import { useDroppable } from '@dnd-kit/core';
 import type { Quadrant, Task } from '@emt/backend-core';
 import { ErrorBanner, Glow, Skeleton, type GlowColor } from '@emt/design-system';
 import { useMemo, type ReactNode } from 'react';
@@ -18,6 +27,7 @@ import { useT } from '../../i18n/provider.js';
 import type { StringKey } from '../../i18n/strings.en.js';
 import { useTasks } from '../../queries/tasks.js';
 
+import type { DroppableCellData } from './dnd.js';
 import { TaskCard } from './TaskCard.js';
 
 const GLOW_COLOR: Record<Quadrant, GlowColor> = {
@@ -51,11 +61,16 @@ export function MatrixCell({ quadrant }: MatrixCellProps): ReactNode {
     [query.data],
   );
 
+  const data: DroppableCellData = useMemo(() => ({ kind: 'cell', quadrant }), [quadrant]);
+  const { setNodeRef, isOver } = useDroppable({ id: `cell-${quadrant}`, data });
+
   return (
     <Glow
+      ref={setNodeRef}
       color={GLOW_COLOR[quadrant]}
       className="emt-matrix__cell"
       data-quadrant={quadrant}
+      data-drop-active={isOver ? 'true' : 'false'}
       role="region"
       aria-label={label}
     >

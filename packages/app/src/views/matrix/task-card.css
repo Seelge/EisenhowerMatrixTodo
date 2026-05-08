@@ -27,12 +27,25 @@
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   padding: var(--space-sm) var(--space-md);
-  cursor: pointer;
+  cursor: grab;
+  /* Suppress the browser's default touch behavior on the card so a
+     vertical drag becomes a dnd-kit drag instead of a page scroll. */
+  touch-action: none;
   -webkit-tap-highlight-color: transparent;
   font: inherit;
   transition:
     border-color var(--motion-duration-short) var(--motion-easing-standard),
     background var(--motion-duration-short) var(--motion-easing-standard);
+}
+
+.emt-task-card[data-dragging='true'] {
+  /* Float the card above its siblings while the user moves it; keeps
+     the dragged element from getting visually clipped by the cell's
+     overflow boundary mid-drag. */
+  cursor: grabbing;
+  opacity: 0.85;
+  z-index: 1;
+  position: relative;
 }
 
 .emt-task-card:hover:not(:disabled) {

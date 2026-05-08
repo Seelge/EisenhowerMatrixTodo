@@ -459,7 +459,7 @@ The full-matrix view. Depends on Phase 4 (router, queries, theme) and Phase 3.
 **Outputs.** Updated CSS in `MatrixCell.tsx`.
 **Done when.** Two cells with > viewport-height tasks scroll independently. Scrollbars styled to match the dark theme.
 
-### Step 5.5 — Drag-and-drop between quadrants
+### Step ✅ 5.5 — Drag-and-drop between quadrants
 **Goal.** Drag a card from one cell into another using dnd-kit; on drop, `useUpdateTask` patches `quadrant`.
 **Inputs.** Step 4.3, dnd-kit.
 **Outputs.** `MatrixView.tsx` becomes a `DndContext`; `MatrixCell` uses `useDroppable`; `TaskCard` uses `useDraggable`.

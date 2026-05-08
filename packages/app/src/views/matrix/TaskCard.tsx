@@ -1,20 +1,27 @@
 /**
  * Task card — single-row summary of a `Task`. Used by `MatrixCell` in
- * view1 (Step 5.3) and by `QuadrantView` in view2 (Phase 6). Click /
- * tap opens view3 by writing `focusedTaskId` and `openedFromZoom`
- * into the view-state store; the URL is the source of truth so the
- * overlay survives reload and the back button.
+ * view1 and by `QuadrantView` in view2 (Phase 6). Click / tap opens
+ * view3 by writing `focusedTaskId` and `openedFromZoom` into the
+ * view-state store; the URL is the source of truth so the overlay
+ * survives reload and the back button.
  *
- * Step 5.2 only renders the card and wires its click. Drag-and-drop
- * (Step 5.5) and the kebab menu (Step 5.6) layer on top later.
+ * Step 5.5 makes the card draggable via dnd-kit's `useDraggable`. The
+ * `<DndContext>` configures the `PointerSensor` with a 5px activation
+ * distance, so a tap that doesn't move past that threshold stays a
+ * click and still opens view3. Once the threshold is crossed, dnd-kit
+ * begins emitting transform updates and absorbs the pointer events —
+ * the click handler does not fire.
  *
  * The priority dot is decorative (`aria-hidden`); the visible button
  * text — title, due date, and tags — carries the meaning for AT.
  */
+import { useDraggable } from '@dnd-kit/core';
 import type { Task } from '@emt/backend-core';
-import { useCallback, useMemo, type ReactNode } from 'react';
+import { useCallback, useMemo, type CSSProperties, type ReactNode } from 'react';
 
 import { useViewStateStore } from '../../state/view-state.js';
+
+import type { DraggableTaskData } from './dnd.js';
 
 import './task-card.css';
 
@@ -68,14 +75,31 @@ export function TaskCard({ task }: TaskCardProps): ReactNode {
   );
   const hasMeta = dueLabel !== undefined || task.tags.length > 0;
 
+  const data: DraggableTaskData = useMemo(() => ({ kind: 'task', task }), [task]);
+  const { setNodeRef, attributes, listeners, transform, isDragging } = useDraggable({
+    id: task.id,
+    data,
+  });
+
+  // While dragging, follow the pointer with a CSS transform; dnd-kit
+  // updates `transform` on every pointermove. `touch-action: none` is
+  // already on `.emt-task-card` so touch drags don't scroll the page.
+  const dragStyle: CSSProperties =
+    transform !== null ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : {};
+
   return (
     <button
+      ref={setNodeRef}
       type="button"
       className="emt-task-card"
       data-task-id={task.id}
       data-priority={task.priority}
       data-status={task.status}
+      data-dragging={isDragging ? 'true' : 'false'}
+      style={dragStyle}
       onClick={onOpen}
+      {...attributes}
+      {...listeners}
     >
       <span className="emt-task-card__priority" data-priority={task.priority} aria-hidden="true" />
       <span className="emt-task-card__title">{task.title}</span>
