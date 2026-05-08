@@ -95,6 +95,20 @@
   border-radius: var(--radius-md);
 }
 
+.emt-matrix__cell[data-drop-active='true'] {
+  /*
+   * Drop indicator — when a draggable card is over the cell, brighten
+   * the glow halo and lay an outline on top of the cell border so the
+   * receiving cell pops without shifting layout (transform / size
+   * changes would re-trigger dnd-kit's rect measurements). The outline
+   * uses the per-quadrant glow token so the indicator inherits the
+   * cell's identity.
+   */
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: -2px;
+  filter: brightness(1.15);
+}
+
 .emt-matrix__cell[data-quadrant='Q1'] {
   grid-area: q1;
 }
