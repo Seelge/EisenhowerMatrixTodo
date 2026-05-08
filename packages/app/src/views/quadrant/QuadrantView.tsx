@@ -29,20 +29,48 @@ import { DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from
 import type { Quadrant } from '@emt/backend-core';
 import { ErrorBanner, Glow, Skeleton, type GlowColor } from '@emt/design-system';
 import { useQueryClient } from '@tanstack/react-query';
-import { useMemo, type ReactNode } from 'react';
+import {
+  useCallback,
+  useMemo,
+  useRef,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from 'react';
 
 import { useT } from '../../i18n/provider.js';
 import type { StringKey } from '../../i18n/strings.en.js';
 import { useSetTaskRank, useTaskOrder } from '../../queries/task-order.js';
 import { useTasks, useUpdateTask } from '../../queries/tasks.js';
 import { type TaskOrderMap } from '../../state/task-order.js';
+import { useViewStateStore } from '../../state/view-state.js';
 import { createDragEndHandler } from '../matrix/dnd.js';
 import { sortTasks } from '../matrix/sort.js';
 import { TaskCard } from '../matrix/TaskCard.js';
 
 import { NEIGHBORS, NeighborEdge } from './NeighborEdge.js';
+import { DEFAULT_SWIPE_OPTIONS, resolveSwipeDirection, resolveSwipeTarget } from './swipe.js';
 
 import './quadrant.css';
+
+/**
+ * CSS selector for elements whose pointer events should NOT be treated
+ * as swipes:
+ *   - `.emt-task-card` — dnd-kit owns drags that start on a card.
+ *   - `.emt-quadrant__list` — vertical scrolling inside a populated
+ *     quadrant easily clears the swipe distance threshold and would
+ *     otherwise hijack scroll. The header / frame padding / strips
+ *     give the user enough room to swipe outside the list. The strips
+ *     themselves use `pointer-events: none`, so a swipe across one
+ *     bubbles to the underlying frame and resolves correctly.
+ */
+const SWIPE_EXCLUDE_SELECTOR = '.emt-task-card, .emt-quadrant__list';
+
+interface PendingGesture {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  startTime: number;
+}
 
 const EMPTY_RANKS: TaskOrderMap = new Map();
 
@@ -94,6 +122,55 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
     [queryClient, updateTask.mutate, setRank.mutate],
   );
 
+  // Step 6.3 — touch swipe to change focus.
+  //
+  // The route flip is the entire "animation" — there's no morph here
+  // (Phase 7 owns that), so the snap is instant by construction and
+  // satisfies `prefers-reduced-motion: reduce` without a guard. Phase
+  // 7's zoom controller will gate its own animation on
+  // `useReducedMotion`; this handler stays input-only.
+  const pendingGesture = useRef<PendingGesture | null>(null);
+  const lastSwipeAt = useRef<number>(0);
+
+  const onPointerDown = useCallback((e: ReactPointerEvent<HTMLElement>) => {
+    if (!e.isPrimary) return;
+    const target = e.target;
+    if (target instanceof Element && target.closest(SWIPE_EXCLUDE_SELECTOR) !== null) {
+      pendingGesture.current = null;
+      return;
+    }
+    pendingGesture.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      startTime: performance.now(),
+    };
+  }, []);
+
+  const onPointerUp = useCallback(
+    (e: ReactPointerEvent<HTMLElement>) => {
+      const g = pendingGesture.current;
+      if (g === null || g.pointerId !== e.pointerId) return;
+      pendingGesture.current = null;
+      const t = performance.now();
+      if (t - lastSwipeAt.current < DEFAULT_SWIPE_OPTIONS.cooldown) return;
+      const dx = e.clientX - g.startX;
+      const dy = e.clientY - g.startY;
+      const direction = resolveSwipeDirection(dx, dy, t - g.startTime);
+      if (direction === undefined) return;
+      const target = resolveSwipeTarget(quadrant, direction);
+      if (target === undefined) return;
+      lastSwipeAt.current = t;
+      const { state, navigate } = useViewStateStore.getState();
+      navigate({ ...state, zoom: 'quadrant', focusedQuadrant: target });
+    },
+    [quadrant],
+  );
+
+  const onPointerCancel = useCallback(() => {
+    pendingGesture.current = null;
+  }, []);
+
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <main
@@ -101,6 +178,9 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
         data-quadrant={quadrant}
         className="emt-quadrant"
         aria-label={label}
+        onPointerDown={onPointerDown}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
       >
         <Glow color={GLOW_COLOR[quadrant]} className="emt-quadrant__frame" data-quadrant={quadrant}>
           <header className="emt-quadrant__header">

@@ -515,12 +515,13 @@ Single-quadrant view. Depends on Phase 4 and Phase 3.
 - Drop moves the task and removes it from the current view.
 **Note:** the dnd-kit drop-data discriminator was widened from `DroppableCellData` to `DroppableTargetData = DroppableCellData | DroppableEdgeData`, both carrying a `quadrant`. `createDragEndHandler` now narrows on either, so view2's edge-drop reuses the exact optimistic-cache + adapter-write + manual-rank pipeline as view1's cross-cell drag — same `applyOptimisticMove`, same rollback, same `setRank` write. `QuadrantView` hoists its own `<DndContext>` with the same `PointerSensor (distance: 5)` + `KeyboardSensor` config as `MatrixView`; Phase 7's `ZoomController` will replace the two local contexts with one shared context. The strip's drop-active state uses the same `data-drop-active` attribute pattern as `.emt-matrix__cell`; on hit, opacity jumps to 1 and a `--glow-q{n}` halo lights the band. The strips keep `pointer-events: none` (the band overlays only the frame's inner padding, so the focus list isn't behind it; dnd-kit's collision detector works off droppable rects, not pointer events on the strip).
 
-### Step 6.3 — Touch swipe to change focus
+### Step ✅ 6.3 — Touch swipe to change focus
 **Goal.** Horizontal/vertical swipe (when not on a draggable card) switches focused quadrant.
 **Outputs.** Pointer/touch handler at `QuadrantView` root.
 **Done when.**
 - Swipe left/right/up/down navigates to the geometrically-adjacent quadrant (left/right swap urgent axis, up/down swap importance axis).
 - Swipe is rate-limited and respects `prefers-reduced-motion` (instant snap).
+**Note:** the gesture geometry lives in `swipe.ts` as pure helpers (`resolveSwipeDirection` / `resolveSwipeTarget` / `SWIPE_NEIGHBORS`) so the thresholds are testable without happy-dom's pointer-event quirks. Defaults: 50 px distance, 1.5× dominance ratio, 400 ms max gesture duration, 300 ms cooldown between successful swipes — the duration cap is what discriminates a flick from a slow scroll/drag, the cooldown handles rate-limiting. Pointer handlers (`onPointerDown` / `onPointerUp` / `onPointerCancel`) are spread on `QuadrantView`'s `<main>`. Excluded targets: `.emt-task-card` (dnd-kit owns those drags) and `.emt-quadrant__list` (so vertical scroll inside a populated list isn't hijacked into a swipe). The reduced-motion guard is "instant snap" by construction in this step — there's no animation here, the route flip is the entire visual transition. Phase 7 gates the zoom morph on `useReducedMotion` separately.
 
 ### Step 6.4 — Mouse drag-at-edge to change focus
 **Goal.** Click-and-drag from the background (not on a card) translates focus the same way as a swipe.
