@@ -30,6 +30,19 @@ export interface DroppableCellData {
   readonly quadrant: Quadrant;
 }
 
+/**
+ * A view2 neighbor strip — Step 6.2's drop-on-edge target. Carries the
+ * neighbor's quadrant so the same {@link createDragEndHandler} can route
+ * the move without caring whether the user dropped on a matrix cell or
+ * a quadrant edge.
+ */
+export interface DroppableEdgeData {
+  readonly kind: 'edge';
+  readonly quadrant: Quadrant;
+}
+
+export type DroppableTargetData = DroppableCellData | DroppableEdgeData;
+
 export function isDraggableTaskData(value: unknown): value is DraggableTaskData {
   return (
     typeof value === 'object' &&
@@ -46,6 +59,19 @@ export function isDroppableCellData(value: unknown): value is DroppableCellData 
     (value as { kind?: unknown }).kind === 'cell' &&
     typeof (value as { quadrant?: unknown }).quadrant === 'string'
   );
+}
+
+export function isDroppableEdgeData(value: unknown): value is DroppableEdgeData {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    (value as { kind?: unknown }).kind === 'edge' &&
+    typeof (value as { quadrant?: unknown }).quadrant === 'string'
+  );
+}
+
+export function isDroppableTargetData(value: unknown): value is DroppableTargetData {
+  return isDroppableCellData(value) || isDroppableEdgeData(value);
 }
 
 /**
@@ -150,7 +176,7 @@ export function createDragEndHandler(deps: DragEndHandlerDeps): (event: DragEndE
     if (over === null) return;
     const dragData = active.data.current;
     const dropData = over.data.current;
-    if (!isDraggableTaskData(dragData) || !isDroppableCellData(dropData)) return;
+    if (!isDraggableTaskData(dragData) || !isDroppableTargetData(dropData)) return;
     if (dragData.task.quadrant === dropData.quadrant) return;
 
     const rollback = applyOptimisticMove(deps.queryClient, dragData.task, dropData.quadrant);

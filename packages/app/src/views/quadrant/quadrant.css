@@ -79,16 +79,46 @@
 
 /*
  * Neighbor strips. Reduced-opacity bands of the neighbor's quadrant
- * color, sitting flush to the matching side of the focused frame.
- * Step 6.2 lifts the opacity (and adds a glow) when a card is dragged
- * over the strip; until then they're decorative and `pointer-events`
- * are disabled so they don't intercept clicks on the task list.
+ * color, sitting flush to the matching side of the focused frame. Each
+ * strip is a Step-6.2 dnd-kit droppable; on drag-over it lights up to
+ * preview the destination quadrant. The strip overlays the frame's
+ * inner padding only — the task list is inside that padding, so the
+ * `pointer-events: none` keeps stray taps from being captured by the
+ * decorative band while still letting dnd-kit's collision detection
+ * (which works off droppable rects, not pointer events on the strip
+ * itself) flag the over-state.
  */
 .emt-quadrant__edge {
   position: absolute;
   pointer-events: none;
   opacity: 0.4;
   z-index: var(--layer-quadrant-edge);
+  transition:
+    opacity var(--motion-duration-short) var(--motion-easing-standard),
+    filter var(--motion-duration-short) var(--motion-easing-standard);
+}
+
+.emt-quadrant__edge[data-drop-active='true'] {
+  /* Drop indicator — the strip jumps to full brightness so the user
+     sees which neighbor will receive the drop. The per-edge color
+     comes from `data-emt-edge-color` below; the glow tokens already
+     match the same per-quadrant hue so we just brighten the band and
+     reuse the per-quadrant glow as a halo. */
+  opacity: 1;
+  filter: brightness(1.2);
+}
+
+.emt-quadrant__edge[data-drop-active='true'][data-emt-edge-color='q1'] {
+  box-shadow: var(--glow-q1);
+}
+.emt-quadrant__edge[data-drop-active='true'][data-emt-edge-color='q2'] {
+  box-shadow: var(--glow-q2);
+}
+.emt-quadrant__edge[data-drop-active='true'][data-emt-edge-color='q3'] {
+  box-shadow: var(--glow-q3);
+}
+.emt-quadrant__edge[data-drop-active='true'][data-emt-edge-color='q4'] {
+  box-shadow: var(--glow-q4);
 }
 
 .emt-quadrant__edge[data-emt-edge-color='q1'] {
