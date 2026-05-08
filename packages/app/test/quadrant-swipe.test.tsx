@@ -5,6 +5,14 @@
  *   - Swipe is rate-limited and respects `prefers-reduced-motion`
  *     (instant snap).
  *
+ * Step 6.4 "Done when":
+ *   - Click-and-drag from the background (not on a card) translates
+ *     focus the same way as a swipe. Reuses the same handler — React's
+ *     `onPointer*` props fire for mouse / touch / pen alike, so the
+ *     regression coverage here is "with `pointerType: 'mouse'` the
+ *     existing thresholds still flip the route, and the same exclusion
+ *     selector still skips drags that start on a card."
+ *
  * Two layers of coverage:
  *
  *   1. Pure unit tests on `swipe.ts` — direction classification under
@@ -18,6 +26,9 @@
  *      dnd-kit doesn't intercept these events; here we additionally
  *      assert that gestures starting on a `.emt-task-card` or inside
  *      the scroll list don't navigate (so dnd and scroll keep working).
+ *      The Step 6.4 cases below run the same scenarios with
+ *      `pointerType: 'mouse'` to lock in the pointer-type-agnostic
+ *      contract.
  *
  * The "instant snap" requirement of the reduced-motion guard is met by
  * construction in this step: there's no animation here — the route
@@ -61,6 +72,7 @@ interface PointerEventInit {
   clientY: number;
   pointerId?: number;
   isPrimary?: boolean;
+  pointerType?: 'touch' | 'mouse' | 'pen';
 }
 
 function dispatchPointer(
@@ -74,6 +86,7 @@ function dispatchPointer(
     isPrimary: init.isPrimary ?? true,
     clientX: init.clientX,
     clientY: init.clientY,
+    pointerType: init.pointerType ?? 'touch',
   });
   target.dispatchEvent(event);
 }
@@ -247,6 +260,54 @@ describe('QuadrantView — Step 6.3 swipe integration', () => {
 
     dispatchPointer(list, 'pointerdown', { clientX: 200, clientY: 200 });
     dispatchPointer(main, 'pointerup', { clientX: 200, clientY: 280 });
+
+    expect(useViewStateStore.getState().state.focusedQuadrant).toBe('Q1');
+  });
+
+  // Step 6.4 — mouse drag-at-edge to change focus.
+  //
+  // The handler in QuadrantView is pointer-type-agnostic (React's
+  // `onPointer*` fires for touch, mouse, and pen alike), so the
+  // production code path is the exact same one exercised above. These
+  // regression cases assert that under `pointerType: 'mouse'`:
+  //   - a click-and-drag on the background flips focus the same way
+  //     as a swipe;
+  //   - the same `.emt-task-card` exclusion still applies, so a mouse
+  //     drag that originates on a card stays with dnd-kit.
+  it('Step 6.4 — mouse drag on the background changes focus (Q1 → Q2)', async () => {
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <QuadrantView quadrant="Q1" />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+    const main = container.querySelector<HTMLElement>('[data-view="quadrant"]')!;
+
+    dispatchPointer(main, 'pointerdown', { clientX: 200, clientY: 200, pointerType: 'mouse' });
+    dispatchPointer(main, 'pointerup', { clientX: 120, clientY: 200, pointerType: 'mouse' });
+
+    expect(useViewStateStore.getState().state.focusedQuadrant).toBe('Q2');
+    expect(window.location.pathname).toBe('/q/Q2');
+  });
+
+  it('Step 6.4 — mouse drag starting on a task card is ignored', async () => {
+    const { registry } = await getBackends();
+    const adapter = registry.list()[0]!;
+    await adapter.create({ ...DRAFT, title: 'live', quadrant: 'Q1' });
+
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <QuadrantView quadrant="Q1" />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+
+    await waitFor(() => container.querySelector('.emt-task-card') !== null);
+    const card = container.querySelector<HTMLElement>('.emt-task-card')!;
+    const main = container.querySelector<HTMLElement>('[data-view="quadrant"]')!;
+
+    dispatchPointer(card, 'pointerdown', { clientX: 200, clientY: 200, pointerType: 'mouse' });
+    dispatchPointer(main, 'pointerup', { clientX: 120, clientY: 200, pointerType: 'mouse' });
 
     expect(useViewStateStore.getState().state.focusedQuadrant).toBe('Q1');
   });

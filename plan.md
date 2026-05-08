@@ -523,10 +523,11 @@ Single-quadrant view. Depends on Phase 4 and Phase 3.
 - Swipe is rate-limited and respects `prefers-reduced-motion` (instant snap).
 **Note:** the gesture geometry lives in `swipe.ts` as pure helpers (`resolveSwipeDirection` / `resolveSwipeTarget` / `SWIPE_NEIGHBORS`) so the thresholds are testable without happy-dom's pointer-event quirks. Defaults: 50 px distance, 1.5× dominance ratio, 400 ms max gesture duration, 300 ms cooldown between successful swipes — the duration cap is what discriminates a flick from a slow scroll/drag, the cooldown handles rate-limiting. Pointer handlers (`onPointerDown` / `onPointerUp` / `onPointerCancel`) are spread on `QuadrantView`'s `<main>`. Excluded targets: `.emt-task-card` (dnd-kit owns those drags) and `.emt-quadrant__list` (so vertical scroll inside a populated list isn't hijacked into a swipe). The reduced-motion guard is "instant snap" by construction in this step — there's no animation here, the route flip is the entire visual transition. Phase 7 gates the zoom morph on `useReducedMotion` separately.
 
-### Step 6.4 — Mouse drag-at-edge to change focus
+### Step ✅ 6.4 — Mouse drag-at-edge to change focus
 **Goal.** Click-and-drag from the background (not on a card) translates focus the same way as a swipe.
 **Outputs.** Same handler as 6.3, mouse code path.
 **Done when.** Tests for both swipe and mouse drag pass.
+**Note.** Covered by 6.3's pointer-type-agnostic handlers — React's `onPointer*` props fire for mouse, touch, and pen alike, so the mouse code path *is* the swipe code path. No production change in this step. Added two regression cases in `test/quadrant-swipe.test.tsx` that dispatch with `pointerType: 'mouse'`: (a) drag on the background flips Q1 → Q2, (b) drag starting on a `.emt-task-card` is ignored (same exclusion still applies, so dnd-kit keeps mouse drags on cards). The shared `dispatchPointer` helper grew an optional `pointerType` field defaulting to `'touch'`, so existing 6.3 cases still describe a touch swipe explicitly.
 
 ### Step 6.5 — FAB in view2
 **Goal.** FAB creates a task in the currently focused quadrant (no quadrant picker shown).
