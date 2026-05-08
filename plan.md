@@ -529,10 +529,11 @@ Single-quadrant view. Depends on Phase 4 and Phase 3.
 **Done when.** Tests for both swipe and mouse drag pass.
 **Note.** Covered by 6.3's pointer-type-agnostic handlers — React's `onPointer*` props fire for mouse, touch, and pen alike, so the mouse code path *is* the swipe code path. No production change in this step. Added two regression cases in `test/quadrant-swipe.test.tsx` that dispatch with `pointerType: 'mouse'`: (a) drag on the background flips Q1 → Q2, (b) drag starting on a `.emt-task-card` is ignored (same exclusion still applies, so dnd-kit keeps mouse drags on cards). The shared `dispatchPointer` helper grew an optional `pointerType` field defaulting to `'touch'`, so existing 6.3 cases still describe a touch swipe explicitly.
 
-### Step 6.5 — FAB in view2
+### Step ✅ 6.5 — FAB in view2
 **Goal.** FAB creates a task in the currently focused quadrant (no quadrant picker shown).
 **Outputs.** Reuse `QuickComposer` (Step 5.8) without the mini-matrix.
 **Done when.** New task appears in the focused quadrant immediately.
+**Note.** `QuickComposer` grew a `showQuadrantPicker?: boolean` prop (default `true`, so view1's call site is unchanged). When `false`, the picker `<div>` is omitted and `onSubmit` reads the destination from the live `defaultQuadrant` prop instead of internal state — view2 has no UI to mutate the destination, and `<QuickComposer>` itself stays mounted across the surface's open/close cycles, so internal state could otherwise lock in a stale quadrant. `QuadrantView` adds a `<Fab>` + `<QuickComposer ... showQuadrantPicker={false} defaultQuadrant={quadrant}>` pair, anchored at `.emt-quadrant__fab` (absolute, bottom-right, `--layer-fab` z-index, safe-area inset — same rule as `.emt-matrix__fab` so Phase 7's morph keeps the FAB in place across views). The "Add task" label reuses `app.matrix.fab.add`; the FAB does the same thing in both views, so a separate i18n key would be premature scope.
 
 ### Step 6.6 — Empty state
 **Goal.** Empty focused quadrant renders normally with the muted-grey "empty" note from Step 3.8 (no illustration).

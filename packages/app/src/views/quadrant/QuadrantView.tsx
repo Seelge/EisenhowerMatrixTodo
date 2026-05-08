@@ -27,12 +27,13 @@
  */
 import { DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import type { Quadrant } from '@emt/backend-core';
-import { ErrorBanner, Glow, Skeleton, type GlowColor } from '@emt/design-system';
+import { ErrorBanner, Fab, Glow, Skeleton, type GlowColor } from '@emt/design-system';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   useCallback,
   useMemo,
   useRef,
+  useState,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
@@ -44,6 +45,7 @@ import { useTasks, useUpdateTask } from '../../queries/tasks.js';
 import { type TaskOrderMap } from '../../state/task-order.js';
 import { useViewStateStore } from '../../state/view-state.js';
 import { createDragEndHandler } from '../matrix/dnd.js';
+import { QuickComposer } from '../matrix/QuickComposer.js';
 import { sortTasks } from '../matrix/sort.js';
 import { TaskCard } from '../matrix/TaskCard.js';
 
@@ -171,6 +173,17 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
     pendingGesture.current = null;
   }, []);
 
+  // Step 6.5 — FAB in view2.
+  //
+  // Reuses Step 5.8's `QuickComposer` with `showQuadrantPicker={false}`
+  // so the new task lands in the focused quadrant by construction —
+  // there's no picker to fight the implied target. The FAB anchors to
+  // the frame's bottom-right with the same safe-area-aware offset rule
+  // as `.emt-matrix__fab`.
+  const [composerOpen, setComposerOpen] = useState(false);
+  const openComposer = useCallback(() => setComposerOpen(true), []);
+  const closeComposer = useCallback(() => setComposerOpen(false), []);
+
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <main
@@ -210,6 +223,21 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
             <NeighborEdge key={n.edge} edge={n.edge} neighbor={n.quadrant} />
           ))}
         </Glow>
+        <Fab
+          className="emt-quadrant__fab"
+          aria-label={t('app.matrix.fab.add')}
+          aria-haspopup="dialog"
+          aria-expanded={composerOpen}
+          onClick={openComposer}
+        >
+          +
+        </Fab>
+        <QuickComposer
+          open={composerOpen}
+          onClose={closeComposer}
+          defaultQuadrant={quadrant}
+          showQuadrantPicker={false}
+        />
       </main>
     </DndContext>
   );

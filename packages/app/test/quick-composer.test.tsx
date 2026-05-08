@@ -19,12 +19,19 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { I18nProvider } from '../src/i18n/provider.tsx';
 import { __resetBackendsCacheForTesting, getBackends } from '../src/state/backends.ts';
+import { useViewStateStore } from '../src/state/view-state.ts';
 import { MatrixCell } from '../src/views/matrix/MatrixCell.tsx';
 import { MatrixView } from '../src/views/matrix/MatrixView.tsx';
 import { QuickComposer } from '../src/views/matrix/QuickComposer.tsx';
+import { QuadrantView } from '../src/views/quadrant/QuadrantView.tsx';
 
 import { renderWithQueryClient } from './query-render.tsx';
 import { renderToContainer } from './render.ts';
+
+function resetTo(internalPath: string): void {
+  window.history.replaceState(null, '', internalPath);
+  useViewStateStore.getState().syncFromUrl();
+}
 
 async function waitFor(check: () => boolean, timeoutMs = 1500): Promise<void> {
   const start = Date.now();
@@ -218,6 +225,27 @@ describe('QuickComposer — Step 5.8', () => {
     }
   });
 
+  it('hides the quadrant picker when showQuadrantPicker is false (Step 6.5)', async () => {
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <QuickComposer
+          open={true}
+          onClose={() => {}}
+          defaultQuadrant="Q3"
+          showQuadrantPicker={false}
+        />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+
+    // Picker is not rendered — view2's focused frame already implies
+    // the destination, so the composer surface only shows the title
+    // input + submit row.
+    expect(container.querySelector('.emt-quadrant-picker')).toBeNull();
+    // The title input is still present.
+    expect(container.querySelector('.emt-quick-composer__input')).not.toBeNull();
+  });
+
   it('renders nothing when open is false', async () => {
     const { container, unmount } = await renderWithQueryClient(
       <I18nProvider>
@@ -264,5 +292,67 @@ describe('MatrixView — Step 5.8 FAB integration', () => {
     // composer form is visible and the FAB reflects the open state.
     expect(document.querySelector('.emt-quick-composer')).not.toBeNull();
     expect(fab.getAttribute('aria-expanded')).toBe('true');
+  });
+});
+
+describe('QuadrantView — Step 6.5 FAB integration', () => {
+  let teardown: (() => void) | undefined;
+
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    __resetBackendsCacheForTesting();
+    resetTo('/q/Q3');
+  });
+
+  afterEach(() => {
+    teardown?.();
+    teardown = undefined;
+    __resetBackendsCacheForTesting();
+    resetTo('/');
+  });
+
+  it('renders the FAB and opens a picker-less composer that creates in the focused quadrant', async () => {
+    const { registry } = await getBackends();
+    const adapter = registry.list()[0]!;
+
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <QuadrantView quadrant="Q3" />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+
+    const fab = container.querySelector<HTMLButtonElement>('.emt-quadrant__fab')!;
+    expect(fab).not.toBeNull();
+    expect(fab.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(fab.getAttribute('aria-expanded')).toBe('false');
+
+    await act(async () => {
+      fab.click();
+    });
+
+    expect(fab.getAttribute('aria-expanded')).toBe('true');
+    expect(document.querySelector('.emt-quick-composer')).not.toBeNull();
+    // Picker is hidden — view2's frame already implies the destination.
+    expect(document.querySelector('.emt-quadrant-picker')).toBeNull();
+
+    const input = container.querySelector<HTMLInputElement>('.emt-quick-composer__input')!;
+    await act(async () => {
+      setInputValue(input, 'from view2');
+    });
+    const submit = container.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    await act(async () => {
+      submit.click();
+    });
+
+    await waitFor(async () => {
+      const tasks = await adapter.list('Q3');
+      return tasks.some((t) => t.title === 'from view2');
+    });
+    // None of the other quadrants picked it up.
+    for (const q of ['Q1', 'Q2', 'Q4'] as const) {
+      const tasks = await adapter.list(q);
+      expect(tasks.some((t) => t.title === 'from view2')).toBe(false);
+    }
   });
 });
