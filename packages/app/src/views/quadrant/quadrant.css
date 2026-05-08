@@ -78,10 +78,14 @@
 }
 
 /*
- * Empty-state note (Step 6.6). The list itself is a flex column, so
- * `margin: auto` centers the note vertically inside the available
- * space without disturbing how cards stack when the list is non-empty
- * (the EmptyNote is only rendered when `tasks.length === 0`).
+ * Empty-state note (Step 6.6). The list is a flex column, so
+ * `margin: auto` resolves on the main (vertical) axis to absorb the
+ * free space above and below the note, centering it vertically. The
+ * cross-axis is stretched (default `align-items: stretch`), so the
+ * `<p>` fills the list width and horizontal centering comes from the
+ * design-system rule `.emt-empty-note { text-align: center }`, not
+ * from `margin: auto`. The note is only rendered when
+ * `tasks.length === 0`, so this rule never affects card stacking.
  */
 .emt-quadrant__empty {
   margin: auto;

@@ -10,7 +10,7 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 `packages/app/src/views/quadrant/QuadrantView.tsx`: imports `EmptyNote` from `@emt/design-system` and adds a `tasks !== undefined && tasks.length === 0` branch inside the existing list `<div>`, ordered after the `query.isPending` skeleton block and the `query.isError` `ErrorBanner` so transient pending states don't flash the empty note. The note text comes from a new `app.quadrant.empty` i18n key — added to `packages/app/src/i18n/strings.en.ts` between `app.matrix.fab.add` and the `app.composer.*` rows.
 
-`packages/app/src/views/quadrant/quadrant.css`: single new rule `.emt-quadrant__empty { margin: auto; }`. The list is already a flex column with `flex: 1` and `min-height: 0`, so `margin: auto` centers the note both vertically and horizontally inside the available frame area without disturbing the card-stacking layout when the list is populated (the note only renders when `tasks.length === 0`).
+`packages/app/src/views/quadrant/quadrant.css`: single new rule `.emt-quadrant__empty { margin: auto; }`. The list is already a flex column with `flex: 1` and `min-height: 0`, so `margin-top/bottom: auto` absorbs the vertical free space and centers the note on the main axis. The cross-axis stretches by default, so horizontal centering actually comes from the design-system base style `.emt-empty-note { text-align: center }` in `components.css`, not from this rule. The note only renders when `tasks.length === 0`, so the rule never disturbs the card-stacking layout.
 
 Tests added to `packages/app/test/quadrant-view.test.tsx`:
 
