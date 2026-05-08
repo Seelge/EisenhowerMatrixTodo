@@ -29,6 +29,8 @@ import {
 } from '@emt/backend-core';
 import { createLocalIndexedDbAdapter } from '@emt/backend-local-indexeddb';
 
+import { openTaskOrderDb, type OrderDb } from './task-order.js';
+
 export interface AppBackends {
   readonly registry: BackendRegistry;
   readonly syncEngine: SyncEngine;
@@ -38,6 +40,11 @@ export interface AppBackends {
    * seed flag, connect-banner-dismissed flag, …) for one-off settings.
    */
   readonly meta: MetaStore;
+  /**
+   * UI-only IDB holding the manual `taskOrder` rank store (Step 5.7).
+   * Lives in its own database — these ranks are never synced.
+   */
+  readonly taskOrderDb: OrderDb;
 }
 
 let cached: Promise<AppBackends> | undefined;
@@ -82,7 +89,9 @@ async function bootstrap(): Promise<AppBackends> {
     getAdapter: (id) => registry.get(id),
   });
 
-  return { registry, syncEngine, meta };
+  const taskOrderDb = await openTaskOrderDb();
+
+  return { registry, syncEngine, meta, taskOrderDb };
 }
 
 /** Drops the cached singleton. Tests only. */

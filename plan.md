@@ -474,7 +474,7 @@ The full-matrix view. Depends on Phase 4 (router, queries, theme) and Phase 3.
 **Outputs.** `TaskCardMenu.tsx`.
 **Done when.** Keyboard-only test: focus card → activate menu → choose target → assertion task moved.
 
-### Step 5.7 — Sort: manual with due-date secondary + reset
+### Step ✅ 5.7 — Sort: manual with due-date secondary + reset
 **Goal.** Per-quadrant manual order, persisted locally. When a task has no manual rank, sort by due date (nulls last). "Reset to secondary" action clears manual ranks for the current quadrant.
 **Outputs.**
 - New `taskOrder` IDB store keyed by `(backendId, taskId)` with a `rank: number` field. Manual order is a UI concern, not synced — kept out of the canonical `Task` model.

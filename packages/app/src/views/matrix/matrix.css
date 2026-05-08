@@ -137,6 +137,35 @@
   letter-spacing: 0.01em;
 }
 
+.emt-matrix__cell-reset {
+  /* Step 5.7 reset action — only visible when at least one task in the
+     cell carries a manual rank, so the chrome stays out of the way for
+     the "default" (due-date sorted) state. */
+  background: transparent;
+  border: 0;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.04em;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-pill);
+  text-transform: uppercase;
+  transition: color var(--motion-duration-short) var(--motion-easing-standard);
+}
+
+.emt-matrix__cell-reset:hover,
+.emt-matrix__cell-reset:focus-visible {
+  color: var(--color-text-primary);
+  background: var(--color-surface-elevated);
+  outline: 0;
+}
+
+.emt-matrix__cell-reset:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .emt-matrix__axis {
   position: absolute;
   font-size: var(--font-size-xs);

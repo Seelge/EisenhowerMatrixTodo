@@ -123,9 +123,28 @@ export interface DragEndHandlerDeps {
     input: { backendId: BackendId; id: TaskId; patch: TaskPatch },
     options: { onError: () => void },
   ) => void;
+  /**
+   * Persist a manual rank for a moved task (Step 5.7). The cross-cell
+   * drop assigns `Date.now()` as the rank — newer drops sort below
+   * older drops within the manual section of the destination cell, so
+   * the just-dropped card lands at the bottom of the manual list.
+   *
+   * Errors are swallowed: a rank is a UI nicety, and the rest of the
+   * move (which the user can see) has already happened. Logging the
+   * failure to console keeps the diagnostic trail without surfacing a
+   * cryptic toast for a non-functional concern.
+   */
+  readonly setRank?: (input: { backendId: BackendId; taskId: TaskId; rank: number }) => void;
+  /**
+   * Time source for the rank value, defaulting to `Date.now`. Tests
+   * inject a deterministic clock so the assertion can match an exact
+   * rank.
+   */
+  readonly now?: () => number;
 }
 
 export function createDragEndHandler(deps: DragEndHandlerDeps): (event: DragEndEvent) => void {
+  const now = deps.now ?? Date.now;
   return (event) => {
     const { active, over } = event;
     if (over === null) return;
@@ -143,6 +162,14 @@ export function createDragEndHandler(deps: DragEndHandlerDeps): (event: DragEndE
       },
       { onError: rollback },
     );
+
+    if (deps.setRank) {
+      deps.setRank({
+        backendId: dragData.task.backendId,
+        taskId: dragData.task.id,
+        rank: now(),
+      });
+    }
   };
 }
 

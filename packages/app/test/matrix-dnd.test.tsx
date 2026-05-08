@@ -222,6 +222,44 @@ describe('Matrix drag-and-drop wiring (Step 5.5)', () => {
     expect(mutate).not.toHaveBeenCalled();
   });
 
+  it('writes a manual rank for the dropped task (Step 5.7)', () => {
+    const task = makeTask({ id: 'ranked' as TaskId, quadrant: 'Q2' });
+    const qc = createTestQueryClient();
+    const mutate = vi.fn();
+    const setRank = vi.fn();
+    const handler = createDragEndHandler({
+      queryClient: qc,
+      mutate,
+      setRank,
+      now: () => 1_700_000_000_000,
+    });
+
+    handler(makeDragEndEvent(task, 'Q1'));
+
+    expect(setRank).toHaveBeenCalledOnce();
+    expect(setRank).toHaveBeenCalledWith({
+      backendId: task.backendId,
+      taskId: task.id,
+      rank: 1_700_000_000_000,
+    });
+  });
+
+  it('does not write a rank for a no-op drop (same quadrant or no over)', () => {
+    const task = makeTask({ quadrant: 'Q2' });
+    const qc = createTestQueryClient();
+    const setRank = vi.fn();
+    const handler = createDragEndHandler({
+      queryClient: qc,
+      mutate: vi.fn(),
+      setRank,
+    });
+
+    handler(makeDragEndEvent(task, null));
+    handler(makeDragEndEvent(task, 'Q2'));
+
+    expect(setRank).not.toHaveBeenCalled();
+  });
+
   it('MatrixView mounts the DndContext and seeds appear in their cells', async () => {
     // Sanity check that wiring the DndContext doesn't break the basic
     // render — the rest of the drag pipeline is covered above.
