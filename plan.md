@@ -485,7 +485,7 @@ The full-matrix view. Depends on Phase 4 (router, queries, theme) and Phase 3.
 - Reset clears ranks for the current quadrant; cards fall back to due-date order.
 - Order persists across reloads.
 
-### Step 5.8 — FAB + quick composer
+### Step ✅ 5.8 — FAB + quick composer
 **Goal.** Bottom-right FAB opens a quick composer (title + 2 × 2 mini-picker); creates a task via `useCreateTask` in the chosen quadrant.
 **Outputs.** `QuickComposer.tsx` (uses Step 3.4 Sheet on mobile, popover on desktop).
 **Done when.**
