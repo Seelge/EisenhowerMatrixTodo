@@ -454,7 +454,7 @@ The full-matrix view. Depends on Phase 4 (router, queries, theme) and Phase 3.
 **Outputs.** `MatrixCell.tsx` updated; integrates with TanStack Query.
 **Done when.** Tasks created via the Phase 4 debug page appear in their respective cells without reload.
 
-### Step 5.4 — Independent vertical scroll per cell
+### Step ✅ 5.4 — Independent vertical scroll per cell
 **Goal.** Each cell has its own scroll viewport; matrix container does not scroll.
 **Outputs.** Updated CSS in `MatrixCell.tsx`.
 **Done when.** Two cells with > viewport-height tasks scroll independently. Scrollbars styled to match the dark theme.
