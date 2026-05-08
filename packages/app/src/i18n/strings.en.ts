@@ -19,6 +19,7 @@ export const strings = {
   'app.matrix.axis.urgent': 'Urgent',
   'app.matrix.cell.reset': 'Reset order',
   'app.matrix.fab.add': 'Add task',
+  'app.quadrant.empty': 'Nothing here yet.',
   'app.composer.label': 'Add task',
   'app.composer.titleLabel': 'Title',
   'app.composer.titlePlaceholder': 'What needs doing?',

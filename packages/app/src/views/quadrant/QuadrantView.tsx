@@ -27,7 +27,7 @@
  */
 import { DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import type { Quadrant } from '@emt/backend-core';
-import { ErrorBanner, Fab, Glow, Skeleton, type GlowColor } from '@emt/design-system';
+import { EmptyNote, ErrorBanner, Fab, Glow, Skeleton, type GlowColor } from '@emt/design-system';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   useCallback,
@@ -214,6 +214,9 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
                   void query.refetch();
                 }}
               />
+            )}
+            {tasks !== undefined && tasks.length === 0 && (
+              <EmptyNote className="emt-quadrant__empty">{t('app.quadrant.empty')}</EmptyNote>
             )}
             {tasks?.map((task) => (
               <TaskCard key={task.id} task={task} />
