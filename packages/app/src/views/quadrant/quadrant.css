@@ -161,3 +161,17 @@
   right: 0;
   width: 24px;
 }
+
+/*
+ * The view2 FAB — anchored to the quadrant container's bottom-right
+ * corner. `.emt-quadrant` is already `position: relative`, so the FAB
+ * just needs absolute positioning within it. The safe-area inset keeps
+ * the button clear of the home indicator on mobile, mirroring the
+ * `.emt-matrix__fab` rule from view1.
+ */
+.emt-quadrant__fab {
+  position: absolute;
+  right: max(var(--space-lg), env(safe-area-inset-right));
+  bottom: max(var(--space-lg), env(safe-area-inset-bottom));
+  z-index: var(--layer-fab);
+}

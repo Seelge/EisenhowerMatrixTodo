@@ -47,12 +47,21 @@ export interface QuickComposerProps {
   onClose: () => void;
   /** Quadrant pre-selected when the composer opens. Defaults to Q1 (Do). */
   defaultQuadrant?: Quadrant;
+  /**
+   * Whether to render the 2 × 2 quadrant picker (Step 6.5). View1 needs
+   * it because the FAB is shared across all four cells; view2 already
+   * implies its quadrant via the focused frame, so the picker is hidden
+   * and `defaultQuadrant` is the only quadrant the composer can land
+   * the new task in. Defaults to `true` to preserve the view1 wiring.
+   */
+  showQuadrantPicker?: boolean;
 }
 
 export function QuickComposer({
   open,
   onClose,
   defaultQuadrant = 'Q1',
+  showQuadrantPicker = true,
 }: QuickComposerProps): ReactNode {
   const t = useT();
   const queryClient = useQueryClient();
@@ -76,11 +85,18 @@ export function QuickComposer({
       if (adapter === undefined) return;
       const backendId = adapter.describe().id;
 
+      // When the picker is hidden (Step 6.5 — view2), the user can't
+      // alter the quadrant inside the composer, so the live prop is the
+      // single source of truth. Reading internal state would lock in
+      // the prop value at first mount and ignore later view2 → view2
+      // navigations through other quadrants.
+      const targetQuadrant = showQuadrantPicker ? quadrant : defaultQuadrant;
+
       const draft: TaskDraft = {
         title: trimmed,
         notes: '',
         priority: 'normal',
-        quadrant,
+        quadrant: targetQuadrant,
         status: 'open',
         tags: [],
       };
@@ -96,7 +112,7 @@ export function QuickComposer({
       setQuadrant(defaultQuadrant);
       createTask.mutate({ draft }, { onError: rollback });
     },
-    [title, quadrant, defaultQuadrant, queryClient, createTask, close],
+    [title, quadrant, defaultQuadrant, showQuadrantPicker, queryClient, createTask, close],
   );
 
   const titleId = useId();
@@ -129,20 +145,22 @@ export function QuickComposer({
             autoFocus
           />
         </div>
-        <div className="emt-quick-composer__field">
-          <span className="emt-quick-composer__label">{t('app.composer.quadrantLabel')}</span>
-          <QuadrantPicker
-            value={TO_DS[quadrant]}
-            onChange={(next) => setQuadrant(FROM_DS[next])}
-            labels={{
-              q1: t(PICKER_LABEL_KEY.q1),
-              q2: t(PICKER_LABEL_KEY.q2),
-              q3: t(PICKER_LABEL_KEY.q3),
-              q4: t(PICKER_LABEL_KEY.q4),
-            }}
-            aria-label={t('app.composer.quadrantLabel')}
-          />
-        </div>
+        {showQuadrantPicker && (
+          <div className="emt-quick-composer__field">
+            <span className="emt-quick-composer__label">{t('app.composer.quadrantLabel')}</span>
+            <QuadrantPicker
+              value={TO_DS[quadrant]}
+              onChange={(next) => setQuadrant(FROM_DS[next])}
+              labels={{
+                q1: t(PICKER_LABEL_KEY.q1),
+                q2: t(PICKER_LABEL_KEY.q2),
+                q3: t(PICKER_LABEL_KEY.q3),
+                q4: t(PICKER_LABEL_KEY.q4),
+              }}
+              aria-label={t('app.composer.quadrantLabel')}
+            />
+          </div>
+        )}
         <footer className="emt-quick-composer__actions">
           <Button variant="text" onClick={close}>
             {t('app.composer.cancel')}
