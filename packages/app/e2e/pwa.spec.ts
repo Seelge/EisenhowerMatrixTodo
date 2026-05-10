@@ -10,7 +10,18 @@
  *  3. With the network blocked, a reload still serves the app shell
  *     (workbox precache + `navigateFallback: 'index.html'`).
  */
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+async function waitForServiceWorkerControl(page: Page): Promise<void> {
+  await page.waitForFunction(
+    async () => {
+      const reg = await navigator.serviceWorker.ready;
+      return reg.active?.state === 'activated' && navigator.serviceWorker.controller !== null;
+    },
+    null,
+    { timeout: 15_000 },
+  );
+}
 
 test('serves a valid web-app manifest', async ({ page, request }) => {
   await page.goto('/');
@@ -32,15 +43,7 @@ test('serves a valid web-app manifest', async ({ page, request }) => {
 
 test('registers a service worker and takes control', async ({ page }) => {
   await page.goto('/');
-  // Wait until the SW activates and controls the page.
-  await page.waitForFunction(
-    async () => {
-      const reg = await navigator.serviceWorker.getRegistration();
-      return reg?.active?.state === 'activated';
-    },
-    null,
-    { timeout: 15_000 },
-  );
+  await waitForServiceWorkerControl(page);
   const count = await page.evaluate(async () => {
     const regs = await navigator.serviceWorker.getRegistrations();
     return regs.length;
@@ -50,22 +53,15 @@ test('registers a service worker and takes control', async ({ page }) => {
 
 test('offline reload serves the precached shell', async ({ page, context }) => {
   await page.goto('/');
-  await page.waitForFunction(
-    async () => {
-      const reg = await navigator.serviceWorker.getRegistration();
-      return reg?.active?.state === 'activated';
-    },
-    null,
-    { timeout: 15_000 },
-  );
+  await waitForServiceWorkerControl(page);
 
   await context.setOffline(true);
   try {
     await page.reload();
-    // Whatever the matrix placeholder renders is fine — we just need
-    // the shell HTML + JS to come back from the precache rather than
-    // a "no network" browser error.
-    await expect(page.locator('h1')).toBeVisible();
+    // Whatever the matrix renders is fine — we just need the shell
+    // HTML + JS to come back from the precache rather than a "no
+    // network" browser error.
+    await expect(page.locator('[data-view="matrix"]')).toBeVisible();
   } finally {
     await context.setOffline(false);
   }
