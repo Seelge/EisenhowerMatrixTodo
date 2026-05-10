@@ -18,6 +18,7 @@ import { ConnectBanner } from '../onboarding/ConnectBanner.js';
 import { useInternalPath, useViewState } from '../state/view-state.js';
 import { MatrixView } from '../views/matrix/MatrixView.js';
 import { QuadrantView } from '../views/quadrant/QuadrantView.js';
+import { ZoomController } from '../views/zoom/ZoomController.js';
 
 // Vite substitutes `import.meta.env.DEV` with the literal `true` in dev
 // and `false` in production. Using the canonical form (no optional
@@ -42,10 +43,12 @@ export function Routes(): ReactNode {
   return (
     <>
       <ConnectBanner />
-      {state.zoom === 'matrix' && <MatrixView />}
-      {state.zoom === 'quadrant' && state.focusedQuadrant !== undefined && (
-        <QuadrantView quadrant={state.focusedQuadrant} />
-      )}
+      <ZoomController state={state}>
+        {state.zoom === 'matrix' && <MatrixView />}
+        {state.zoom === 'quadrant' && state.focusedQuadrant !== undefined && (
+          <QuadrantView quadrant={state.focusedQuadrant} />
+        )}
+      </ZoomController>
       {state.focusedTaskId !== undefined && <TaskFocusPlaceholder taskId={state.focusedTaskId} />}
     </>
   );

@@ -29,6 +29,7 @@ import { DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from
 import type { Quadrant } from '@emt/backend-core';
 import { EmptyNote, ErrorBanner, Fab, Glow, Skeleton, type GlowColor } from '@emt/design-system';
 import { useQueryClient } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import {
   useCallback,
   useMemo,
@@ -48,6 +49,7 @@ import { createDragEndHandler } from '../matrix/dnd.js';
 import { QuickComposer } from '../matrix/QuickComposer.js';
 import { sortTasks } from '../matrix/sort.js';
 import { TaskCard } from '../matrix/TaskCard.js';
+import { quadrantLayoutId } from '../zoom/ZoomController.js';
 
 import { NEIGHBORS, NeighborEdge } from './NeighborEdge.js';
 import { DEFAULT_SWIPE_OPTIONS, resolveSwipeDirection, resolveSwipeTarget } from './swipe.js';
@@ -195,37 +197,48 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerCancel}
       >
-        <Glow color={GLOW_COLOR[quadrant]} className="emt-quadrant__frame" data-quadrant={quadrant}>
-          <header className="emt-quadrant__header">
-            <h1 className="emt-quadrant__title">{label}</h1>
-          </header>
-          <div className="emt-quadrant__list" data-task-count={tasks?.length ?? 0}>
-            {query.isPending && (
-              <>
-                <Skeleton className="emt-quadrant__skeleton" height={48} />
-                <Skeleton className="emt-quadrant__skeleton" height={48} />
-                <Skeleton className="emt-quadrant__skeleton" height={48} />
-              </>
-            )}
-            {query.isError && (
-              <ErrorBanner
-                message={query.error.message}
-                onRetry={() => {
-                  void query.refetch();
-                }}
-              />
-            )}
-            {tasks !== undefined && tasks.length === 0 && (
-              <EmptyNote className="emt-quadrant__empty">{t('app.quadrant.empty')}</EmptyNote>
-            )}
-            {tasks?.map((task) => (
-              <TaskCard key={task.id} task={task} />
+        <motion.div
+          className="emt-zoom__quadrant-frame"
+          data-zoom-quadrant={quadrant}
+          layoutId={quadrantLayoutId(quadrant)}
+          transition={{ duration: 0.22, ease: [0.2, 0, 0, 1] }}
+        >
+          <Glow
+            color={GLOW_COLOR[quadrant]}
+            className="emt-quadrant__frame"
+            data-quadrant={quadrant}
+          >
+            <header className="emt-quadrant__header">
+              <h1 className="emt-quadrant__title">{label}</h1>
+            </header>
+            <div className="emt-quadrant__list" data-task-count={tasks?.length ?? 0}>
+              {query.isPending && (
+                <>
+                  <Skeleton className="emt-quadrant__skeleton" height={48} />
+                  <Skeleton className="emt-quadrant__skeleton" height={48} />
+                  <Skeleton className="emt-quadrant__skeleton" height={48} />
+                </>
+              )}
+              {query.isError && (
+                <ErrorBanner
+                  message={query.error.message}
+                  onRetry={() => {
+                    void query.refetch();
+                  }}
+                />
+              )}
+              {tasks !== undefined && tasks.length === 0 && (
+                <EmptyNote className="emt-quadrant__empty">{t('app.quadrant.empty')}</EmptyNote>
+              )}
+              {tasks?.map((task) => (
+                <TaskCard key={task.id} task={task} />
+              ))}
+            </div>
+            {neighbors.map((n) => (
+              <NeighborEdge key={n.edge} edge={n.edge} neighbor={n.quadrant} />
             ))}
-          </div>
-          {neighbors.map((n) => (
-            <NeighborEdge key={n.edge} edge={n.edge} neighbor={n.quadrant} />
-          ))}
-        </Glow>
+          </Glow>
+        </motion.div>
         <Fab
           className="emt-quadrant__fab"
           aria-label={t('app.matrix.fab.add')}

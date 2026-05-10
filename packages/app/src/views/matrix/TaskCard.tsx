@@ -27,9 +27,11 @@
  */
 import { useDraggable } from '@dnd-kit/core';
 import type { Task } from '@emt/backend-core';
-import { useCallback, useMemo, type CSSProperties, type ReactNode } from 'react';
+import { motion, type MotionStyle } from 'framer-motion';
+import { useCallback, useMemo, type ReactNode } from 'react';
 
 import { useViewStateStore } from '../../state/view-state.js';
+import { taskLayoutId } from '../zoom/ZoomController.js';
 
 import type { DraggableTaskData } from './dnd.js';
 import { TaskCardMenu } from './TaskCardMenu.js';
@@ -95,17 +97,19 @@ export function TaskCard({ task }: TaskCardProps): ReactNode {
   // While dragging, follow the pointer with a CSS transform; dnd-kit
   // updates `transform` on every pointermove. `touch-action: none` is
   // already on `.emt-task-card` so touch drags don't scroll the page.
-  const dragStyle: CSSProperties =
+  const dragStyle: MotionStyle | undefined =
     transform !== null ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : {};
 
   return (
-    <div
+    <motion.div
       ref={setNodeRef}
       className="emt-task-card"
       data-task-id={task.id}
       data-priority={task.priority}
       data-status={task.status}
       data-dragging={isDragging ? 'true' : 'false'}
+      layoutId={taskLayoutId(task.backendId, task.id)}
+      transition={{ duration: 0.22, ease: [0.2, 0, 0, 1] }}
       style={dragStyle}
       {...attributes}
       {...listeners}
@@ -137,6 +141,6 @@ export function TaskCard({ task }: TaskCardProps): ReactNode {
         )}
       </button>
       <TaskCardMenu task={task} />
-    </div>
+    </motion.div>
   );
 }

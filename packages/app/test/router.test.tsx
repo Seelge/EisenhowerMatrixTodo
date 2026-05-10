@@ -51,6 +51,7 @@ describe('Router + Routes', () => {
     resetTo('/');
     const { container, unmount } = await renderWithQueryClient(<Tree />);
     teardown = unmount;
+    expect(findZoomScene(container, 'matrix')).not.toBeUndefined();
     expect(container.querySelector('[data-view="matrix"]')).not.toBeNull();
     expect(container.querySelector('[data-view="quadrant"]')).toBeNull();
     expect(container.querySelector('[data-view="task"]')).toBeNull();
@@ -61,6 +62,9 @@ describe('Router + Routes', () => {
     const { container, unmount } = await renderWithQueryClient(<Tree />);
     teardown = unmount;
     const quadrant = container.querySelector<HTMLElement>('[data-view="quadrant"]');
+    const scene = findZoomScene(container, 'quadrant');
+    expect(scene).not.toBeUndefined();
+    expect(scene?.dataset['focusedQuadrant']).toBe('Q2');
     expect(quadrant).not.toBeNull();
     expect(quadrant!.dataset['quadrant']).toBe('Q2');
     expect(container.querySelector('[data-view="matrix"]')).toBeNull();
@@ -88,8 +92,10 @@ describe('Router + Routes', () => {
     });
 
     const quadrant = container.querySelector<HTMLElement>('[data-view="quadrant"]');
+    const scene = findZoomScene(container, 'quadrant');
+    expect(scene).not.toBeUndefined();
+    expect(scene?.dataset['focusedQuadrant']).toBe('Q4');
     expect(quadrant?.dataset['quadrant']).toBe('Q4');
-    expect(container.querySelector('[data-view="matrix"]')).toBeNull();
     expect(window.location.pathname).toBe('/q/Q4');
   });
 
@@ -107,3 +113,12 @@ describe('Router + Routes', () => {
     expect(quadrant?.dataset['quadrant']).toBe('Q1');
   });
 });
+
+function findZoomScene(
+  container: HTMLElement,
+  zoom: 'matrix' | 'quadrant',
+): HTMLElement | undefined {
+  return Array.from(container.querySelectorAll<HTMLElement>('.emt-zoom__scene')).find(
+    (scene) => scene.dataset['zoom'] === zoom,
+  );
+}

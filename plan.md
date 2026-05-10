@@ -551,12 +551,13 @@ Glue the two views with the snap-zoom animation and input bindings.
 
 Depends on Phases 5 and 6.
 
-### Step 7.1 — Snap morph animation
+### Step ✅ 7.1 — Snap morph animation
 **Goal.** Animate from matrix to single quadrant (and back) by scaling the layout — single CSS transform, no per-card layout shift. The animation snaps; nothing in between.
 **Outputs.** `packages/app/src/views/zoom/ZoomController.tsx`. Uses Framer Motion `layout` + a shared layout id between `MatrixCell` and `QuadrantView`.
 **Done when.**
 - Toggling zoom via the view-state store animates 200–250 ms with M3 easing.
 - No layout shift on cards mid-animation.
+**Note.** Added `framer-motion` to `@emt/app` and introduced `ZoomController` as a `LayoutGroup` + `AnimatePresence` shell around the active matrix/quadrant route. The shell uses a 220 ms M3-standard easing transition and keeps outgoing surfaces mounted during the snap morph. `MatrixCell` and `QuadrantView` now wrap their quadrant frames with matching shared layout IDs, and `TaskCard` publishes a stable task layout ID based on backend + task ID so cards retain visual identity across the two views. Wrapper-only quadrant metadata uses `data-zoom-quadrant` so the existing `[data-quadrant]` contract continues to identify the Glow cell/frame nodes.
 
 ### Step 7.2 — Touch pinch
 **Goal.** Pinch-in from view1 zooms into the quadrant under the pinch midpoint at gesture start. Pinch-out from view2 returns to view1 with a 600 ms highlight on the previously-focused quadrant.

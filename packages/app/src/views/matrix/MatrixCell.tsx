@@ -26,6 +26,7 @@
 import { useDroppable } from '@dnd-kit/core';
 import type { Quadrant } from '@emt/backend-core';
 import { ErrorBanner, Glow, Skeleton, type GlowColor } from '@emt/design-system';
+import { motion } from 'framer-motion';
 import { useCallback, useMemo, type ReactNode } from 'react';
 
 import { useT } from '../../i18n/provider.js';
@@ -33,6 +34,7 @@ import type { StringKey } from '../../i18n/strings.en.js';
 import { useClearTaskRanks, useTaskOrder } from '../../queries/task-order.js';
 import { useTasks } from '../../queries/tasks.js';
 import { taskOrderKey, type TaskOrderMap } from '../../state/task-order.js';
+import { quadrantLayoutId } from '../zoom/ZoomController.js';
 
 import type { DroppableCellData } from './dnd.js';
 import { refsForReset, sortTasks } from './sort.js';
@@ -87,47 +89,54 @@ export function MatrixCell({ quadrant }: MatrixCellProps): ReactNode {
   const { setNodeRef, isOver } = useDroppable({ id: `cell-${quadrant}`, data });
 
   return (
-    <Glow
-      ref={setNodeRef}
-      color={GLOW_COLOR[quadrant]}
-      className="emt-matrix__cell"
-      data-quadrant={quadrant}
-      data-drop-active={isOver ? 'true' : 'false'}
-      role="region"
-      aria-label={label}
+    <motion.div
+      className="emt-zoom__quadrant-frame"
+      data-zoom-quadrant={quadrant}
+      layoutId={quadrantLayoutId(quadrant)}
+      transition={{ duration: 0.22, ease: [0.2, 0, 0, 1] }}
     >
-      <header className="emt-matrix__cell-header">
-        <h2 className="emt-matrix__cell-title">{label}</h2>
-        {hasManualRank && (
-          <button
-            type="button"
-            className="emt-matrix__cell-reset"
-            onClick={onReset}
-            disabled={clearRanks.isPending}
-          >
-            {t('app.matrix.cell.reset')}
-          </button>
-        )}
-      </header>
-      <div className="emt-matrix__cell-list" data-task-count={tasks?.length ?? 0}>
-        {query.isPending && (
-          <>
-            <Skeleton className="emt-matrix__cell-skeleton" height={44} />
-            <Skeleton className="emt-matrix__cell-skeleton" height={44} />
-          </>
-        )}
-        {query.isError && (
-          <ErrorBanner
-            message={query.error.message}
-            onRetry={() => {
-              void query.refetch();
-            }}
-          />
-        )}
-        {tasks?.map((task) => (
-          <TaskCard key={task.id} task={task} />
-        ))}
-      </div>
-    </Glow>
+      <Glow
+        ref={setNodeRef}
+        color={GLOW_COLOR[quadrant]}
+        className="emt-matrix__cell"
+        data-quadrant={quadrant}
+        data-drop-active={isOver ? 'true' : 'false'}
+        role="region"
+        aria-label={label}
+      >
+        <header className="emt-matrix__cell-header">
+          <h2 className="emt-matrix__cell-title">{label}</h2>
+          {hasManualRank && (
+            <button
+              type="button"
+              className="emt-matrix__cell-reset"
+              onClick={onReset}
+              disabled={clearRanks.isPending}
+            >
+              {t('app.matrix.cell.reset')}
+            </button>
+          )}
+        </header>
+        <div className="emt-matrix__cell-list" data-task-count={tasks?.length ?? 0}>
+          {query.isPending && (
+            <>
+              <Skeleton className="emt-matrix__cell-skeleton" height={44} />
+              <Skeleton className="emt-matrix__cell-skeleton" height={44} />
+            </>
+          )}
+          {query.isError && (
+            <ErrorBanner
+              message={query.error.message}
+              onRetry={() => {
+                void query.refetch();
+              }}
+            />
+          )}
+          {tasks?.map((task) => (
+            <TaskCard key={task.id} task={task} />
+          ))}
+        </div>
+      </Glow>
+    </motion.div>
   );
 }
