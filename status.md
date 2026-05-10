@@ -22,6 +22,17 @@ Tests added to `packages/app/test/quadrant-view.test.tsx`:
 
 Phase 6 is now closed. View2 has matrix layout (6.1), drop-on-edge to move (6.2), touch swipe to change focus (6.3), mouse drag-at-edge to change focus (6.4), FAB (6.5), and empty state (6.6). Phase 7 — zoom transition — depends on Phases 5 and 6 and now unblocks.
 
+Additional fixes applied after phase 6:
+- Found Playwright Chromium initially failed because Ubuntu 26.04 was missing runtime libraries: `libnspr4`, `libnss3`, and `libasound`.
+- Asked the user to install the needed system packages with `sudo apt install -y libnspr4 libnss3 libasound2t64`.
+- Verified the missing Chromium shared libraries were resolved after installation.
+- Confirmed Playwright screenshot capture works.
+- Fixed `packages/app/playwright.config.ts` so `VITE_BASE_PATH=/` applies to both `pnpm build` and `pnpm preview` during e2e.
+- Fixed `packages/app/e2e/pwa.spec.ts` to wait for the service worker to control the page before offline reload.
+- Updated the offline PWA assertion to check `[data-view="matrix"]` instead of a stale `h1` selector.
+- Verified `pnpm e2e` passes: 4 tests passed.
+- Verified `pnpm --filter @emt/app exec tsc` passes.
+
 **Next:** Phase 7 opens with Step 7.1 — snap morph animation. Wire `packages/app/src/views/zoom/ZoomController.tsx`: a Framer Motion–driven shell that lives between `<App />`'s router and the actual view components, animating between `zoom: 'matrix'` and `zoom: 'quadrant'` via a single CSS transform on the wrapping container (no per-card layout shift). Cards keep their identity across views via a shared `layoutId` on `MatrixCell` ↔ `QuadrantView`'s task cards — already partially set up in 6.1's note ("same `task.id`, same manual rank, same due-date fallback"). Animation: 200–250 ms with M3 standard easing. The "snap" wording in `plan.md` means there's no in-between layout — the matrix-to-single-quadrant transform is the entire visual transition; cards may rescale via `layout` but their relative positions inside their cell don't shift mid-flight. Practical wiring: install `framer-motion` if not already present (check root `package.json`), add a wrapping `<motion.div layout>` with a key that flips on `zoom`, and let Framer's `LayoutGroup` handle the shared-layout cross-fades. Reduced-motion handling lands in 7.5; for 7.1 the animation is unconditional. Test: toggling zoom via `useViewStateStore.navigate({...state, zoom: 'quadrant', focusedQuadrant: 'Q1'})` from a `zoom: 'matrix'` baseline triggers the morph; cards mid-animation maintain their bounding-box relationship to the cell.
 
 ## Environment notes
