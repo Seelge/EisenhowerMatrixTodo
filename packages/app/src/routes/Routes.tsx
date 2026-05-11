@@ -1,23 +1,22 @@
 /**
  * Routes — switch over the projected `ViewState` and render the
- * corresponding view. Phase 5+ replaces these placeholders with the
- * real Matrix / Quadrant / TaskFocus views; for 4.2 the placeholders
- * are enough to verify deep-linking and back/forward navigation.
+ * corresponding view.
  *
  * View3 (task focus) is always rendered *over* whichever underlying
  * view is active — view1 (matrix) when `zoom === 'matrix'`, view2
  * (quadrant) when `zoom === 'quadrant'`. That matches the contract:
- * `focusedTaskId` is an overlay flag, not a separate route.
+ * `focusedTaskId` is an overlay flag, not a separate route. `TaskView`
+ * always mounts; it self-gates on `focusedTaskId` via `ResponsiveSurface.open`
+ * so the surface and its dialog effect tear down cleanly on close.
  */
-import type { TaskId } from '@emt/backend-core';
 import type { ReactNode } from 'react';
 
 import { DebugPage } from '../debug/DebugPage.js';
-import { useT } from '../i18n/provider.js';
 import { ConnectBanner } from '../onboarding/ConnectBanner.js';
 import { useInternalPath, useViewState } from '../state/view-state.js';
 import { MatrixView } from '../views/matrix/MatrixView.js';
 import { QuadrantView } from '../views/quadrant/QuadrantView.js';
+import { TaskView } from '../views/task/TaskView.js';
 import { ZoomController } from '../views/zoom/ZoomController.js';
 
 // Vite substitutes `import.meta.env.DEV` with the literal `true` in dev
@@ -49,7 +48,7 @@ export function Routes(): ReactNode {
           <QuadrantView quadrant={state.focusedQuadrant} />
         )}
       </ZoomController>
-      {state.focusedTaskId !== undefined && <TaskFocusPlaceholder taskId={state.focusedTaskId} />}
+      <TaskView />
     </>
   );
 }
@@ -57,16 +56,4 @@ export function Routes(): ReactNode {
 function stripQuery(path: string): string {
   const i = path.indexOf('?');
   return i === -1 ? path : path.slice(0, i);
-}
-
-function TaskFocusPlaceholder({ taskId }: { taskId: TaskId }): ReactNode {
-  const t = useT();
-  return (
-    <aside data-view="task" data-task-id={taskId} role="dialog" aria-label={t('app.task.heading')}>
-      <h2>
-        {t('app.task.heading')} {taskId}
-      </h2>
-      <p>{t('app.task.placeholder')}</p>
-    </aside>
-  );
 }

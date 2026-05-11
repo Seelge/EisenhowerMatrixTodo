@@ -73,13 +73,6 @@ function toMatrixState(state: ViewState): ViewState {
   return next;
 }
 
-/** Build a `ViewState` that closes view3 (drops `focusedTaskId` + `openedFromZoom`). */
-function withoutFocusedTask(state: ViewState): ViewState {
-  const next: { -readonly [K in keyof ViewState]: ViewState[K] } = { zoom: state.zoom };
-  if (state.focusedQuadrant !== undefined) next.focusedQuadrant = state.focusedQuadrant;
-  return next;
-}
-
 export interface ZoomControllerProps {
   state: ViewState;
   children: ReactNode;
@@ -160,11 +153,10 @@ export function ZoomController({ state, children }: ZoomControllerProps): ReactN
         state.zoom === 'matrix' && isQuadrant(rawCellQuadrant) ? rawCellQuadrant : undefined;
 
       if (e.key === 'Escape') {
-        if (state.focusedTaskId !== undefined) {
-          e.preventDefault();
-          navigate(withoutFocusedTask(state));
-          return;
-        }
+        // View3 (task focus) owns its own Escape via `useDialogBehavior`
+        // in the design-system surface; routing it through here as well
+        // would push two history entries for one keystroke.
+        if (state.focusedTaskId !== undefined) return;
         if (state.zoom === 'quadrant') {
           e.preventDefault();
           navigate(toMatrixState(state));
