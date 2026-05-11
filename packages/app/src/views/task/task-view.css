@@ -1,0 +1,116 @@
+/*
+ * view3 — task focus surface styles (Step 8.1 + 8.2).
+ *
+ * Layout for the form body inside the design-system surface (Sheet on
+ * narrow, SidePanel on wide). Form controls borrow the visual
+ * vocabulary of `emt-quick-composer__*` so the two surfaces feel like
+ * the same family without duplicating tokens.
+ */
+
+.emt-task-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  min-height: 0;
+}
+
+.emt-task-view__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.emt-task-view__heading {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  letter-spacing: 0.01em;
+}
+
+.emt-task-view__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  min-height: 0;
+}
+
+.emt-task-view__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.emt-task-view__field--inline {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.emt-task-view__label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.emt-task-view__label--inline {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-md);
+}
+
+.emt-task-view__input,
+.emt-task-view__textarea {
+  width: 100%;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-surface-elevated);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  font: inherit;
+  font-size: var(--font-size-md);
+}
+
+.emt-task-view__input {
+  min-height: 48px;
+}
+
+.emt-task-view__textarea {
+  min-height: 120px;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.emt-task-view__input::placeholder,
+.emt-task-view__textarea::placeholder {
+  color: var(--color-text-secondary);
+  opacity: 0.7;
+}
+
+.emt-task-view__input:focus-visible,
+.emt-task-view__textarea:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-color: transparent;
+}
+
+.emt-task-view__checkbox {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.emt-task-view__checkbox:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.emt-task-view__notice {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
