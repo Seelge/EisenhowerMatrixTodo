@@ -6,31 +6,37 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 7.3 — Mouse wheel.
+**Last completed:** Step 7.4 — Keyboard.
 
-`Ctrl + wheel` now toggles zoom from the same shell that owns the morph it triggers. Plain wheel is left alone so per-cell / per-quadrant scroll still works. `Ctrl + wheel-up` on view1 zooms into the cell under the cursor (resolved geometrically against the scene rect via `quadrantAtPoint` from `pinch.ts`); `Ctrl + wheel-down` on view2 returns to view1. macOS trackpad pinch already synthesizes `ctrlKey: true` on wheel, so the same handler covers desktop trackpad pinch without extra plumbing.
+Global keyboard bindings now sit next to the wheel handler inside `ZoomController`, so every input modality that drives the view1 ↔ view2 morph is co-located:
 
-Pure helper `packages/app/src/views/zoom/wheel.ts` exposes `resolveWheelDirection(deltaY)` with a 5 px deadzone and `WHEEL_COOLDOWN_MS = 300`. Browser convention is honored: `deltaY > 0` is wheel-down (zoom out), `deltaY < 0` is wheel-up (zoom in).
+- `Esc` → if view3 is open (`focusedTaskId !== undefined`), close it; else if `state.zoom === 'quadrant'`, zoom out to matrix; else no-op.
+- `Enter` on a focused matrix cell → navigate to `/q/<that quadrant>`.
+- Arrow keys on a focused matrix cell → move focus to the visually-adjacent cell (no wrap, standard WAI-ARIA grid pattern).
+- `+` / `=` → zoom into the focused cell (or `Q1` by default if focus is elsewhere).
+- `-` / `_` → zoom out of view2.
 
-`ZoomController.tsx` adds an `onWheel` on the scene `motion.div`. Behavior:
-- `!e.ctrlKey` → return immediately (preserve native scroll).
-- `e.ctrlKey` → `preventDefault()` *always* (suppress browser page-zoom even when the action is a no-op like cooldown / deadzone / already-min-or-max-zoom).
-- Throttle via `useRef` against `WHEEL_COOLDOWN_MS`.
-- `state.zoom === 'matrix' && direction === 'up'` → `quadrantAtPoint({clientX,clientY}, currentTarget.getBoundingClientRect())` → `navigate({ ...state, zoom: 'quadrant', focusedQuadrant: target })`.
-- `state.zoom === 'quadrant' && direction === 'down'` → build a fresh `{ zoom: 'matrix' }` carrying any `focusedTaskId` / `openedFromZoom` (the same `exactOptionalPropertyTypes`-safe construction QuadrantView's pinch-out uses).
+Pure helpers live in `packages/app/src/views/zoom/keyboard.ts`: `resolveArrowQuadrant(from, key)` codifies the 2 × 2 mapping (Q2↔Q1 / Q2↔Q4 / Q1↔Q3 / Q4↔Q3), and `isTextEditingTarget`, `isArrowKey`, `isZoomInKey`, `isZoomOutKey` keep the React handler small. The handler:
+- Skips when `event.defaultPrevented`, when any of `ctrl/meta/alt` is pressed (Ctrl+wheel and OS shortcuts get a clear lane), or when the target is text-editing (input / textarea / `select` / `contenteditable`).
+- Locates the focused cell via `target.closest('.emt-matrix__cell[data-quadrant]')` so unrelated `data-quadrant` carriers (TaskCardMenu items, QuadrantView frame) don't masquerade as cells.
+- Reuses `toMatrixState(state)` for every zoom-out path (Esc, `-`, wheel-down) so the `focusedTaskId` / `openedFromZoom` preservation is written once.
+
+`MatrixCell.tsx` adds `tabIndex={0}` to the Glow so cells are keyboard-focusable. `matrix.css` adds a `focus-visible` 3 px inset outline matched to the drop-indicator pattern so the ring doesn't shift layout (and dnd-kit's measured rects stay stable).
 
 Tests:
-- `packages/app/test/zoom-wheel.test.tsx` covers (a) the pure direction classifier — up/down thresholds + deadzone; (b) integration over a real `<Routes>` shell: `Ctrl + wheel-up` at each of the four cell midpoints navigates to the right `/q/<Qn>`, with `event.defaultPrevented === true`; (c) `Ctrl + wheel-down` from `/q/Q3` returns to `/`; (d) plain wheel (no ctrlKey) does *not* `preventDefault` and does *not* navigate; (e) `Ctrl + wheel-down` on view1 and `Ctrl + wheel-up` on view2 are no-ops (still preventDefault to swallow browser zoom); (f) cooldown swallows a rapid second wheel-up. Scene `getBoundingClientRect` is stubbed to a 400×400 box for the cursor→quadrant resolution.
+- `packages/app/test/zoom-keyboard.test.tsx`: pure mapping for every cell × every direction, both shifted/unshifted zoom keys, text-target guard. Integration over `<Routes>`: cells expose `tabIndex={0}`; Enter on Q2 → `/q/Q2`; Esc from `/q/Q2` → `/`; Esc on `/` is a no-op; arrow keys walk Q2→Q1→Q3 and `Right` on Q3 is a no-op; `+` zooms into focused cell, defaults to `Q1` when focus is elsewhere; `-` zooms out; typing keys inside an `<input>` does nothing; `Ctrl+Enter` is ignored.
+- `packages/app/e2e/keyboard.spec.ts`: keyboard-only Playwright covers Q2 → Enter → `/q/Q2` → Esc → `/` and the arrow-key focus walk to Q3 followed by Enter → `/q/Q3`.
 
 Verification completed:
 - `pnpm --filter @emt/app exec tsc` passes.
 - `pnpm lint` passes.
 - `pnpm format:check` passes.
-- `pnpm test` passes: 52 files / 357 tests.
-- `pnpm --filter @emt/app build` passes. Production build: 396.07 KB JS / 11.13 KB CSS.
-- `pnpm e2e` passes: 4 tests.
+- `pnpm test` passes: 53 files / 370 tests.
+- `pnpm --filter @emt/app build` passes. Production build: 397.79 KB JS / 11.26 KB CSS.
+- `pnpm e2e` passes: 6 tests.
+- CI + Deploy green on `54b308d`.
 
-**Next:** Step 7.4 — Keyboard. Global keyboard handler at the app shell, dispatching to view-state: `Esc` zooms out from view2 (or closes view3 if open); `Enter` on a focused matrix cell zooms in; arrow keys move focus between cells; `+` / `-` zoom. Done when a keyboard-only e2e navigates to Q2 → Enter → land in view2/Q2; Esc returns to view1.
+**Next:** Step 7.5 — Reduced-motion path. `ZoomController` reads `useReducedMotion` (Step 3.9) and skips the Framer Motion transition (instant cuts, no morph). Done when a test covers both modes for the same state transitions; only the animation duration differs.
 
 ## Environment notes
 
