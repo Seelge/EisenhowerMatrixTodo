@@ -16,7 +16,8 @@
  * spin into one nav.
  */
 import type { Quadrant } from '@emt/backend-core';
-import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
+import { useReducedMotion } from '@emt/design-system';
+import { AnimatePresence, LayoutGroup, MotionConfig, motion } from 'framer-motion';
 import {
   useCallback,
   useEffect,
@@ -37,6 +38,7 @@ import {
 } from './keyboard.js';
 import { quadrantAtPoint } from './pinch.js';
 import { resolveWheelDirection, WHEEL_COOLDOWN_MS } from './wheel.js';
+import { selectZoomTransition } from './zoom-transition.js';
 
 import './zoom.css';
 
@@ -78,11 +80,6 @@ function withoutFocusedTask(state: ViewState): ViewState {
   return next;
 }
 
-const ZOOM_TRANSITION = {
-  duration: 0.22,
-  ease: [0.2, 0, 0, 1],
-} as const;
-
 export interface ZoomControllerProps {
   state: ViewState;
   children: ReactNode;
@@ -93,6 +90,16 @@ export function ZoomController({ state, children }: ZoomControllerProps): ReactN
     state.zoom === 'quadrant' && state.focusedQuadrant !== undefined
       ? `quadrant-${state.focusedQuadrant}`
       : 'matrix';
+
+  // Step 7.5 — `prefers-reduced-motion: reduce` collapses the morph
+  // to an instant cut. The chosen transition is applied to the scene
+  // `motion.div` *and* propagated to every descendant motion via
+  // `<MotionConfig transition>` below — that way the shared `layoutId`
+  // morph on matrix cells, the focused quadrant frame, and task cards
+  // all snap as one piece. State transitions still complete identically
+  // in both modes (URL, view-state, focus); only duration differs.
+  const prefersReducedMotion = useReducedMotion();
+  const transition = selectZoomTransition(prefersReducedMotion);
 
   const lastWheelAt = useRef<number>(0);
 
@@ -205,21 +212,24 @@ export function ZoomController({ state, children }: ZoomControllerProps): ReactN
   }, []);
 
   return (
-    <LayoutGroup id="emt-zoom">
-      <AnimatePresence initial={false} mode="popLayout">
-        <motion.div
-          key={surfaceKey}
-          className="emt-zoom__scene"
-          data-zoom={state.zoom}
-          data-focused-quadrant={state.focusedQuadrant}
-          layout
-          transition={ZOOM_TRANSITION}
-          onWheel={onWheel}
-        >
-          {children}
-        </motion.div>
-      </AnimatePresence>
-    </LayoutGroup>
+    <MotionConfig transition={transition}>
+      <LayoutGroup id="emt-zoom">
+        <AnimatePresence initial={false} mode="popLayout">
+          <motion.div
+            key={surfaceKey}
+            className="emt-zoom__scene"
+            data-zoom={state.zoom}
+            data-focused-quadrant={state.focusedQuadrant}
+            data-reduced-motion={prefersReducedMotion ? 'true' : 'false'}
+            layout
+            transition={transition}
+            onWheel={onWheel}
+          >
+            {children}
+          </motion.div>
+        </AnimatePresence>
+      </LayoutGroup>
+    </MotionConfig>
   );
 }
 

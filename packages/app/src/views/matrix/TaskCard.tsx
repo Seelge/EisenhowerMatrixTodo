@@ -109,7 +109,6 @@ export function TaskCard({ task }: TaskCardProps): ReactNode {
       data-status={task.status}
       data-dragging={isDragging ? 'true' : 'false'}
       layoutId={taskLayoutId(task.backendId, task.id)}
-      transition={{ duration: 0.22, ease: [0.2, 0, 0, 1] }}
       style={dragStyle}
       {...attributes}
       {...listeners}

@@ -261,7 +261,6 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
           className="emt-zoom__quadrant-frame"
           data-zoom-quadrant={quadrant}
           layoutId={quadrantLayoutId(quadrant)}
-          transition={{ duration: 0.22, ease: [0.2, 0, 0, 1] }}
         >
           <Glow
             color={GLOW_COLOR[quadrant]}
