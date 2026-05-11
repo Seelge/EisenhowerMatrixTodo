@@ -1,5 +1,7 @@
 # Eisenhower Matrix Todo
 
+> ⚠️ **Early development — not usable yet.** This project is in early development, very much a work in progress and not ready for use. Features are incomplete, APIs may change without notice, and there is no stable release. Track progress in [`status.md`](./status.md) and details in [`plan.md`](./plan.md).
+
 A PWA to-do app organized by the Eisenhower matrix (Important × Urgent). Pluggable backends, offline-first. Targets Chrome on Android and Windows. Minimal futuristic dark UI with glowing borders.
 
 ## Status
