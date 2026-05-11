@@ -6,32 +6,30 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 7.5 — Reduced-motion path. Closes Phase 7.
+**Last completed:** Step 8.1 — view3 surface container. Opens Phase 8.
 
-`ZoomController` now reads `useReducedMotion` (from `@emt/design-system`, Step 3.9) and picks the zoom morph transition accordingly via the pure `selectZoomTransition(reduced)` helper:
+`packages/app/src/views/task/TaskView.tsx` mounts the task-focus view inside `ResponsiveSurface` (Step 3.4):
 
-- Default: `ZOOM_TRANSITION = { duration: 0.22, ease: [0.2, 0, 0, 1] }` (M3-standard).
-- Reduced motion: `INSTANT_TRANSITION = { duration: 0 }` — Framer Motion still routes the state change, but the visual cut is instantaneous.
+- Narrow viewports → bottom sheet (`emt-sheet`) with a 40 %-opacity scrim, so the matrix or focused quadrant below shows through but is clearly demoted.
+- Wide viewports (≥ 768 px) → `min(480px, 100vw)` right-side panel (`emt-side-panel`) with no scrim, so the underlying view stays fully visible alongside.
 
-Both constants live in `packages/app/src/views/zoom/zoom-transition.ts` so the choice is unit-testable without a DOM.
+The component reads `focusedTaskId` from `useViewState()` and self-gates the surface via `ResponsiveSurface.open`, so the surface and its `useDialogBehavior` effect (focus trap + Escape + focus restore) tear down cleanly on close. Closing currently drops `focusedTaskId` and keeps `zoom` / `focusedQuadrant` intact — Step 8.9 will route close through `openedFromZoom` once the underlying view can change while view3 is open.
 
-The chosen transition is applied to the scene `motion.div` *and* propagated to every descendant motion through `<MotionConfig transition={...}>`. That lets the shared-`layoutId` morphs on matrix cells, the focused quadrant frame, and task cards all snap as one piece — and let me drop the three duplicated `transition={{ duration: 0.22, ease: ... }}` props from `MatrixCell.tsx`, `TaskCard.tsx`, and `QuadrantView.tsx` (they now inherit from MotionConfig). The scene exposes `data-reduced-motion="true"|"false"` for test/debug introspection.
+To avoid two history entries on a single Esc, the `focusedTaskId` branch was removed from `ZoomController`'s Escape handler (the dialog inside the surface owns it). The `TaskFocusPlaceholder` stub in `Routes.tsx` was replaced by `<TaskView />`.
 
 Tests:
-- `packages/app/test/zoom-reduced-motion.test.tsx`: pure `selectZoomTransition(true|false)` returns the expected constants; integration stubs `window.matchMedia` (same shape as `packages/design-system/test/use-reduced-motion.test.tsx`) and renders `<Routes>` in both modes. Asserts (a) the scene's `data-reduced-motion` flag reflects the OS preference, and (b) the same Enter-on-Q2 → `/q/Q2` transition lands at the same view-state in both modes — proving "only the animation duration differs".
+- `packages/app/test/task-view.test.tsx`: stubs `matchMedia` per test to drive both surface branches, then asserts (a) Sheet + scrim over `[data-view="matrix"]` for `/?task=abc&from=matrix` on narrow, (b) SidePanel (no scrim) over `[data-view="quadrant"][data-quadrant="Q3"]` for `/q/Q3?task=xyz&from=quadrant` on wide, (c) absence of any task surface when `?task=` is missing, and (d) Esc on `/q/Q2?task=abc&from=quadrant` clears `focusedTaskId` in view-state and URL (`/q/Q2`, empty search) while keeping the quadrant.
 
-Verification completed:
+Verification:
 - `pnpm --filter @emt/app exec tsc` passes.
-- `pnpm lint` passes.
-- `pnpm format:check` passes.
-- `pnpm test` passes: 54 files / 375 tests.
-- `pnpm --filter @emt/app build` passes. Production build: 398.48 KB JS / 11.26 KB CSS.
+- `pnpm lint` + `pnpm format:check` pass.
+- `pnpm test` passes: 55 files / 379 tests.
+- `pnpm --filter @emt/app build` passes. Production build: 398.67 KB JS / 11.26 KB CSS.
 - `pnpm e2e` passes: 6 tests.
-- CI + Deploy green on `ce18bdb`.
 
-**Phase 7 exit:** view1 ↔ view2 navigation feels seamless across input types (touch pinch, mouse wheel + Ctrl, keyboard, reduced-motion respected).
+**Previously completed:** Step 7.5 — Reduced-motion path. Closed Phase 7 (view1 ↔ view2 navigation feels seamless across input types: touch pinch, mouse wheel + Ctrl, keyboard, reduced-motion respected).
 
-**Next:** Step 8.1 — Surface container. view3 mounts inside `ResponsiveSurface` (Step 3.4): bottom sheet on mobile, right side panel on desktop, ≤ 480 px wide. The matrix below remains visible. Outputs `packages/app/src/views/task/TaskView.tsx` + a route handler reading `?task=:id`. Done when opening view3 over view1 keeps the matrix dim but visible, and over view2 the focused quadrant is partly visible.
+**Next:** Step 8.2 — Field editors: title, notes, status. Editable single-line title, notes (textarea-with-preview-toggle is acceptable for v1), and a status checkbox; all wired to `useUpdateTask` with 300 ms debounce. Outputs `TitleField.tsx`, `NotesField.tsx`, `StatusToggle.tsx`. Done when edits persist and fast typing produces a single debounced write rather than N writes.
 
 ## Environment notes
 
