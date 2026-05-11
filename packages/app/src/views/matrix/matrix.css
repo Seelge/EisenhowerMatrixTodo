@@ -95,6 +95,20 @@
   border-radius: var(--radius-md);
 }
 
+.emt-matrix__cell:focus {
+  outline: none;
+}
+.emt-matrix__cell:focus-visible {
+  /*
+   * Step 7.4 — keyboard focus ring on the cell, using the same inset
+   * outline pattern as the drop indicator so it doesn't shift layout
+   * (and so dnd-kit's measured rects stay stable). Distinguished from
+   * the drop indicator by being slightly thicker.
+   */
+  outline: 3px solid var(--color-text-primary);
+  outline-offset: -3px;
+}
+
 .emt-matrix__cell[data-drop-active='true'] {
   /*
    * Drop indicator — when a draggable card is over the cell, brighten

@@ -108,6 +108,7 @@ export function MatrixCell({ quadrant }: MatrixCellProps): ReactNode {
         data-pinch-highlight={pinchHighlight ? 'true' : 'false'}
         role="region"
         aria-label={label}
+        tabIndex={0}
       >
         <header className="emt-matrix__cell-header">
           <h2 className="emt-matrix__cell-title">{label}</h2>

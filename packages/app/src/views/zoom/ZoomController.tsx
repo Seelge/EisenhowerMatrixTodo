@@ -15,16 +15,68 @@
  * cooldown collapses the dozens of wheel events real OSes emit per
  * spin into one nav.
  */
+import type { Quadrant } from '@emt/backend-core';
 import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
-import { useCallback, useRef, type ReactNode, type WheelEvent as ReactWheelEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  type ReactNode,
+  type WheelEvent as ReactWheelEvent,
+} from 'react';
 
 import type { ViewState } from '../../routes/contract.js';
 import { useViewStateStore } from '../../state/view-state.js';
 
+import {
+  isArrowKey,
+  isTextEditingTarget,
+  isZoomInKey,
+  isZoomOutKey,
+  resolveArrowQuadrant,
+} from './keyboard.js';
 import { quadrantAtPoint } from './pinch.js';
 import { resolveWheelDirection, WHEEL_COOLDOWN_MS } from './wheel.js';
 
 import './zoom.css';
+
+const QUADRANTS: readonly Quadrant[] = ['Q1', 'Q2', 'Q3', 'Q4'];
+
+function isQuadrant(value: string | null | undefined): value is Quadrant {
+  return value !== null && value !== undefined && (QUADRANTS as readonly string[]).includes(value);
+}
+
+/**
+ * Build a `ViewState` that drops the optional fields tied to a
+ * currently-focused quadrant or open task view. Used by Esc /
+ * wheel-down / `-` paths that return to the matrix.
+ *
+ * Carrying `focusedTaskId` / `openedFromZoom` through is intentional:
+ * pressing `-` while a task is open should not close the task too —
+ * that's a separate gesture (Esc on view3, or its own close button).
+ * `exactOptionalPropertyTypes` forbids passing `undefined` for absent
+ * optional fields, so the object is assembled conditionally.
+ */
+function toMatrixState(state: ViewState): ViewState {
+  const next: ViewState = { zoom: 'matrix' };
+  if (state.focusedTaskId !== undefined) {
+    return state.openedFromZoom !== undefined
+      ? {
+          ...next,
+          focusedTaskId: state.focusedTaskId,
+          openedFromZoom: state.openedFromZoom,
+        }
+      : { ...next, focusedTaskId: state.focusedTaskId };
+  }
+  return next;
+}
+
+/** Build a `ViewState` that closes view3 (drops `focusedTaskId` + `openedFromZoom`). */
+function withoutFocusedTask(state: ViewState): ViewState {
+  const next: { -readonly [K in keyof ViewState]: ViewState[K] } = { zoom: state.zoom };
+  if (state.focusedQuadrant !== undefined) next.focusedQuadrant = state.focusedQuadrant;
+  return next;
+}
 
 const ZOOM_TRANSITION = {
   duration: 0.22,
@@ -69,26 +121,88 @@ export function ZoomController({ state, children }: ZoomControllerProps): ReactN
         return;
       }
       if (state.zoom === 'quadrant' && direction === 'down') {
-        // Drop `focusedQuadrant` cleanly — `exactOptionalPropertyTypes`
-        // forbids passing it as `undefined`, so build a fresh object
-        // and only forward fields still meaningful in matrix view.
-        const next: ViewState = { zoom: 'matrix' };
-        const withTask: ViewState =
-          state.focusedTaskId !== undefined
-            ? state.openedFromZoom !== undefined
-              ? {
-                  ...next,
-                  focusedTaskId: state.focusedTaskId,
-                  openedFromZoom: state.openedFromZoom,
-                }
-              : { ...next, focusedTaskId: state.focusedTaskId }
-            : next;
-        navigate(withTask);
+        navigate(toMatrixState(state));
         lastWheelAt.current = now;
       }
     },
     [state],
   );
+
+  // Step 7.4 — global keyboard bindings: Esc / +/- always; Enter /
+  // arrows are only meaningful when a `[data-quadrant]` cell has
+  // focus. Lives at the same shell that owns the morph so the
+  // keybinding sits next to its visual effect (mirrors the wheel
+  // handler above). Listener is on `document` so the binding works
+  // even when focus is on `<body>`.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent): void => {
+      if (e.defaultPrevented) return;
+      // Modifier-combinations are reserved for the wheel binding
+      // (Ctrl+wheel) and for browser / OS shortcuts.
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (isTextEditingTarget(e.target)) return;
+
+      const { state, navigate } = useViewStateStore.getState();
+      const target = e.target instanceof HTMLElement ? e.target : null;
+      // Restrict to the matrix cell — other elements (TaskCardMenu items,
+      // QuadrantView frame) also carry `data-quadrant`, but only the cell
+      // is a valid keyboard zoom-in target.
+      const rawCellQuadrant = target?.closest<HTMLElement>('.emt-matrix__cell[data-quadrant]')
+        ?.dataset['quadrant'];
+      const focusedCell: Quadrant | undefined =
+        state.zoom === 'matrix' && isQuadrant(rawCellQuadrant) ? rawCellQuadrant : undefined;
+
+      if (e.key === 'Escape') {
+        if (state.focusedTaskId !== undefined) {
+          e.preventDefault();
+          navigate(withoutFocusedTask(state));
+          return;
+        }
+        if (state.zoom === 'quadrant') {
+          e.preventDefault();
+          navigate(toMatrixState(state));
+        }
+        return;
+      }
+
+      if (e.key === 'Enter' && focusedCell !== undefined) {
+        e.preventDefault();
+        navigate({ ...state, zoom: 'quadrant', focusedQuadrant: focusedCell });
+        return;
+      }
+
+      if (isArrowKey(e.key) && focusedCell !== undefined) {
+        const next = resolveArrowQuadrant(focusedCell, e.key);
+        if (next === undefined) return;
+        const nextEl = document.querySelector<HTMLElement>(
+          `.emt-matrix__cell[data-quadrant="${next}"]`,
+        );
+        if (nextEl) {
+          e.preventDefault();
+          nextEl.focus();
+        }
+        return;
+      }
+
+      if (isZoomInKey(e.key)) {
+        if (state.zoom !== 'matrix') return;
+        // Prefer the focused cell; otherwise default to Q1 (urgent +
+        // important) — the canonical "do first" quadrant.
+        const focusQuadrant: Quadrant = focusedCell ?? 'Q1';
+        e.preventDefault();
+        navigate({ ...state, zoom: 'quadrant', focusedQuadrant: focusQuadrant });
+        return;
+      }
+
+      if (isZoomOutKey(e.key)) {
+        if (state.zoom !== 'quadrant') return;
+        e.preventDefault();
+        navigate(toMatrixState(state));
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   return (
     <LayoutGroup id="emt-zoom">
