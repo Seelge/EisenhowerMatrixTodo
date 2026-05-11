@@ -6,33 +6,30 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 7.1 — Snap morph animation.
+**Last completed:** Step 7.2 — Touch pinch.
 
-Added `framer-motion` to `packages/app/package.json` and `pnpm-lock.yaml`.
+Two-pointer pinch detection now drives view1 ↔ view2 navigation. Pure helpers live in `packages/app/src/views/zoom/pinch.ts` (`distance`, `midpoint`, `resolvePinchDirection`, `quadrantAtPoint`); thresholds are `inThreshold: 1.3`, `outThreshold: 0.77`, `minInitialDistance: 40 px`. `quadrantAtPoint` maps a viewport-relative point inside the matrix rect to the canonical Q2/Q1/Q4/Q3 layout (top-left/top-right/bottom-left/bottom-right); the rect-center tie resolves to Q3.
 
-`packages/app/src/views/zoom/ZoomController.tsx` is the new Phase 7 shell. It wraps the active matrix/quadrant route in `LayoutGroup` + `AnimatePresence` and a single `motion.div` with `layout`, keyed by `matrix` or `quadrant-<Qn>`. The transition is 220 ms with M3 standard easing `[0.2, 0, 0, 1]`. `packages/app/src/views/zoom/zoom.css` adds the stable wrapper sizing and grid-area rules.
+`packages/app/src/views/zoom/usePinchGesture.ts` wraps the helpers in a React hook that tracks pointer ids, snapshots the initial finger distance + midpoint + host bounding rect when the second pointer lands, and finalizes on pointerup. It also exposes `hasMultiPointer()` so callers can suppress single-pointer gestures (swipe / drag) while a pinch is in flight. Refs for the consumer's callback / options are written inside `useEffect` to satisfy `react-hooks/refs`.
 
-`packages/app/src/routes/Routes.tsx` now renders `MatrixView` / `QuadrantView` inside `ZoomController`. `ConnectBanner` and the task-focus placeholder stay outside the morph shell.
+`MatrixView` spreads the hook's handlers onto its `<main>` and navigates to `/q/<Qn>` on pinch-in using `quadrantAtPoint(midpoint, rect)`. The midpoint is captured at gesture start, so the destination quadrant doesn't shift while the user spreads their fingers.
 
-Shared-layout identity:
-- `MatrixCell` wraps each Glow cell in a `motion.div` with `layoutId=emt-quadrant-<Qn>`.
-- `QuadrantView` wraps its focused Glow frame with the matching quadrant `layoutId`.
-- `TaskCard` renders as `motion.div` with `layoutId=emt-task-<backendId>-<taskId>`, preserving existing dnd-kit refs/listeners and the drag transform style.
-- The motion wrappers use `data-zoom-quadrant`, not `data-quadrant`, so the existing tests and DOM contract still identify the Glow nodes as the quadrant elements.
+`QuadrantView` adds the same handlers and additionally wires `pinch.onPointerMove` so the pointer positions stay current. The pinch-out path navigates back to `{ zoom: 'matrix' }` (constructed cleanly to satisfy `exactOptionalPropertyTypes`) and forwards any open `focusedTaskId` / `openedFromZoom`. The existing swipe handler now reads `pinch.hasMultiPointer()` and clears its `pendingGesture` whenever a second pointer lands or the lifted pointer was part of a pinch — that way a fast finger-1 drift during a pinch can't bleed into a phantom swipe.
+
+`packages/app/src/views/zoom/highlight.ts` is a tiny Zustand store with a 600 ms TTL (`PINCH_HIGHLIGHT_MS`). `MatrixCell` reads it via `usePinchHighlight(quadrant)` and toggles `data-pinch-highlight="true"` on the Glow. `matrix.css` adds an outline + brightness rule for that attribute, transitioning back via the existing motion tokens.
 
 Tests:
-- Added `packages/app/test/zoom-controller.test.tsx` for shell state markers and stable layout-id helper output.
-- Updated `packages/app/test/router.test.tsx` to assert the active zoom scene. Because Framer keeps outgoing scenes mounted during `AnimatePresence`, tests now search for the matching scene instead of assuming one scene exists after navigation.
+- `packages/app/test/matrix-pinch.test.tsx` covers (a) the pure helpers — direction classification at the thresholds, deadzone, min-initial-distance, midpoint→quadrant mapping; (b) `MatrixView` integration — synthetic two-pointer pinch-in centred on each of the four quadrant midpoints navigates to the right `/q/<Qn>`; (c) `QuadrantView` integration — pinch-out returns to `/`, sets `usePinchHighlightStore.active = previous`, and the active value clears after `PINCH_HIGHLIGHT_MS`; (d) regressions: pinch-in from view2 is a no-op, and a pinch suppresses an otherwise-qualifying swipe on the same touch. Happy-dom doesn't compute layout, so the host's `getBoundingClientRect` is stubbed to a 400×400 rect.
 
 Verification completed:
 - `pnpm --filter @emt/app exec tsc` passes.
 - `pnpm lint` passes.
 - `pnpm format:check` passes after `pnpm format`.
-- `pnpm test` passes: 50 files / 330 tests.
-- `pnpm --filter @emt/app build` passes. Production build: 392.65 KB JS / 10.84 KB CSS. The JS increase is mostly Framer Motion.
+- `pnpm test` passes: 51 files / 345 tests.
+- `pnpm --filter @emt/app build` passes. Production build: 395.38 KB JS / 11.13 KB CSS.
 - `pnpm e2e` passes: 4 tests.
 
-**Next:** Step 7.2 — Touch pinch. Add two-pointer detection at the matrix/root zoom surface: pinch-in from view1 zooms into the quadrant under the pinch midpoint at gesture start; pinch-out from view2 returns to view1 and starts a 600 ms highlight on the previously-focused quadrant. Tests should synthesize pointer events for each matrix midpoint and confirm the highlight appears/decays on pinch-out.
+**Next:** Step 7.3 — Mouse wheel. `Ctrl + wheel` toggles zoom; plain wheel scrolls within the focused element. Wheel-up = zoom in, wheel-down = zoom out. Wire a wheel handler into `ZoomController`, ensure plain-wheel scrolling inside a cell is unaffected, and assert `Ctrl + wheel-up` on view1 zooms into the cell under the cursor while `Ctrl + wheel-down` on view2 returns to view1.
 
 ## Environment notes
 

@@ -109,6 +109,23 @@
   filter: brightness(1.15);
 }
 
+.emt-matrix__cell[data-pinch-highlight='true'] {
+  /*
+   * Step 7.2 — brief glow on the cell the user just pinched out from,
+   * so they can locate where they came from in the 2 × 2 grid. Uses
+   * the same brighten-and-outline pattern as the drop indicator and
+   * fades back via a CSS transition. The fade duration matches the
+   * highlight TTL in `highlight.ts`; the timer there clears the data
+   * attribute, this rule animates the visual decay.
+   */
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: -2px;
+  filter: brightness(1.2);
+  transition:
+    outline-color var(--motion-duration-medium) var(--motion-easing-standard),
+    filter var(--motion-duration-medium) var(--motion-easing-standard);
+}
+
 .emt-matrix__cell[data-quadrant='Q1'] {
   grid-area: q1;
 }

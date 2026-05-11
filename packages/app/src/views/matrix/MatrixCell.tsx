@@ -34,6 +34,7 @@ import type { StringKey } from '../../i18n/strings.en.js';
 import { useClearTaskRanks, useTaskOrder } from '../../queries/task-order.js';
 import { useTasks } from '../../queries/tasks.js';
 import { taskOrderKey, type TaskOrderMap } from '../../state/task-order.js';
+import { usePinchHighlight } from '../zoom/highlight.js';
 import { quadrantLayoutId } from '../zoom/ZoomController.js';
 
 import type { DroppableCellData } from './dnd.js';
@@ -88,6 +89,9 @@ export function MatrixCell({ quadrant }: MatrixCellProps): ReactNode {
   const data: DroppableCellData = useMemo(() => ({ kind: 'cell', quadrant }), [quadrant]);
   const { setNodeRef, isOver } = useDroppable({ id: `cell-${quadrant}`, data });
 
+  // Step 7.2 — brief glow on the cell the user just pinched out from.
+  const pinchHighlight = usePinchHighlight(quadrant);
+
   return (
     <motion.div
       className="emt-zoom__quadrant-frame"
@@ -101,6 +105,7 @@ export function MatrixCell({ quadrant }: MatrixCellProps): ReactNode {
         className="emt-matrix__cell"
         data-quadrant={quadrant}
         data-drop-active={isOver ? 'true' : 'false'}
+        data-pinch-highlight={pinchHighlight ? 'true' : 'false'}
         role="region"
         aria-label={label}
       >

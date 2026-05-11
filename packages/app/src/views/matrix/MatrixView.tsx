@@ -27,6 +27,9 @@ import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { useT } from '../../i18n/provider.js';
 import { useSetTaskRank } from '../../queries/task-order.js';
 import { useUpdateTask } from '../../queries/tasks.js';
+import { useViewStateStore } from '../../state/view-state.js';
+import { quadrantAtPoint } from '../zoom/pinch.js';
+import { usePinchGesture } from '../zoom/usePinchGesture.js';
 
 import './matrix.css';
 import { createDragEndHandler } from './dnd.js';
@@ -58,9 +61,29 @@ export function MatrixView(): ReactNode {
   const openComposer = useCallback(() => setComposerOpen(true), []);
   const closeComposer = useCallback(() => setComposerOpen(false), []);
 
+  // Step 7.2 — pinch-in zooms into the quadrant under the midpoint.
+  // The midpoint is captured at gesture start (when the second finger
+  // lands) so the destination doesn't shift while the user spreads.
+  const pinch = usePinchGesture(
+    useCallback((e) => {
+      if (e.direction !== 'in') return;
+      const target = quadrantAtPoint(e.midpoint, e.rect);
+      const { state, navigate } = useViewStateStore.getState();
+      navigate({ ...state, zoom: 'quadrant', focusedQuadrant: target });
+    }, []),
+  );
+
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-      <main data-view="matrix" className="emt-matrix" aria-label={t('app.matrix.heading')}>
+      <main
+        data-view="matrix"
+        className="emt-matrix"
+        aria-label={t('app.matrix.heading')}
+        onPointerDown={pinch.onPointerDown}
+        onPointerMove={pinch.onPointerMove}
+        onPointerUp={pinch.onPointerUp}
+        onPointerCancel={pinch.onPointerCancel}
+      >
         <div className="emt-matrix__grid">
           <MatrixCell quadrant="Q2" />
           <MatrixCell quadrant="Q1" />

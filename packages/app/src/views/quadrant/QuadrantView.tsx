@@ -43,12 +43,15 @@ import { useT } from '../../i18n/provider.js';
 import type { StringKey } from '../../i18n/strings.en.js';
 import { useSetTaskRank, useTaskOrder } from '../../queries/task-order.js';
 import { useTasks, useUpdateTask } from '../../queries/tasks.js';
+import type { ViewState } from '../../routes/contract.js';
 import { type TaskOrderMap } from '../../state/task-order.js';
 import { useViewStateStore } from '../../state/view-state.js';
 import { createDragEndHandler } from '../matrix/dnd.js';
 import { QuickComposer } from '../matrix/QuickComposer.js';
 import { sortTasks } from '../matrix/sort.js';
 import { TaskCard } from '../matrix/TaskCard.js';
+import { usePinchHighlightStore } from '../zoom/highlight.js';
+import { usePinchGesture } from '../zoom/usePinchGesture.js';
 import { quadrantLayoutId } from '../zoom/ZoomController.js';
 
 import { NEIGHBORS, NeighborEdge } from './NeighborEdge.js';
@@ -136,23 +139,75 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
   const pendingGesture = useRef<PendingGesture | null>(null);
   const lastSwipeAt = useRef<number>(0);
 
-  const onPointerDown = useCallback((e: ReactPointerEvent<HTMLElement>) => {
-    if (!e.isPrimary) return;
-    const target = e.target;
-    if (target instanceof Element && target.closest(SWIPE_EXCLUDE_SELECTOR) !== null) {
-      pendingGesture.current = null;
-      return;
-    }
-    pendingGesture.current = {
-      pointerId: e.pointerId,
-      startX: e.clientX,
-      startY: e.clientY,
-      startTime: performance.now(),
-    };
-  }, []);
+  // Step 7.2 — pinch-out returns to view1 and starts a 600 ms
+  // highlight on the previously-focused quadrant. The pinch hook
+  // also exposes `hasMultiPointer()` so the swipe handler below
+  // can suppress itself while a two-finger gesture is in flight
+  // (otherwise lifting the second finger would leave the first
+  // pointer's down/up looking like a swipe).
+  const pinch = usePinchGesture(
+    useCallback(
+      (e) => {
+        if (e.direction !== 'out') return;
+        const previous = quadrant;
+        const { state, navigate } = useViewStateStore.getState();
+        // Drop `focusedQuadrant` cleanly — `exactOptionalPropertyTypes`
+        // forbids passing it as `undefined`, so build a fresh object
+        // and only forward the fields that are still meaningful in
+        // matrix view (task overlay + provenance).
+        const next: ViewState = { zoom: 'matrix' };
+        const withTask: ViewState =
+          state.focusedTaskId !== undefined
+            ? state.openedFromZoom !== undefined
+              ? {
+                  ...next,
+                  focusedTaskId: state.focusedTaskId,
+                  openedFromZoom: state.openedFromZoom,
+                }
+              : { ...next, focusedTaskId: state.focusedTaskId }
+            : next;
+        navigate(withTask);
+        usePinchHighlightStore.getState().highlight(previous);
+      },
+      [quadrant],
+    ),
+  );
+
+  const onPointerDown = useCallback(
+    (e: ReactPointerEvent<HTMLElement>) => {
+      pinch.onPointerDown(e);
+      if (pinch.hasMultiPointer()) {
+        // A pinch is being tracked — drop any pending swipe so it
+        // doesn't fire when the first finger lifts.
+        pendingGesture.current = null;
+        return;
+      }
+      if (!e.isPrimary) return;
+      const target = e.target;
+      if (target instanceof Element && target.closest(SWIPE_EXCLUDE_SELECTOR) !== null) {
+        pendingGesture.current = null;
+        return;
+      }
+      pendingGesture.current = {
+        pointerId: e.pointerId,
+        startX: e.clientX,
+        startY: e.clientY,
+        startTime: performance.now(),
+      };
+    },
+    [pinch],
+  );
 
   const onPointerUp = useCallback(
     (e: ReactPointerEvent<HTMLElement>) => {
+      const wasMulti = pinch.hasMultiPointer();
+      pinch.onPointerUp(e);
+      if (wasMulti) {
+        // The lifted pointer was part of a pinch — never resolve a
+        // swipe from the same gesture.
+        pendingGesture.current = null;
+        return;
+      }
       const g = pendingGesture.current;
       if (g === null || g.pointerId !== e.pointerId) return;
       pendingGesture.current = null;
@@ -168,12 +223,16 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
       const { state, navigate } = useViewStateStore.getState();
       navigate({ ...state, zoom: 'quadrant', focusedQuadrant: target });
     },
-    [quadrant],
+    [pinch, quadrant],
   );
 
-  const onPointerCancel = useCallback(() => {
-    pendingGesture.current = null;
-  }, []);
+  const onPointerCancel = useCallback(
+    (e: ReactPointerEvent<HTMLElement>) => {
+      pinch.onPointerCancel(e);
+      pendingGesture.current = null;
+    },
+    [pinch],
+  );
 
   // Step 6.5 — FAB in view2.
   //
@@ -194,6 +253,7 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
         className="emt-quadrant"
         aria-label={label}
         onPointerDown={onPointerDown}
+        onPointerMove={pinch.onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerCancel}
       >
