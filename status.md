@@ -6,37 +6,32 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 7.4 — Keyboard.
+**Last completed:** Step 7.5 — Reduced-motion path. Closes Phase 7.
 
-Global keyboard bindings now sit next to the wheel handler inside `ZoomController`, so every input modality that drives the view1 ↔ view2 morph is co-located:
+`ZoomController` now reads `useReducedMotion` (from `@emt/design-system`, Step 3.9) and picks the zoom morph transition accordingly via the pure `selectZoomTransition(reduced)` helper:
 
-- `Esc` → if view3 is open (`focusedTaskId !== undefined`), close it; else if `state.zoom === 'quadrant'`, zoom out to matrix; else no-op.
-- `Enter` on a focused matrix cell → navigate to `/q/<that quadrant>`.
-- Arrow keys on a focused matrix cell → move focus to the visually-adjacent cell (no wrap, standard WAI-ARIA grid pattern).
-- `+` / `=` → zoom into the focused cell (or `Q1` by default if focus is elsewhere).
-- `-` / `_` → zoom out of view2.
+- Default: `ZOOM_TRANSITION = { duration: 0.22, ease: [0.2, 0, 0, 1] }` (M3-standard).
+- Reduced motion: `INSTANT_TRANSITION = { duration: 0 }` — Framer Motion still routes the state change, but the visual cut is instantaneous.
 
-Pure helpers live in `packages/app/src/views/zoom/keyboard.ts`: `resolveArrowQuadrant(from, key)` codifies the 2 × 2 mapping (Q2↔Q1 / Q2↔Q4 / Q1↔Q3 / Q4↔Q3), and `isTextEditingTarget`, `isArrowKey`, `isZoomInKey`, `isZoomOutKey` keep the React handler small. The handler:
-- Skips when `event.defaultPrevented`, when any of `ctrl/meta/alt` is pressed (Ctrl+wheel and OS shortcuts get a clear lane), or when the target is text-editing (input / textarea / `select` / `contenteditable`).
-- Locates the focused cell via `target.closest('.emt-matrix__cell[data-quadrant]')` so unrelated `data-quadrant` carriers (TaskCardMenu items, QuadrantView frame) don't masquerade as cells.
-- Reuses `toMatrixState(state)` for every zoom-out path (Esc, `-`, wheel-down) so the `focusedTaskId` / `openedFromZoom` preservation is written once.
+Both constants live in `packages/app/src/views/zoom/zoom-transition.ts` so the choice is unit-testable without a DOM.
 
-`MatrixCell.tsx` adds `tabIndex={0}` to the Glow so cells are keyboard-focusable. `matrix.css` adds a `focus-visible` 3 px inset outline matched to the drop-indicator pattern so the ring doesn't shift layout (and dnd-kit's measured rects stay stable).
+The chosen transition is applied to the scene `motion.div` *and* propagated to every descendant motion through `<MotionConfig transition={...}>`. That lets the shared-`layoutId` morphs on matrix cells, the focused quadrant frame, and task cards all snap as one piece — and let me drop the three duplicated `transition={{ duration: 0.22, ease: ... }}` props from `MatrixCell.tsx`, `TaskCard.tsx`, and `QuadrantView.tsx` (they now inherit from MotionConfig). The scene exposes `data-reduced-motion="true"|"false"` for test/debug introspection.
 
 Tests:
-- `packages/app/test/zoom-keyboard.test.tsx`: pure mapping for every cell × every direction, both shifted/unshifted zoom keys, text-target guard. Integration over `<Routes>`: cells expose `tabIndex={0}`; Enter on Q2 → `/q/Q2`; Esc from `/q/Q2` → `/`; Esc on `/` is a no-op; arrow keys walk Q2→Q1→Q3 and `Right` on Q3 is a no-op; `+` zooms into focused cell, defaults to `Q1` when focus is elsewhere; `-` zooms out; typing keys inside an `<input>` does nothing; `Ctrl+Enter` is ignored.
-- `packages/app/e2e/keyboard.spec.ts`: keyboard-only Playwright covers Q2 → Enter → `/q/Q2` → Esc → `/` and the arrow-key focus walk to Q3 followed by Enter → `/q/Q3`.
+- `packages/app/test/zoom-reduced-motion.test.tsx`: pure `selectZoomTransition(true|false)` returns the expected constants; integration stubs `window.matchMedia` (same shape as `packages/design-system/test/use-reduced-motion.test.tsx`) and renders `<Routes>` in both modes. Asserts (a) the scene's `data-reduced-motion` flag reflects the OS preference, and (b) the same Enter-on-Q2 → `/q/Q2` transition lands at the same view-state in both modes — proving "only the animation duration differs".
 
 Verification completed:
 - `pnpm --filter @emt/app exec tsc` passes.
 - `pnpm lint` passes.
 - `pnpm format:check` passes.
-- `pnpm test` passes: 53 files / 370 tests.
-- `pnpm --filter @emt/app build` passes. Production build: 397.79 KB JS / 11.26 KB CSS.
+- `pnpm test` passes: 54 files / 375 tests.
+- `pnpm --filter @emt/app build` passes. Production build: 398.48 KB JS / 11.26 KB CSS.
 - `pnpm e2e` passes: 6 tests.
-- CI + Deploy green on `54b308d`.
+- CI + Deploy green on `ce18bdb`.
 
-**Next:** Step 7.5 — Reduced-motion path. `ZoomController` reads `useReducedMotion` (Step 3.9) and skips the Framer Motion transition (instant cuts, no morph). Done when a test covers both modes for the same state transitions; only the animation duration differs.
+**Phase 7 exit:** view1 ↔ view2 navigation feels seamless across input types (touch pinch, mouse wheel + Ctrl, keyboard, reduced-motion respected).
+
+**Next:** Step 8.1 — Surface container. view3 mounts inside `ResponsiveSurface` (Step 3.4): bottom sheet on mobile, right side panel on desktop, ≤ 480 px wide. The matrix below remains visible. Outputs `packages/app/src/views/task/TaskView.tsx` + a route handler reading `?task=:id`. Done when opening view3 over view1 keeps the matrix dim but visible, and over view2 the focused quadrant is partly visible.
 
 ## Environment notes
 
