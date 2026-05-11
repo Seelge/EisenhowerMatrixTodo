@@ -6,30 +6,31 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 7.2 — Touch pinch.
+**Last completed:** Step 7.3 — Mouse wheel.
 
-Two-pointer pinch detection now drives view1 ↔ view2 navigation. Pure helpers live in `packages/app/src/views/zoom/pinch.ts` (`distance`, `midpoint`, `resolvePinchDirection`, `quadrantAtPoint`); thresholds are `inThreshold: 1.3`, `outThreshold: 0.77`, `minInitialDistance: 40 px`. `quadrantAtPoint` maps a viewport-relative point inside the matrix rect to the canonical Q2/Q1/Q4/Q3 layout (top-left/top-right/bottom-left/bottom-right); the rect-center tie resolves to Q3.
+`Ctrl + wheel` now toggles zoom from the same shell that owns the morph it triggers. Plain wheel is left alone so per-cell / per-quadrant scroll still works. `Ctrl + wheel-up` on view1 zooms into the cell under the cursor (resolved geometrically against the scene rect via `quadrantAtPoint` from `pinch.ts`); `Ctrl + wheel-down` on view2 returns to view1. macOS trackpad pinch already synthesizes `ctrlKey: true` on wheel, so the same handler covers desktop trackpad pinch without extra plumbing.
 
-`packages/app/src/views/zoom/usePinchGesture.ts` wraps the helpers in a React hook that tracks pointer ids, snapshots the initial finger distance + midpoint + host bounding rect when the second pointer lands, and finalizes on pointerup. It also exposes `hasMultiPointer()` so callers can suppress single-pointer gestures (swipe / drag) while a pinch is in flight. Refs for the consumer's callback / options are written inside `useEffect` to satisfy `react-hooks/refs`.
+Pure helper `packages/app/src/views/zoom/wheel.ts` exposes `resolveWheelDirection(deltaY)` with a 5 px deadzone and `WHEEL_COOLDOWN_MS = 300`. Browser convention is honored: `deltaY > 0` is wheel-down (zoom out), `deltaY < 0` is wheel-up (zoom in).
 
-`MatrixView` spreads the hook's handlers onto its `<main>` and navigates to `/q/<Qn>` on pinch-in using `quadrantAtPoint(midpoint, rect)`. The midpoint is captured at gesture start, so the destination quadrant doesn't shift while the user spreads their fingers.
-
-`QuadrantView` adds the same handlers and additionally wires `pinch.onPointerMove` so the pointer positions stay current. The pinch-out path navigates back to `{ zoom: 'matrix' }` (constructed cleanly to satisfy `exactOptionalPropertyTypes`) and forwards any open `focusedTaskId` / `openedFromZoom`. The existing swipe handler now reads `pinch.hasMultiPointer()` and clears its `pendingGesture` whenever a second pointer lands or the lifted pointer was part of a pinch — that way a fast finger-1 drift during a pinch can't bleed into a phantom swipe.
-
-`packages/app/src/views/zoom/highlight.ts` is a tiny Zustand store with a 600 ms TTL (`PINCH_HIGHLIGHT_MS`). `MatrixCell` reads it via `usePinchHighlight(quadrant)` and toggles `data-pinch-highlight="true"` on the Glow. `matrix.css` adds an outline + brightness rule for that attribute, transitioning back via the existing motion tokens.
+`ZoomController.tsx` adds an `onWheel` on the scene `motion.div`. Behavior:
+- `!e.ctrlKey` → return immediately (preserve native scroll).
+- `e.ctrlKey` → `preventDefault()` *always* (suppress browser page-zoom even when the action is a no-op like cooldown / deadzone / already-min-or-max-zoom).
+- Throttle via `useRef` against `WHEEL_COOLDOWN_MS`.
+- `state.zoom === 'matrix' && direction === 'up'` → `quadrantAtPoint({clientX,clientY}, currentTarget.getBoundingClientRect())` → `navigate({ ...state, zoom: 'quadrant', focusedQuadrant: target })`.
+- `state.zoom === 'quadrant' && direction === 'down'` → build a fresh `{ zoom: 'matrix' }` carrying any `focusedTaskId` / `openedFromZoom` (the same `exactOptionalPropertyTypes`-safe construction QuadrantView's pinch-out uses).
 
 Tests:
-- `packages/app/test/matrix-pinch.test.tsx` covers (a) the pure helpers — direction classification at the thresholds, deadzone, min-initial-distance, midpoint→quadrant mapping; (b) `MatrixView` integration — synthetic two-pointer pinch-in centred on each of the four quadrant midpoints navigates to the right `/q/<Qn>`; (c) `QuadrantView` integration — pinch-out returns to `/`, sets `usePinchHighlightStore.active = previous`, and the active value clears after `PINCH_HIGHLIGHT_MS`; (d) regressions: pinch-in from view2 is a no-op, and a pinch suppresses an otherwise-qualifying swipe on the same touch. Happy-dom doesn't compute layout, so the host's `getBoundingClientRect` is stubbed to a 400×400 rect.
+- `packages/app/test/zoom-wheel.test.tsx` covers (a) the pure direction classifier — up/down thresholds + deadzone; (b) integration over a real `<Routes>` shell: `Ctrl + wheel-up` at each of the four cell midpoints navigates to the right `/q/<Qn>`, with `event.defaultPrevented === true`; (c) `Ctrl + wheel-down` from `/q/Q3` returns to `/`; (d) plain wheel (no ctrlKey) does *not* `preventDefault` and does *not* navigate; (e) `Ctrl + wheel-down` on view1 and `Ctrl + wheel-up` on view2 are no-ops (still preventDefault to swallow browser zoom); (f) cooldown swallows a rapid second wheel-up. Scene `getBoundingClientRect` is stubbed to a 400×400 box for the cursor→quadrant resolution.
 
 Verification completed:
 - `pnpm --filter @emt/app exec tsc` passes.
 - `pnpm lint` passes.
-- `pnpm format:check` passes after `pnpm format`.
-- `pnpm test` passes: 51 files / 345 tests.
-- `pnpm --filter @emt/app build` passes. Production build: 395.38 KB JS / 11.13 KB CSS.
+- `pnpm format:check` passes.
+- `pnpm test` passes: 52 files / 357 tests.
+- `pnpm --filter @emt/app build` passes. Production build: 396.07 KB JS / 11.13 KB CSS.
 - `pnpm e2e` passes: 4 tests.
 
-**Next:** Step 7.3 — Mouse wheel. `Ctrl + wheel` toggles zoom; plain wheel scrolls within the focused element. Wheel-up = zoom in, wheel-down = zoom out. Wire a wheel handler into `ZoomController`, ensure plain-wheel scrolling inside a cell is unaffected, and assert `Ctrl + wheel-up` on view1 zooms into the cell under the cursor while `Ctrl + wheel-down` on view2 returns to view1.
+**Next:** Step 7.4 — Keyboard. Global keyboard handler at the app shell, dispatching to view-state: `Esc` zooms out from view2 (or closes view3 if open); `Enter` on a focused matrix cell zooms in; arrow keys move focus between cells; `+` / `-` zoom. Done when a keyboard-only e2e navigates to Q2 → Enter → land in view2/Q2; Esc returns to view1.
 
 ## Environment notes
 
