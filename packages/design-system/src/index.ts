@@ -19,7 +19,11 @@ export {
   type SnackbarProviderProps,
   type SnackbarShowOptions,
 } from './SnackbarProvider.js';
-export { ThemeProvider, type ThemeProviderProps } from './ThemeProvider.js';
+export {
+  ThemeProvider,
+  type QuadrantColorOverrides,
+  type ThemeProviderProps,
+} from './ThemeProvider.js';
 export { useReducedMotion } from './useReducedMotion.js';
 export { COMPONENT_CSS } from './components.js';
 export { RESET_CSS } from './reset.js';

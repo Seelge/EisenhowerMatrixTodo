@@ -18,13 +18,14 @@
  */
 import { SnackbarProvider, ThemeProvider } from '@emt/design-system';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import { ErrorBoundary } from './ErrorBoundary.js';
 import { I18nProvider } from './i18n/provider.js';
 import { FirstRun } from './onboarding/FirstRun.js';
 import { Router } from './routes/Router.js';
 import { Routes } from './routes/Routes.js';
+import { useAppearanceOverrides, useAppearanceStore } from './state/appearance.js';
 
 export function App(): ReactNode {
   const [queryClient] = useState(
@@ -35,8 +36,12 @@ export function App(): ReactNode {
         },
       }),
   );
+  const overrides = useAppearanceOverrides();
+  useEffect(() => {
+    void useAppearanceStore.getState().load();
+  }, []);
   return (
-    <ThemeProvider>
+    <ThemeProvider colorOverrides={overrides}>
       <QueryClientProvider client={queryClient}>
         <SnackbarProvider>
           <FirstRun />

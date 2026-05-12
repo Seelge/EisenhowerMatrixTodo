@@ -670,7 +670,7 @@ Depends on Phase 4. Internal sub-routing.
 **Outputs.** `AccountPanel.tsx`. Local backend has no account; renders informational copy. Google/MS rows are placeholders.
 **Done when.** UI renders correctly for the local-only state.
 
-### Step 9.4 — Appearance panel
+### Step ✅ 9.4 — Appearance panel
 **Goal.** Theme is locked to Dark in this release (rendered as disabled). Per-quadrant color overrides editable; persisted to user prefs.
 **Outputs.** `AppearancePanel.tsx`. Override state stored under a `prefs` IDB store; merged into the theme on read.
 **Done when.** Changing Q1 color updates the matrix glow without reload; clearing override returns to the design-system default.

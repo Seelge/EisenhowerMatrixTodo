@@ -28,7 +28,14 @@ function detachReset(): void {
   styleElement = null;
 }
 
-function buildThemeVariables(): CSSProperties {
+export interface QuadrantColorOverrides {
+  q1?: string;
+  q2?: string;
+  q3?: string;
+  q4?: string;
+}
+
+function buildThemeVariables(overrides: QuadrantColorOverrides | undefined): CSSProperties {
   const vars: Record<string, string | number> = {
     colorScheme: 'dark',
     '--color-bg': tokens.color.bg,
@@ -37,10 +44,10 @@ function buildThemeVariables(): CSSProperties {
     '--color-text-primary': tokens.color.textPrimary,
     '--color-text-secondary': tokens.color.textSecondary,
     '--color-accent': tokens.color.accent,
-    '--color-q1': tokens.color.q1,
-    '--color-q2': tokens.color.q2,
-    '--color-q3': tokens.color.q3,
-    '--color-q4': tokens.color.q4,
+    '--color-q1': overrides?.q1 ?? tokens.color.q1,
+    '--color-q2': overrides?.q2 ?? tokens.color.q2,
+    '--color-q3': overrides?.q3 ?? tokens.color.q3,
+    '--color-q4': overrides?.q4 ?? tokens.color.q4,
     '--color-error': tokens.color.error,
 
     '--space-xs': tokens.space.xs,
@@ -98,10 +105,17 @@ function buildThemeVariables(): CSSProperties {
 
 export interface ThemeProviderProps {
   children: ReactNode;
+  /**
+   * Optional per-quadrant color overrides. Undefined keys fall back
+   * to the design-system tokens — assigning a value swaps the
+   * matching CSS custom property (`--color-q1` etc.) and the matrix /
+   * quadrant surfaces pick it up immediately (no reload).
+   */
+  colorOverrides?: QuadrantColorOverrides;
 }
 
-export function ThemeProvider({ children }: ThemeProviderProps): ReactNode {
-  const style = useMemo(() => buildThemeVariables(), []);
+export function ThemeProvider({ children, colorOverrides }: ThemeProviderProps): ReactNode {
+  const style = useMemo(() => buildThemeVariables(colorOverrides), [colorOverrides]);
   useEffect(() => {
     attachReset();
     return detachReset;
