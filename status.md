@@ -6,7 +6,9 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 9.3 — Account panel (`AccountPanel.tsx`). Renders the registered backends with an informational status string for each (today: just the local IDB backend, which has no account concept) plus two future-backend placeholder rows for Google Tasks and Microsoft To-Do with disabled "Sign out" buttons. Structure mirrors `BackendsPanel` so the eventual remote rows can share the registry plumbing. 1-case test asserts the local-only state renders as expected. CI run `25765395927` + Deploy `25765395930` green on `main`.
+**Last completed:** Step 9.4 — Appearance panel + per-quadrant color overrides. `AppearancePanel.tsx` locks the theme radio to "Dark" (the only theme shipped this release) and renders a per-quadrant color row for each of Q1-Q4 — native `<input type="color">` plus a Reset button that drops the override and returns to the design-system default. Plumbing: new `state/appearance.ts` Zustand store mirrors saved overrides under `appearance:q{n}` keys in the shared meta IDB store (reusing the registry's existing `MetaStore`); `ThemeProvider` gained an optional `colorOverrides` prop wiring through to the matching CSS variables; `App.tsx` calls `useAppearanceStore.load()` on mount and forwards live overrides so the matrix glow updates without reload. 4-case test covers default seeding, live CSS-variable update via the store, reset semantics, and persistence across remount. CI run `25765746450` + Deploy `25765746496` green on `main`.
+
+**Previously completed:** Step 9.3 — Account panel (`AccountPanel.tsx`). Renders the registered backends with an informational status string for each (today: just the local IDB backend, which has no account concept) plus two future-backend placeholder rows for Google Tasks and Microsoft To-Do with disabled "Sign out" buttons. Structure mirrors `BackendsPanel` so the eventual remote rows can share the registry plumbing. 1-case test asserts the local-only state renders as expected. CI run `25765395927` + Deploy `25765395930` green on `main`.
 
 **Previously completed:** Step 9.2 — Backends panel (`BackendsPanel.tsx`). Lists registered backends with a default radio writing through `registry.setDefault(id)` (persists to the registry's meta store, so a remount picks the same selection up). Two placeholder rows for Google Tasks and Microsoft To-Do preview the eventual shape with disabled Connect buttons and a "Coming later" status. Local-backend status label is "Always in sync (local writes are direct)" — natural slot for a real timestamp once the sync engine surfaces one. OptionsView's `GroupPanel` dispatches the `backends` slug to this panel; the other five still render the placeholder. 2-case test covers initial layout + future placeholders, and default-persistence across remount. CI run `25765242150` + Deploy `25765242178` green on `main`.
 
@@ -59,7 +61,7 @@ Verification:
 
 **Also: docs.** A small follow-up commit (`docs: backfill ✅`) added the missing ✅ markers on plan.md headings for steps 7.2–7.5, 8.1, and 8.2 — `status.md` had already recorded them complete, but the inline headings were stale.
 
-**Next:** Step 9.4 — Appearance panel. Theme locked to Dark in this release (disabled). Per-quadrant color overrides editable; persisted to user prefs (a new `prefs` IDB store). Output `AppearancePanel.tsx`. Done when changing Q1 color updates the matrix glow without reload, and clearing override returns to the design-system default.
+**Next:** Step 9.5 — Defaults panel. Default quadrant for new tasks; default secondary sort (due date / created / title). Output `DefaultsPanel.tsx`. Done when changing default quadrant changes the FAB → quick composer pre-selection.
 
 ## Environment notes
 
