@@ -17,6 +17,7 @@ import { useT } from '../../i18n/provider.js';
 import type { StringKey } from '../../i18n/strings.en.js';
 import { useInternalPath, useViewStateStore } from '../../state/view-state.js';
 
+import { AccountPanel } from './AccountPanel.js';
 import { BackendsPanel } from './BackendsPanel.js';
 import {
   OPTIONS_INDEX_PATH,
@@ -80,6 +81,9 @@ function GroupPanel({ group }: { group: OptionsGroup }): ReactNode {
   const t = useT();
   if (group === 'backends') {
     return <BackendsPanel />;
+  }
+  if (group === 'account') {
+    return <AccountPanel />;
   }
   // Steps 9.3–9.7 fill the remaining groups in.
   return (

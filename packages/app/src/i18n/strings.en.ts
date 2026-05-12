@@ -73,6 +73,8 @@ export const strings = {
   'app.options.backends.comingLater': 'Coming later',
   'app.options.backends.future.google': 'Google Tasks',
   'app.options.backends.future.microsoft': 'Microsoft To-Do',
+  'app.options.account.local': 'Local data — no account required',
+  'app.options.account.signOut': 'Sign out',
   'app.task.notFound': 'This task is no longer available.',
   'app.task.menu.label': 'Task actions',
   'app.task.menu.moveTo.q1': 'Move to Do',

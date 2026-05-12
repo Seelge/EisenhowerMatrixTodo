@@ -665,7 +665,7 @@ Depends on Phase 4. Internal sub-routing.
 **Outputs.** `BackendsPanel.tsx`. (Connect actions for Google/MS will be wired when those adapters land; in this release only "Local (IndexedDB)" is connectable; the other two render disabled rows with "Coming later".)
 **Done when.** Default selection persists; UI shows last-sync timestamp from the sync engine.
 
-### Step 9.3 — Account panel
+### Step ✅ 9.3 — Account panel
 **Goal.** Show connected identity per backend; sign-out per backend.
 **Outputs.** `AccountPanel.tsx`. Local backend has no account; renders informational copy. Google/MS rows are placeholders.
 **Done when.** UI renders correctly for the local-only state.
