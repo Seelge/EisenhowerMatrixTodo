@@ -15,6 +15,8 @@ import { DebugPage } from '../debug/DebugPage.js';
 import { ConnectBanner } from '../onboarding/ConnectBanner.js';
 import { useInternalPath, useViewState } from '../state/view-state.js';
 import { MatrixView } from '../views/matrix/MatrixView.js';
+import { isOptionsPath } from '../views/options/options-routing.js';
+import { OptionsView } from '../views/options/OptionsView.js';
 import { QuadrantView } from '../views/quadrant/QuadrantView.js';
 import { TaskView } from '../views/task/TaskView.js';
 import { ZoomController } from '../views/zoom/ZoomController.js';
@@ -37,6 +39,10 @@ export function Routes(): ReactNode {
   // its import) out of the bundle.
   if (DEBUG_ENABLED && stripQuery(internalPath) === '/__debug') {
     return <DebugPage />;
+  }
+
+  if (isOptionsPath(internalPath)) {
+    return <OptionsView />;
   }
 
   return (

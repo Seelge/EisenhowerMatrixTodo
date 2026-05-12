@@ -655,7 +655,7 @@ Settings & data management.
 
 Depends on Phase 4. Internal sub-routing.
 
-### Step 9.1 — Options shell + sub-routing
+### Step ✅ 9.1 — Options shell + sub-routing
 **Goal.** `/options` lists groups; `/options/:group` opens the corresponding panel; back-button friendly.
 **Outputs.** `packages/app/src/views/options/OptionsView.tsx`, `OptionsList.tsx`.
 **Done when.** Browser back/forward works between groups.

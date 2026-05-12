@@ -1,0 +1,95 @@
+/*
+ * Options view styles (Step 9.1).
+ *
+ * Single-column reading layout. Group list rows are full-width tap
+ * targets so the surface works on mobile without further tweaking;
+ * desktop inherits the same shape (no max-width constraint yet —
+ * Phase-11 polish can tune this).
+ */
+
+.emt-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  min-height: 0;
+}
+
+.emt-options__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.emt-options__heading {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.emt-options__back {
+  appearance: none;
+  border: 1px solid var(--color-surface-elevated);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-md);
+  width: 40px;
+  height: 40px;
+  font: inherit;
+  font-size: var(--font-size-lg);
+  cursor: pointer;
+}
+
+.emt-options__back:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.emt-options__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.emt-options__list-button {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  width: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-elevated);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  text-align: start;
+  cursor: pointer;
+  color: var(--color-text-primary);
+}
+
+.emt-options__list-button:hover {
+  background: var(--color-surface-elevated);
+}
+
+.emt-options__list-button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.emt-options__list-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+}
+
+.emt-options__list-summary {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.emt-options__panel-stub {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}

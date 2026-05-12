@@ -55,6 +55,15 @@ export interface ViewStateStore {
   navigate: (next: ViewState) => void;
   /** Replace the current history entry and update the store. */
   replace: (next: ViewState) => void;
+  /**
+   * Push a raw internal path (out-of-band routes like `/options/...`
+   * that don't map to a `ViewState`). The store's `internalPath`
+   * updates so subscribers re-render; the projected `state` reflects
+   * `parseUrl(internal)`, which falls back to the matrix view for
+   * unknown paths — fine because nothing under `/options/*` cares
+   * about the projected state.
+   */
+  navigateRaw: (internal: string) => void;
   /** Re-read the URL into the store. Idempotent. */
   syncFromUrl: () => void;
 }
@@ -79,6 +88,12 @@ export const useViewStateStore = create<ViewStateStore>((set) => ({
       window.history.replaceState(null, '', toExternalPath(internal));
     }
     set({ state: next, internalPath: internal });
+  },
+  navigateRaw: (internal) => {
+    if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', toExternalPath(internal));
+    }
+    set({ state: parseUrl(internal), internalPath: internal });
   },
   syncFromUrl: () => {
     if (typeof window === 'undefined') return;
