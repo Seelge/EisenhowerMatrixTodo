@@ -27,6 +27,7 @@ import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { useT } from '../../i18n/provider.js';
 import { useSetTaskRank } from '../../queries/task-order.js';
 import { useUpdateTask } from '../../queries/tasks.js';
+import { useNewTaskQuadrant } from '../../state/defaults.js';
 import { useViewStateStore } from '../../state/view-state.js';
 import { quadrantAtPoint } from '../zoom/pinch.js';
 import { usePinchGesture } from '../zoom/usePinchGesture.js';
@@ -60,6 +61,7 @@ export function MatrixView(): ReactNode {
   const [composerOpen, setComposerOpen] = useState(false);
   const openComposer = useCallback(() => setComposerOpen(true), []);
   const closeComposer = useCallback(() => setComposerOpen(false), []);
+  const newTaskQuadrant = useNewTaskQuadrant();
 
   // Step 7.2 — pinch-in zooms into the quadrant under the midpoint.
   // The midpoint is captured at gesture start (when the second finger
@@ -105,7 +107,11 @@ export function MatrixView(): ReactNode {
         >
           +
         </Fab>
-        <QuickComposer open={composerOpen} onClose={closeComposer} />
+        <QuickComposer
+          open={composerOpen}
+          onClose={closeComposer}
+          defaultQuadrant={newTaskQuadrant}
+        />
       </main>
     </DndContext>
   );

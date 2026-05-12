@@ -675,7 +675,7 @@ Depends on Phase 4. Internal sub-routing.
 **Outputs.** `AppearancePanel.tsx`. Override state stored under a `prefs` IDB store; merged into the theme on read.
 **Done when.** Changing Q1 color updates the matrix glow without reload; clearing override returns to the design-system default.
 
-### Step 9.5 — Defaults panel
+### Step ✅ 9.5 — Defaults panel
 **Goal.** Default quadrant for new tasks; default secondary sort (due date / created / title).
 **Outputs.** `DefaultsPanel.tsx`. Defaults are read by Step 5.8 and Step 5.7.
 **Done when.** Changing default quadrant changes the FAB → quick composer pre-selection.

@@ -264,3 +264,34 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+.emt-defaults-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.emt-defaults-panel__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border: 1px solid var(--color-surface-elevated);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.emt-defaults-panel__legend {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0 var(--space-xs);
+}
+
+.emt-defaults-panel__option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--color-text-primary);
+}

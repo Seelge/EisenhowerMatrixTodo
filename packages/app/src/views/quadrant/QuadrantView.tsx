@@ -44,6 +44,7 @@ import type { StringKey } from '../../i18n/strings.en.js';
 import { useSetTaskRank, useTaskOrder } from '../../queries/task-order.js';
 import { useTasks, useUpdateTask } from '../../queries/tasks.js';
 import type { ViewState } from '../../routes/contract.js';
+import { useSortBy } from '../../state/defaults.js';
 import { type TaskOrderMap } from '../../state/task-order.js';
 import { useViewStateStore } from '../../state/view-state.js';
 import { createDragEndHandler } from '../matrix/dnd.js';
@@ -105,9 +106,10 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
   const query = useTasks(quadrant);
   const orderQuery = useTaskOrder();
   const ranks = orderQuery.data ?? EMPTY_RANKS;
+  const sortBy = useSortBy();
   const tasks = useMemo(
-    () => (query.data ? sortTasks(query.data, ranks) : undefined),
-    [query.data, ranks],
+    () => (query.data ? sortTasks(query.data, ranks, sortBy) : undefined),
+    [query.data, ranks, sortBy],
   );
 
   const neighbors = NEIGHBORS[quadrant];

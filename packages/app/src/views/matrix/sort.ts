@@ -18,6 +18,7 @@
  */
 import type { BackendId, Task, TaskId } from '@emt/backend-core';
 
+import type { SortKey } from '../../state/defaults.js';
 import { taskOrderKey, type TaskOrderMap } from '../../state/task-order.js';
 
 /** A `Task` paired with whatever `(backendId, taskId)` ⇒ rank lookup tells us. */
@@ -43,12 +44,31 @@ function compareDue(a: Task, b: Task): number {
   return aKey < bKey ? -1 : aKey > bKey ? 1 : 0;
 }
 
+function compareCreated(a: Task, b: Task): number {
+  if (a.createdAt < b.createdAt) return -1;
+  if (a.createdAt > b.createdAt) return 1;
+  return 0;
+}
+
+function compareTitle(a: Task, b: Task): number {
+  // Locale-aware case-insensitive comparison so "apple" < "Banana".
+  const cmp = a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+  return cmp;
+}
+
 /**
  * Comparator implementing the rules above. Exported so callers (e.g.
  * tests, future intra-cell sortable helpers) can reuse it without
- * always going through {@link sortTasks}.
+ * always going through {@link sortTasks}. The secondary key is
+ * configurable via the Defaults panel (Step 9.5); `createdAt` is the
+ * deterministic final tiebreak regardless of the secondary choice.
  */
-export function compareTasks(a: Task, b: Task, ranks: TaskOrderMap): number {
+export function compareTasks(
+  a: Task,
+  b: Task,
+  ranks: TaskOrderMap,
+  secondary: SortKey = 'dueDate',
+): number {
   const aRank = rankOf(a, ranks);
   const bRank = rankOf(b, ranks);
   if (aRank !== undefined && bRank !== undefined) {
@@ -59,19 +79,31 @@ export function compareTasks(a: Task, b: Task, ranks: TaskOrderMap): number {
     return 1;
   }
 
-  const dueCmp = compareDue(a, b);
-  if (dueCmp !== 0) return dueCmp;
+  let secondaryCmp = 0;
+  if (secondary === 'dueDate') {
+    secondaryCmp = compareDue(a, b);
+  } else if (secondary === 'title') {
+    secondaryCmp = compareTitle(a, b);
+  }
+  // `createdAt` skips the explicit second compare and falls through to
+  // the final tiebreak below.
+  if (secondaryCmp !== 0) return secondaryCmp;
 
-  // Final tiebreak: createdAt ascending. Both fields are ISO strings
-  // assigned by the local backend, so lexical comparison is correct.
-  if (a.createdAt < b.createdAt) return -1;
-  if (a.createdAt > b.createdAt) return 1;
-  return 0;
+  return compareCreated(a, b);
 }
 
-/** Return a new array of `tasks` sorted by {@link compareTasks}. */
-export function sortTasks(tasks: readonly Task[], ranks: TaskOrderMap): readonly Task[] {
-  return [...tasks].sort((a, b) => compareTasks(a, b, ranks));
+/**
+ * Return a new array of `tasks` sorted by {@link compareTasks}. The
+ * secondary sort key defaults to `dueDate` to match the Step 5.7
+ * contract; the Defaults panel feeds in `'createdAt'` or `'title'`
+ * when the user chose another option.
+ */
+export function sortTasks(
+  tasks: readonly Task[],
+  ranks: TaskOrderMap,
+  secondary: SortKey = 'dueDate',
+): readonly Task[] {
+  return [...tasks].sort((a, b) => compareTasks(a, b, ranks, secondary));
 }
 
 /**

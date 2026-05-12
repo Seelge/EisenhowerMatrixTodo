@@ -26,6 +26,7 @@ import { FirstRun } from './onboarding/FirstRun.js';
 import { Router } from './routes/Router.js';
 import { Routes } from './routes/Routes.js';
 import { useAppearanceOverrides, useAppearanceStore } from './state/appearance.js';
+import { useDefaultsStore } from './state/defaults.js';
 
 export function App(): ReactNode {
   const [queryClient] = useState(
@@ -39,6 +40,7 @@ export function App(): ReactNode {
   const overrides = useAppearanceOverrides();
   useEffect(() => {
     void useAppearanceStore.getState().load();
+    void useDefaultsStore.getState().load();
   }, []);
   return (
     <ThemeProvider colorOverrides={overrides}>

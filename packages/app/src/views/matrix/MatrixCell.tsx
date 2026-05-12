@@ -33,6 +33,7 @@ import { useT } from '../../i18n/provider.js';
 import type { StringKey } from '../../i18n/strings.en.js';
 import { useClearTaskRanks, useTaskOrder } from '../../queries/task-order.js';
 import { useTasks } from '../../queries/tasks.js';
+import { useSortBy } from '../../state/defaults.js';
 import { taskOrderKey, type TaskOrderMap } from '../../state/task-order.js';
 import { usePinchHighlight } from '../zoom/highlight.js';
 import { quadrantLayoutId } from '../zoom/ZoomController.js';
@@ -69,9 +70,10 @@ export function MatrixCell({ quadrant }: MatrixCellProps): ReactNode {
   const clearRanks = useClearTaskRanks();
 
   const ranks = orderQuery.data ?? EMPTY_RANKS;
+  const sortBy = useSortBy();
   const tasks = useMemo(
-    () => (query.data ? sortTasks(query.data, ranks) : undefined),
-    [query.data, ranks],
+    () => (query.data ? sortTasks(query.data, ranks, sortBy) : undefined),
+    [query.data, ranks, sortBy],
   );
 
   // "Reset" is only meaningful when at least one task in the cell has
