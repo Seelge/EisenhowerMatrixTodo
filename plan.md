@@ -687,7 +687,7 @@ Depends on Phase 4. Internal sub-routing.
 - Round-trip test: export → clear → import → original tasks restored.
 - Clear local cache leaves remote backends intact (verified with the in-memory adapter as a remote stand-in).
 
-### Step 9.7 — About panel
+### Step ✅ 9.7 — About panel
 **Goal.** Version, build commit SHA, link to source.
 **Outputs.** `AboutPanel.tsx`. Build info injected at Vite build time.
 **Done when.** Live build shows the actual commit hash.

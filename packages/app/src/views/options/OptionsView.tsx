@@ -17,6 +17,7 @@ import { useT } from '../../i18n/provider.js';
 import type { StringKey } from '../../i18n/strings.en.js';
 import { useInternalPath, useViewStateStore } from '../../state/view-state.js';
 
+import { AboutPanel } from './AboutPanel.js';
 import { AccountPanel } from './AccountPanel.js';
 import { AppearancePanel } from './AppearancePanel.js';
 import { BackendsPanel } from './BackendsPanel.js';
@@ -97,7 +98,9 @@ function GroupPanel({ group }: { group: OptionsGroup }): ReactNode {
   if (group === 'data') {
     return <DataPanel />;
   }
-  // Steps 9.3–9.7 fill the remaining groups in.
+  if (group === 'about') {
+    return <AboutPanel />;
+  }
   return (
     <div className="emt-options__panel" data-options-group={group}>
       <p className="emt-options__panel-stub">{t('app.options.panel.placeholder')}</p>
