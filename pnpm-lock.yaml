@@ -53,6 +53,9 @@ importers:
       '@emt/backend-core':
         specifier: workspace:*
         version: link:../backend-core
+      '@emt/backend-inmemory':
+        specifier: workspace:*
+        version: link:../backend-inmemory
       '@emt/backend-local-indexeddb':
         specifier: workspace:*
         version: link:../backend-local-indexeddb

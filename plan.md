@@ -620,7 +620,7 @@ Task editor. Depends on Phase 4 and Phase 3.
 **Outputs.** `QuadrantField.tsx`.
 **Done when.** Picking a different quadrant updates the task; matrix below reflects the move.
 
-### Step 8.6 — Backend selector + migration
+### Step ✅ 8.6 — Backend selector + migration
 **Goal.** Dropdown of registered backends; selecting a different backend triggers `migrateTask` (Step 2.7) with a progress indicator and error handling.
 **Outputs.** `BackendField.tsx`.
 **Done when.**

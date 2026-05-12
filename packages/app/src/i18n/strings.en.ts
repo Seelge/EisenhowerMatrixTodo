@@ -40,6 +40,12 @@ export const strings = {
   'app.task.fields.priority.normal': 'Normal',
   'app.task.fields.priority.high': 'High',
   'app.task.fields.quadrant': 'Quadrant',
+  'app.task.fields.backend': 'Backend',
+  'app.task.fields.backend.migrating': 'Migrating…',
+  'app.task.fields.backend.error': 'Could not migrate this task. The original copy is unchanged.',
+  'app.task.fields.backend.dismiss': 'Dismiss',
+  'app.task.fields.backend.staleSource':
+    'Migrated, but the original copy lingered. It will be cleaned up later.',
   'app.task.notFound': 'This task is no longer available.',
   'app.task.menu.label': 'Task actions',
   'app.task.menu.moveTo.q1': 'Move to Do',

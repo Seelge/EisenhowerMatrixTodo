@@ -18,6 +18,7 @@ import {
   migrateTask,
   type BackendId,
   type Quadrant,
+  type StaleSourceEvent,
   type Task,
   type TaskDraft,
   type TaskId,
@@ -146,15 +147,25 @@ export interface MigrateTaskInput {
   readonly taskId: TaskId;
   readonly fromBackendId: BackendId;
   readonly toBackendId: BackendId;
+  /**
+   * Called when target-create succeeded but the source-delete then
+   * failed. The target task is still returned to the mutation; the
+   * caller typically surfaces a warning and queues the source for
+   * cleanup retry.
+   */
+  readonly onStaleSource?: (event: StaleSourceEvent) => void;
 }
 
 export function useMigrateTask(): UseMutationResult<Task, Error, MigrateTaskInput> {
   const qc = useQueryClient();
   return useMutation<Task, Error, MigrateTaskInput>({
-    mutationFn: async ({ taskId, fromBackendId, toBackendId }) => {
+    mutationFn: async ({ taskId, fromBackendId, toBackendId, onStaleSource }) => {
       const { registry } = await getBackends();
       return migrateTask(
-        { getAdapter: (id) => registry.get(id) },
+        {
+          getAdapter: (id) => registry.get(id),
+          ...(onStaleSource !== undefined ? { onStaleSource } : {}),
+        },
         taskId,
         fromBackendId,
         toBackendId,

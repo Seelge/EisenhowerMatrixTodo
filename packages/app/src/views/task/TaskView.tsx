@@ -33,6 +33,7 @@ import { useTask } from '../../queries/tasks.js';
 import type { ViewState } from '../../routes/contract.js';
 import { useViewState, useViewStateStore } from '../../state/view-state.js';
 
+import { BackendField } from './BackendField.js';
 import { DueField } from './DueField.js';
 import { NotesField } from './NotesField.js';
 import { PriorityField } from './PriorityField.js';
@@ -88,6 +89,7 @@ function TaskViewBody({ task }: { task: Task | undefined }): ReactNode {
       <DueField task={task} />
       <PriorityField task={task} />
       <QuadrantField task={task} />
+      <BackendField task={task} />
       <StatusToggle task={task} />
     </div>
   );

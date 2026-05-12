@@ -16,7 +16,7 @@
  *  - I18nProvider is the innermost provider — only views need it; the
  *    fallback uses the default translator from the context default.
  */
-import { ThemeProvider } from '@emt/design-system';
+import { SnackbarProvider, ThemeProvider } from '@emt/design-system';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 
@@ -38,14 +38,16 @@ export function App(): ReactNode {
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <FirstRun />
-        <Router>
-          <ErrorBoundary>
-            <I18nProvider>
-              <Routes />
-            </I18nProvider>
-          </ErrorBoundary>
-        </Router>
+        <SnackbarProvider>
+          <FirstRun />
+          <Router>
+            <ErrorBoundary>
+              <I18nProvider>
+                <Routes />
+              </I18nProvider>
+            </ErrorBoundary>
+          </Router>
+        </SnackbarProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );
