@@ -602,10 +602,13 @@ Task editor. Depends on Phase 4 and Phase 3.
 **Outputs.** `TitleField.tsx`, `NotesField.tsx`, `StatusToggle.tsx`. All wired to `useUpdateTask` with debounce (300 ms).
 **Done when.** Edits persist; fast typing does not produce N writes (debounced to 1).
 
-### Step 8.3 — Due date + time
+### Step ✅ 8.3 — Due date + time
 **Goal.** Use `DueDatePicker` (Step 3.7) for date; an optional time field appears after a date is set.
 **Outputs.** `DueField.tsx`.
 **Done when.** Each preset works; clearing date also clears time; "No date" disables the time field.
+**Note.** The time input is rendered unconditionally and only switches between `disabled` (no date) and enabled (date set), rather than mounting/unmounting on date presence. Two reasons: (a) keyboard focus stays stable across edits — you don't lose the active field when the picker churns; (b) the layout no longer reflows when a date is cleared, which would otherwise nudge surrounding controls. The "appears after a date is set" wording in the step intent is satisfied by the disabled-state contrast: until a date exists the time control is visibly inert and `aria-disabled` per native `<input disabled>` semantics.
+
+**Note.** `TaskPatch` under `exactOptionalPropertyTypes: true` does not accept `{ field: undefined }` literals — the contract has no explicit "clear" mechanism. The DueField call sites build the patch as a loose `Record<string, unknown>` and cast to `TaskPatch`; adapters already merge via `{ ...existing, ...patch }`, so a `undefined` value reaches storage and clears the field. Widening `TaskPatch` to `{ [K in keyof P]?: P[K] | undefined }` would propagate type changes through every adapter assertion (`{ ...existing, ...patch }: Task` ceases to typecheck because spread results would carry `string | undefined` on what `Task` insists is `string`) — out of scope for an editor step. If a third optional field ever needs clearing we should revisit and widen the contract end-to-end.
 
 ### Step 8.4 — Priority editor
 **Goal.** Segmented control for none / low / normal / high.

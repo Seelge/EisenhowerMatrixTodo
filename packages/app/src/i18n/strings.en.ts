@@ -32,6 +32,8 @@ export const strings = {
   'app.task.fields.notes': 'Notes',
   'app.task.fields.notesPlaceholder': 'Notes (Markdown)',
   'app.task.fields.status': 'Mark complete',
+  'app.task.fields.due': 'Due',
+  'app.task.fields.dueTime': 'Time',
   'app.task.notFound': 'This task is no longer available.',
   'app.task.menu.label': 'Task actions',
   'app.task.menu.moveTo.q1': 'Move to Do',

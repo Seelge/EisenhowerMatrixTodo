@@ -33,6 +33,7 @@ import { useTask } from '../../queries/tasks.js';
 import type { ViewState } from '../../routes/contract.js';
 import { useViewState, useViewStateStore } from '../../state/view-state.js';
 
+import { DueField } from './DueField.js';
 import { NotesField } from './NotesField.js';
 import { StatusToggle } from './StatusToggle.js';
 import { TitleField } from './TitleField.js';
@@ -82,6 +83,7 @@ function TaskViewBody({ task }: { task: Task | undefined }): ReactNode {
     <div className="emt-task-view__body" key={task.id}>
       <TitleField task={task} />
       <NotesField task={task} />
+      <DueField task={task} />
       <StatusToggle task={task} />
     </div>
   );
