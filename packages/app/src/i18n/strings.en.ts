@@ -46,6 +46,10 @@ export const strings = {
   'app.task.fields.backend.dismiss': 'Dismiss',
   'app.task.fields.backend.staleSource':
     'Migrated, but the original copy lingered. It will be cleaned up later.',
+  'app.task.fields.unsupported.dueTime':
+    'Time of day is stored in the notes on this backend; native time-of-day is not supported.',
+  'app.task.fields.unsupported.priority':
+    'Priority is stored in the notes on this backend; native priority is not supported.',
   'app.task.notFound': 'This task is no longer available.',
   'app.task.menu.label': 'Task actions',
   'app.task.menu.moveTo.q1': 'Move to Do',

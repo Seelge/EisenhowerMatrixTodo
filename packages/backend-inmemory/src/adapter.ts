@@ -10,6 +10,7 @@
 
 import type {
   BackendAdapter,
+  BackendCapabilities,
   BackendDescriptor,
   BackendId,
   ChangeSet,
@@ -26,6 +27,12 @@ export interface InMemoryAdapterOptions {
   readonly id?: string;
   /** Human-readable label. Defaults to `'In-Memory'`. */
   readonly displayName?: string;
+  /**
+   * Override capabilities. Defaults to all-true; tests can pass
+   * `{ dueTime: false, priority: false, recurrence: false }` to mimic
+   * a less-capable remote (e.g., Google Tasks).
+   */
+  readonly capabilities?: BackendCapabilities;
 }
 
 interface DeletionRecord {
@@ -45,7 +52,7 @@ export class InMemoryAdapter implements BackendAdapter {
     this.descriptor = {
       id: (options.id ?? 'in-memory') as BackendId,
       displayName: options.displayName ?? 'In-Memory',
-      capabilities: { dueTime: true, priority: true, recurrence: true },
+      capabilities: options.capabilities ?? { dueTime: true, priority: true, recurrence: true },
     };
   }
 

@@ -18,6 +18,9 @@ import { useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { useT } from '../../i18n/provider.js';
 import { useUpdateTask } from '../../queries/tasks.js';
 
+import { UnsupportedHint } from './UnsupportedHint.js';
+import { useFieldSupport } from './use-field-support.js';
+
 export interface PriorityFieldProps {
   task: Task;
 }
@@ -55,6 +58,7 @@ function nextIndex(current: number, key: NavKey): number {
 export function PriorityField({ task }: PriorityFieldProps): ReactNode {
   const t = useT();
   const updateTask = useUpdateTask();
+  const supported = useFieldSupport(task.backendId, 'priority');
   const buttonRefs = useRef<Record<Priority, HTMLButtonElement | null>>({
     none: null,
     low: null,
@@ -95,6 +99,7 @@ export function PriorityField({ task }: PriorityFieldProps): ReactNode {
     >
       <span className="emt-task-view__label" aria-hidden>
         {t('app.task.fields.priority')}
+        {!supported && <UnsupportedHint message={t('app.task.fields.unsupported.priority')} />}
       </span>
       <div className="emt-priority-field">
         {ORDER.map((p) => {

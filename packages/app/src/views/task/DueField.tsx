@@ -26,6 +26,9 @@ import { useId, type ChangeEvent, type ReactNode } from 'react';
 import { useT } from '../../i18n/provider.js';
 import { useUpdateTask } from '../../queries/tasks.js';
 
+import { UnsupportedHint } from './UnsupportedHint.js';
+import { useFieldSupport } from './use-field-support.js';
+
 export interface DueFieldProps {
   task: Task;
 }
@@ -53,6 +56,7 @@ export function DueField({ task }: DueFieldProps): ReactNode {
   };
 
   const hasDate = task.dueDate !== undefined;
+  const dueTimeSupported = useFieldSupport(task.backendId, 'dueTime');
 
   return (
     <div className="emt-task-view__field" data-field-group="due">
@@ -61,6 +65,9 @@ export function DueField({ task }: DueFieldProps): ReactNode {
       <div className="emt-task-view__time-row">
         <label htmlFor={timeId} className="emt-task-view__label emt-task-view__label--inline">
           {t('app.task.fields.dueTime')}
+          {!dueTimeSupported && (
+            <UnsupportedHint message={t('app.task.fields.unsupported.dueTime')} />
+          )}
         </label>
         <input
           id={timeId}

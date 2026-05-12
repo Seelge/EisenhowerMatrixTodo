@@ -628,7 +628,7 @@ Task editor. Depends on Phase 4 and Phase 3.
 - Migration failure (target-create): error banner; task unchanged.
 - Migration partial failure (source-delete): warning toast; orphan source is enqueued for cleanup retry.
 
-### Step 8.7 — Backend-unsupported field hints
+### Step ✅ 8.7 — Backend-unsupported field hints
 **Goal.** Each field declares which backends support it; an info icon appears next to a field whose value won't natively round-trip on the active backend (it will still be encoded into notes per design).
 **Outputs.** `useFieldSupport(field)` hook reading `BackendCapabilities`; small `<UnsupportedHint>` component.
 **Done when.** Switching to a less-capable backend mock surfaces the hint on Priority and Due-time fields.
