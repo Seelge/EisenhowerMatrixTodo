@@ -660,7 +660,7 @@ Depends on Phase 4. Internal sub-routing.
 **Outputs.** `packages/app/src/views/options/OptionsView.tsx`, `OptionsList.tsx`.
 **Done when.** Browser back/forward works between groups.
 
-### Step 9.2 — Backends panel
+### Step ✅ 9.2 — Backends panel
 **Goal.** List registered backends with sync status, connect/disconnect actions, and a "default backend for new tasks" radio.
 **Outputs.** `BackendsPanel.tsx`. (Connect actions for Google/MS will be wired when those adapters land; in this release only "Local (IndexedDB)" is connectable; the other two render disabled rows with "Coming later".)
 **Done when.** Default selection persists; UI shows last-sync timestamp from the sync engine.

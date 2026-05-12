@@ -17,6 +17,7 @@ import { useT } from '../../i18n/provider.js';
 import type { StringKey } from '../../i18n/strings.en.js';
 import { useInternalPath, useViewStateStore } from '../../state/view-state.js';
 
+import { BackendsPanel } from './BackendsPanel.js';
 import {
   OPTIONS_INDEX_PATH,
   optionsGroupPath,
@@ -76,9 +77,11 @@ export function OptionsView(): ReactNode {
 }
 
 function GroupPanel({ group }: { group: OptionsGroup }): ReactNode {
-  // Per-group panels land in steps 9.2–9.7. Until then each group
-  // renders a placeholder explaining that the panel is coming.
   const t = useT();
+  if (group === 'backends') {
+    return <BackendsPanel />;
+  }
+  // Steps 9.3–9.7 fill the remaining groups in.
   return (
     <div className="emt-options__panel" data-options-group={group}>
       <p className="emt-options__panel-stub">{t('app.options.panel.placeholder')}</p>
