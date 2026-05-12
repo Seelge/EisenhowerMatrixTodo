@@ -559,14 +559,14 @@ Depends on Phases 5 and 6.
 - No layout shift on cards mid-animation.
 **Note.** Added `framer-motion` to `@emt/app` and introduced `ZoomController` as a `LayoutGroup` + `AnimatePresence` shell around the active matrix/quadrant route. The shell uses a 220 ms M3-standard easing transition and keeps outgoing surfaces mounted during the snap morph. `MatrixCell` and `QuadrantView` now wrap their quadrant frames with matching shared layout IDs, and `TaskCard` publishes a stable task layout ID based on backend + task ID so cards retain visual identity across the two views. Wrapper-only quadrant metadata uses `data-zoom-quadrant` so the existing `[data-quadrant]` contract continues to identify the Glow cell/frame nodes.
 
-### Step 7.2 — Touch pinch
+### Step ✅ 7.2 — Touch pinch
 **Goal.** Pinch-in from view1 zooms into the quadrant under the pinch midpoint at gesture start. Pinch-out from view2 returns to view1 with a 600 ms highlight on the previously-focused quadrant.
 **Outputs.** Pointer event handler at the matrix root using two-pointer detection (no third-party library; the math is small).
 **Done when.**
 - Pinch-in test (synthetic pointer events) targets the correct quadrant from each midpoint.
 - Pinch-out test confirms highlight appears and decays.
 
-### Step 7.3 — Mouse wheel
+### Step ✅ 7.3 — Mouse wheel
 **Goal.** `Ctrl + wheel` toggles zoom; plain wheel scrolls within the focused element (cell or quadrant).
 **Outputs.** Wheel handler in `ZoomController`. Direction: wheel-up = zoom in, wheel-down = zoom out.
 **Done when.**
@@ -574,12 +574,12 @@ Depends on Phases 5 and 6.
 - `Ctrl + wheel-up` on view1 zooms into the cell under the cursor.
 - `Ctrl + wheel-down` on view2 returns to view1.
 
-### Step 7.4 — Keyboard
+### Step ✅ 7.4 — Keyboard
 **Goal.** `Esc` zooms out from view2 (or closes view3 if open); `Enter` on a focused matrix cell zooms in; arrow keys move focus between cells; `+` / `-` zoom.
 **Outputs.** Global keyboard handler at the app shell, dispatching to view-state.
 **Done when.** Keyboard-only e2e: navigate to Q2 → Enter → land in view2/Q2; Esc returns to view1.
 
-### Step 7.5 — Reduced-motion path
+### Step ✅ 7.5 — Reduced-motion path
 **Goal.** When `prefers-reduced-motion: reduce`, all zoom animations are instant cuts (no morph).
 **Outputs.** `ZoomController` reads `useReducedMotion` (Step 3.9) and skips the Framer Motion transition.
 **Done when.** Test in both modes covers the same state transitions; only the animation duration differs.
@@ -592,12 +592,12 @@ Depends on Phases 5 and 6.
 
 Task editor. Depends on Phase 4 and Phase 3.
 
-### Step 8.1 — Surface container
+### Step ✅ 8.1 — Surface container
 **Goal.** view3 mounts inside `ResponsiveSurface` (Step 3.4): bottom sheet on mobile, right side panel on desktop, ≤ 480 px wide. The matrix below remains visible.
 **Outputs.** `packages/app/src/views/task/TaskView.tsx`, route handler reading `?task=:id`.
 **Done when.** Opening view3 over view1 keeps the matrix dim but visible; over view2 the focused quadrant is partly visible.
 
-### Step 8.2 — Field editors: title, notes, status
+### Step ✅ 8.2 — Field editors: title, notes, status
 **Goal.** Editable title (single-line), notes (markdown via a small editor — `textarea` in v1 with preview toggle is acceptable; a richer editor is later), status checkbox.
 **Outputs.** `TitleField.tsx`, `NotesField.tsx`, `StatusToggle.tsx`. All wired to `useUpdateTask` with debounce (300 ms).
 **Done when.** Edits persist; fast typing does not produce N writes (debounced to 1).
