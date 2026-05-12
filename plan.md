@@ -640,7 +640,7 @@ Task editor. Depends on Phase 4 and Phase 3.
 - Click delete → snackbar appears; pressing undo cancels the delete (no commit happened yet).
 - Letting the snackbar expire commits the delete.
 
-### Step 8.9 — Close behavior
+### Step ✅ 8.9 — Close behavior
 **Goal.** Closing view3 returns the user to whichever view (view1 or view2) was visible when it opened, recorded by `openedFromZoom` in `ViewState` (Step 1.7).
 **Outputs.** Close handler in `TaskView.tsx`.
 **Done when.** Open from view1 → close → land in view1. Open from view2/Q3 → close → land in view2/Q3.

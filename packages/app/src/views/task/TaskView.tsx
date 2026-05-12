@@ -30,10 +30,10 @@ import type { ReactNode } from 'react';
 
 import { useT } from '../../i18n/provider.js';
 import { useTask } from '../../queries/tasks.js';
-import type { ViewState } from '../../routes/contract.js';
 import { useViewState, useViewStateStore } from '../../state/view-state.js';
 
 import { BackendField } from './BackendField.js';
+import { closeViewState } from './close-view-state.js';
 import { DueField } from './DueField.js';
 import { NotesField } from './NotesField.js';
 import { PriorityField } from './PriorityField.js';
@@ -42,12 +42,6 @@ import { StatusToggle } from './StatusToggle.js';
 import { TaskActions } from './TaskActions.js';
 import { TitleField } from './TitleField.js';
 import './task-view.css';
-
-function withoutFocusedTask(state: ViewState): ViewState {
-  const next: { -readonly [K in keyof ViewState]: ViewState[K] } = { zoom: state.zoom };
-  if (state.focusedQuadrant !== undefined) next.focusedQuadrant = state.focusedQuadrant;
-  return next;
-}
 
 export function TaskView(): ReactNode {
   const state = useViewState();
@@ -58,7 +52,7 @@ export function TaskView(): ReactNode {
   const close = (): void => {
     const current = useViewStateStore.getState().state;
     if (current.focusedTaskId === undefined) return;
-    useViewStateStore.getState().navigate(withoutFocusedTask(current));
+    useViewStateStore.getState().navigate(closeViewState(current));
   };
 
   return (

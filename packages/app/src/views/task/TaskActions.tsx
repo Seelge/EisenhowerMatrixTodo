@@ -27,19 +27,14 @@ import type { ReactNode } from 'react';
 
 import { useT } from '../../i18n/provider.js';
 import { useDeleteTask } from '../../queries/tasks.js';
-import type { ViewState } from '../../routes/contract.js';
 import { useViewStateStore } from '../../state/view-state.js';
+
+import { closeViewState } from './close-view-state.js';
 
 export interface TaskActionsProps {
   task: Task;
   /** Override the snackbar duration. Tests pass a short value; production omits. */
   snackbarDuration?: number;
-}
-
-function withoutFocusedTask(state: ViewState): ViewState {
-  const next: { -readonly [K in keyof ViewState]: ViewState[K] } = { zoom: state.zoom };
-  if (state.focusedQuadrant !== undefined) next.focusedQuadrant = state.focusedQuadrant;
-  return next;
 }
 
 export function TaskActions({ task, snackbarDuration }: TaskActionsProps): ReactNode {
@@ -52,7 +47,7 @@ export function TaskActions({ task, snackbarDuration }: TaskActionsProps): React
     const taskId = task.id;
     const backendId = task.backendId;
 
-    useViewStateStore.getState().replace(withoutFocusedTask(prev));
+    useViewStateStore.getState().replace(closeViewState(prev));
 
     snackbar.show({
       message: t('app.task.delete.snackbar'),
