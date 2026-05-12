@@ -610,7 +610,7 @@ Task editor. Depends on Phase 4 and Phase 3.
 
 **Note.** `TaskPatch` under `exactOptionalPropertyTypes: true` does not accept `{ field: undefined }` literals — the contract has no explicit "clear" mechanism. The DueField call sites build the patch as a loose `Record<string, unknown>` and cast to `TaskPatch`; adapters already merge via `{ ...existing, ...patch }`, so a `undefined` value reaches storage and clears the field. Widening `TaskPatch` to `{ [K in keyof P]?: P[K] | undefined }` would propagate type changes through every adapter assertion (`{ ...existing, ...patch }: Task` ceases to typecheck because spread results would carry `string | undefined` on what `Task` insists is `string`) — out of scope for an editor step. If a third optional field ever needs clearing we should revisit and widen the contract end-to-end.
 
-### Step 8.4 — Priority editor
+### Step ✅ 8.4 — Priority editor
 **Goal.** Segmented control for none / low / normal / high.
 **Outputs.** `PriorityField.tsx`.
 **Done when.** Keyboard navigation works; selection updates the task.
