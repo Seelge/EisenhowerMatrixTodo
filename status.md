@@ -6,7 +6,9 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 8.4 — view3 priority editor (`PriorityField.tsx`). Four-option segmented control (none/low/normal/high) wired as a WAI-ARIA radio group with roving tabindex; ArrowLeft/Right + ArrowUp/Down move both focus and selection; Home/End jump to the ends; navigation clamps at the boundary rather than wrapping (same pattern as the design-system `QuadrantPicker`). Writes are discrete — `useUpdateTask` fires once per click or arrow press, and re-selecting the current priority is a no-op. New i18n keys `app.task.fields.priority{,.none,.low,.normal,.high}`. 7-case test covers initial roving-tabindex state, click + keyboard navigation, Home/End, and clamping on both edges. CI run `25763668227` + Deploy `25763668288` green on `main`.
+**Last completed:** Step 8.5 — view3 quadrant editor (`QuadrantField.tsx`). Mounts the design-system `QuadrantPicker` (Step 3.6) with the task's current quadrant marked `aria-checked`. Changing the selection writes through `useUpdateTask`; the matrix below picks up the move via the existing `['tasks']` cache invalidation on `onSuccess`, so no view3-specific cross-component plumbing is needed. Re-uses the same lowercase/uppercase translation tables as `QuickComposer` (design-system uses `q1`-`q4`, canonical `Task.quadrant` is `Q1`-`Q4`). 4-case test covers initial aria-checked state, click writes the patch, clicking the current quadrant is a no-op, and arrow-key navigation writes through. CI run `25763844503` + Deploy `25763844244` green on `main`.
+
+**Previously completed:** Step 8.4 — view3 priority editor (`PriorityField.tsx`). Four-option segmented control (none/low/normal/high) wired as a WAI-ARIA radio group with roving tabindex; ArrowLeft/Right + ArrowUp/Down move both focus and selection; Home/End jump to the ends; navigation clamps at the boundary rather than wrapping (same pattern as the design-system `QuadrantPicker`). Writes are discrete — `useUpdateTask` fires once per click or arrow press, and re-selecting the current priority is a no-op. New i18n keys `app.task.fields.priority{,.none,.low,.normal,.high}`. 7-case test covers initial roving-tabindex state, click + keyboard navigation, Home/End, and clamping on both edges. CI run `25763668227` + Deploy `25763668288` green on `main`.
 
 **Previously completed:** Step 8.3 — view3 due date + time editor (`DueField.tsx`).
 
@@ -43,7 +45,7 @@ Verification:
 
 **Also: docs.** A small follow-up commit (`docs: backfill ✅`) added the missing ✅ markers on plan.md headings for steps 7.2–7.5, 8.1, and 8.2 — `status.md` had already recorded them complete, but the inline headings were stale.
 
-**Next:** Step 8.5 — Quadrant editor. Mount the design-system `QuadrantPicker` (Step 3.6) inside view3 with the task's current quadrant highlighted. Done when picking a different quadrant updates the task and the matrix below reflects the move.
+**Next:** Step 8.6 — Backend selector + migration. Dropdown of registered backends inside view3; selecting a different backend triggers `migrateTask` (Step 2.7) with a progress indicator and error handling. Output `BackendField.tsx`. Done when migration success keeps view3 open under the new `backendId`, target-create failure shows an error banner with the task unchanged, and partial failure (source-delete after target-create) warns and queues the source for cleanup.
 
 ## Environment notes
 
