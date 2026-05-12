@@ -39,6 +39,7 @@ export const strings = {
   'app.task.fields.priority.low': 'Low',
   'app.task.fields.priority.normal': 'Normal',
   'app.task.fields.priority.high': 'High',
+  'app.task.fields.quadrant': 'Quadrant',
   'app.task.notFound': 'This task is no longer available.',
   'app.task.menu.label': 'Task actions',
   'app.task.menu.moveTo.q1': 'Move to Do',

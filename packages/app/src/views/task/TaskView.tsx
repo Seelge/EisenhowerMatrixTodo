@@ -36,6 +36,7 @@ import { useViewState, useViewStateStore } from '../../state/view-state.js';
 import { DueField } from './DueField.js';
 import { NotesField } from './NotesField.js';
 import { PriorityField } from './PriorityField.js';
+import { QuadrantField } from './QuadrantField.js';
 import { StatusToggle } from './StatusToggle.js';
 import { TitleField } from './TitleField.js';
 import './task-view.css';
@@ -86,6 +87,7 @@ function TaskViewBody({ task }: { task: Task | undefined }): ReactNode {
       <NotesField task={task} />
       <DueField task={task} />
       <PriorityField task={task} />
+      <QuadrantField task={task} />
       <StatusToggle task={task} />
     </div>
   );

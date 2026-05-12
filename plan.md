@@ -615,7 +615,7 @@ Task editor. Depends on Phase 4 and Phase 3.
 **Outputs.** `PriorityField.tsx`.
 **Done when.** Keyboard navigation works; selection updates the task.
 
-### Step 8.5 — Quadrant editor
+### Step ✅ 8.5 — Quadrant editor
 **Goal.** `QuadrantPicker` (Step 3.6) with current selection highlighted.
 **Outputs.** `QuadrantField.tsx`.
 **Done when.** Picking a different quadrant updates the task; matrix below reflects the move.
