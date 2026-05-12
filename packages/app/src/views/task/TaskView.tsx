@@ -39,6 +39,7 @@ import { NotesField } from './NotesField.js';
 import { PriorityField } from './PriorityField.js';
 import { QuadrantField } from './QuadrantField.js';
 import { StatusToggle } from './StatusToggle.js';
+import { TaskActions } from './TaskActions.js';
 import { TitleField } from './TitleField.js';
 import './task-view.css';
 
@@ -66,6 +67,7 @@ export function TaskView(): ReactNode {
         <section className="emt-task-view" data-view="task" data-task-id={state.focusedTaskId}>
           <header className="emt-task-view__header">
             <h2 className="emt-task-view__heading">{t('app.task.heading')}</h2>
+            {taskQuery.data !== undefined && <TaskActions task={taskQuery.data} />}
           </header>
           <TaskViewBody task={taskQuery.data} />
         </section>

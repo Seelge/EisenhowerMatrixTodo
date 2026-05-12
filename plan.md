@@ -633,7 +633,7 @@ Task editor. Depends on Phase 4 and Phase 3.
 **Outputs.** `useFieldSupport(field)` hook reading `BackendCapabilities`; small `<UnsupportedHint>` component.
 **Done when.** Switching to a less-capable backend mock surfaces the hint on Priority and Due-time fields.
 
-### Step 8.8 — Complete & delete actions
+### Step ✅ 8.8 — Complete & delete actions
 **Goal.** Complete is the status toggle from 8.2; delete is a trash icon that fires `useDeleteTask` and shows an undo snackbar (Step 3.5) for 5 s.
 **Outputs.** `TaskActions.tsx`.
 **Done when.**

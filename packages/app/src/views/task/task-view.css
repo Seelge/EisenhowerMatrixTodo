@@ -236,6 +236,18 @@
   cursor: help;
 }
 
+.emt-task-view__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.emt-task-view__delete {
+  width: 40px;
+  height: 40px;
+  font-size: var(--font-size-lg);
+}
+
 .emt-unsupported-hint__sr {
   position: absolute;
   width: 1px;

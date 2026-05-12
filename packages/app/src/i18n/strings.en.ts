@@ -50,6 +50,9 @@ export const strings = {
     'Time of day is stored in the notes on this backend; native time-of-day is not supported.',
   'app.task.fields.unsupported.priority':
     'Priority is stored in the notes on this backend; native priority is not supported.',
+  'app.task.delete.label': 'Delete task',
+  'app.task.delete.snackbar': 'Task deleted.',
+  'app.task.delete.undo': 'Undo',
   'app.task.notFound': 'This task is no longer available.',
   'app.task.menu.label': 'Task actions',
   'app.task.menu.moveTo.q1': 'Move to Do',
