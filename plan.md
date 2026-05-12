@@ -680,7 +680,7 @@ Depends on Phase 4. Internal sub-routing.
 **Outputs.** `DefaultsPanel.tsx`. Defaults are read by Step 5.8 and Step 5.7.
 **Done when.** Changing default quadrant changes the FAB → quick composer pre-selection.
 
-### Step 9.6 — Data panel
+### Step ✅ 9.6 — Data panel
 **Goal.** Export all tasks (across backends) to JSON; import from JSON; clear local cache (does not affect remote backends).
 **Outputs.** `DataPanel.tsx`. Export format documented in `packages/backend-core/src/export-format.md`.
 **Done when.**

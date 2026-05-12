@@ -20,6 +20,7 @@ import { useInternalPath, useViewStateStore } from '../../state/view-state.js';
 import { AccountPanel } from './AccountPanel.js';
 import { AppearancePanel } from './AppearancePanel.js';
 import { BackendsPanel } from './BackendsPanel.js';
+import { DataPanel } from './DataPanel.js';
 import { DefaultsPanel } from './DefaultsPanel.js';
 import {
   OPTIONS_INDEX_PATH,
@@ -92,6 +93,9 @@ function GroupPanel({ group }: { group: OptionsGroup }): ReactNode {
   }
   if (group === 'defaults') {
     return <DefaultsPanel />;
+  }
+  if (group === 'data') {
+    return <DataPanel />;
   }
   // Steps 9.3–9.7 fill the remaining groups in.
   return (
