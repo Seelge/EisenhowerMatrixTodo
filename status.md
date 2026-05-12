@@ -6,32 +6,42 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 8.2 — view3 field editors (title, notes, status).
+**Last completed:** Step 8.3 — view3 due date + time editor (`DueField.tsx`).
 
-`TaskView` now loads the focused task via `useTask(focusedTaskId)` and mounts the three editor components — `TitleField`, `NotesField`, `StatusToggle` — under `key={task.id}` so each field starts with a clean local-state slate whenever the focused task changes. A not-found notice covers the (rare) case where the query resolves to `undefined` (deleted in another tab, unknown id, query still pending). The Step 8.1 placeholder string (`app.task.placeholder`) was retired.
+`DueField` composes the design-system `DueDatePicker` (Step 3.7) for the date side and a native `<input type="time">` for the optional time. Both are discrete pickers, so writes go straight through `useUpdateTask` — no debounce (unlike `TitleField`/`NotesField`). The time control is mounted unconditionally and toggles its `disabled` attribute based on `task.dueDate !== undefined`: keyboard focus and surrounding layout stay stable across date edits, and the visibly-inert state still communicates "set a date first." `TaskView` mounts the field between `NotesField` and `StatusToggle`.
 
-Field editors:
-- `TitleField.tsx`: single-line input. Mirrors `task.title` locally; writes go through `useUpdateTask` with a 300 ms debounce. Blur flushes the pending value before the timer.
-- `NotesField.tsx`: 5-row textarea (preview toggle deferred — v1 is plain Markdown per plan). Same debounce contract.
-- `StatusToggle.tsx`: discrete checkbox, no debounce. open → done stamps `completedAt` with the current ISO timestamp; done → open leaves `completedAt` in place so the record carries a "last completed at" trail.
+Clear semantics:
+- Picking the "No date" preset emits a single patch carrying `dueDate: undefined` AND `dueTime: undefined` — the time half always follows the date half down when the date is cleared. Verified end-to-end: the adapter spreads the patch, IDB stores the undefined values, and a subsequent `get` returns a record with neither field set.
+- Clearing the time alone (empty `<input type="time">`) emits `{ dueTime: undefined }` only — `dueDate` is preserved.
 
-Shared plumbing:
-- `use-debounced-commit.ts`: mirrors external value locally, restarts a single 300 ms timer per keystroke, exposes `flush()` for blur, auto-flushes on unmount. The hook keeps the latest `commit` closure in a ref so parent re-renders don't disturb the in-flight timer. It does NOT reset local state when `external` changes — a server invalidation while the user is mid-edit must not stomp their keystrokes; remounting (via `key={task.id}` in `TaskView`) handles task switches.
-- `task-view.css`: layout + form-control styling, reusing tokens from the design system. Borrows the visual vocabulary of `emt-quick-composer__*` so the two surfaces feel like the same family.
+TaskPatch / EOPT note (also recorded inline in `plan.md` step 8.3):
+- `TaskPatch = Partial<Omit<Task, 'id' | 'backendId' | 'createdAt' | 'updatedAt'>>`. Under `exactOptionalPropertyTypes`, optional-field values cannot be `undefined`, so a literal `patch: TaskPatch = { dueDate: undefined }` is rejected. The contract has no explicit "clear" mechanism today.
+- `DueField` builds the patch as `Record<string, unknown>` and casts. Adapters already spread the patch (`{ ...existing, ...patch }`), so `undefined` reaches storage and clears the field.
+- The alternative — widening `TaskPatch` to `{ [K]?: T[K] | undefined }` — propagates type errors through every adapter assertion (`const next: Task = { ...existing, ...patch }` fails because the resulting record carries `string | undefined` on fields `Task` declares as `string`). Out of scope for an editor step; revisit if a third optional field ever needs clearing.
 
-Tests:
-- `packages/app/test/task-fields.test.tsx`: seeds a real task through the registered local IDB adapter, spies on `adapter.update`, and asserts (a) `TitleField` seeds from the task title, (b) the title commit lands once after the 300 ms window with the latest value, (c) **the "Done when" assertion**: five rapid keystrokes on `NotesField` produce exactly one adapter write carrying the final value (debounced N → 1), (d) blur flushes the pending notes value before the timer, (e) toggling status open → done writes `status: 'done'` plus a stamped `completedAt`, (f) toggling done → open writes only `status: 'open'` and leaves `completedAt` untouched on the persisted record.
+Tests (`packages/app/test/due-field.test.tsx`, 6 cases, +6 over Step 8.2):
+- (a) seeded with no `dueDate`, the time input is `disabled`;
+- (b) seeded with `dueDate` + `dueTime`, the time input is enabled and shows the existing time;
+- (c) clicking the "Today" preset writes a `YYYY-MM-DD` ISO date (shape-matched so the test is timezone-agnostic);
+- (d) **the "Done when" assertion**: clicking "No date" on a task with both fields fires one adapter write containing both `dueDate: undefined` and `dueTime: undefined`, and the persisted record afterwards has neither;
+- (e) typing into the time input writes only `dueTime`, leaving `dueDate` out of the patch;
+- (f) clearing the time alone writes `dueTime: undefined` and preserves the stored `dueDate`.
+
+i18n: added `app.task.fields.due` ("Due") and `app.task.fields.dueTime` ("Time"). The DueDatePicker brings its own preset labels via the design system.
 
 Verification:
-- `pnpm --filter @emt/app exec tsc` passes.
+- `pnpm typecheck` passes.
 - `pnpm lint` + `pnpm format:check` pass.
-- `pnpm test` passes: 56 files / 385 tests (+6).
-- `pnpm --filter @emt/app build` passes. Production build: 401.76 KB JS / 13.10 KB CSS.
+- `pnpm test` passes: 57 files / 391 tests (+6).
+- `pnpm --filter @emt/app build` passes. Production build: 404.19 KB JS / 13.68 KB CSS.
 - `pnpm e2e` passes: 6 tests.
+- CI run `25763038230` and Deploy run `25763038224` green on `main`.
 
-**Previously completed:** Step 8.1 — view3 surface container (opened Phase 8). `TaskView` mounts inside `ResponsiveSurface`: Sheet + 40 %-opacity scrim on narrow viewports, ~480 px SidePanel (no scrim) on wide. Dialog plumbing (focus trap, Esc, focus restore) comes from `useDialogBehavior` inside the surface; `ZoomController`'s Escape handler no longer dispatches on `focusedTaskId !== undefined` so a single Esc doesn't push two history entries.
+**Previously completed:** Step 8.2 — view3 field editors (title, notes, status). `TitleField` / `NotesField` mirror task fields locally and commit through `useUpdateTask` with a 300 ms debounce + blur/unmount flush via `use-debounced-commit.ts`; `StatusToggle` writes immediately and stamps `completedAt` on open → done, leaving the trail intact on done → open. Field state is reset between tasks by remounting under `key={task.id}` in `TaskView`.
 
-**Next:** Step 8.3 — Due date + time. Use the design-system `DueDatePicker` (Step 3.7) for the date; an optional time field appears after a date is set. Output `DueField.tsx`. Done when each preset works, clearing the date also clears the time, and "No date" disables the time field.
+**Also: docs.** A small follow-up commit (`docs: backfill ✅`) added the missing ✅ markers on plan.md headings for steps 7.2–7.5, 8.1, and 8.2 — `status.md` had already recorded them complete, but the inline headings were stale.
+
+**Next:** Step 8.4 — Priority editor. Build `PriorityField.tsx` as a segmented control for `none` / `low` / `normal` / `high`. Done when keyboard navigation works (arrow keys traverse, Space/Enter selects) and selecting a different priority writes through `useUpdateTask`.
 
 ## Environment notes
 
