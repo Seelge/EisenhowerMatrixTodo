@@ -6,7 +6,9 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Last completed:** Step 8.3 — view3 due date + time editor (`DueField.tsx`).
+**Last completed:** Step 8.4 — view3 priority editor (`PriorityField.tsx`). Four-option segmented control (none/low/normal/high) wired as a WAI-ARIA radio group with roving tabindex; ArrowLeft/Right + ArrowUp/Down move both focus and selection; Home/End jump to the ends; navigation clamps at the boundary rather than wrapping (same pattern as the design-system `QuadrantPicker`). Writes are discrete — `useUpdateTask` fires once per click or arrow press, and re-selecting the current priority is a no-op. New i18n keys `app.task.fields.priority{,.none,.low,.normal,.high}`. 7-case test covers initial roving-tabindex state, click + keyboard navigation, Home/End, and clamping on both edges. CI run `25763668227` + Deploy `25763668288` green on `main`.
+
+**Previously completed:** Step 8.3 — view3 due date + time editor (`DueField.tsx`).
 
 `DueField` composes the design-system `DueDatePicker` (Step 3.7) for the date side and a native `<input type="time">` for the optional time. Both are discrete pickers, so writes go straight through `useUpdateTask` — no debounce (unlike `TitleField`/`NotesField`). The time control is mounted unconditionally and toggles its `disabled` attribute based on `task.dueDate !== undefined`: keyboard focus and surrounding layout stay stable across date edits, and the visibly-inert state still communicates "set a date first." `TaskView` mounts the field between `NotesField` and `StatusToggle`.
 
@@ -41,7 +43,7 @@ Verification:
 
 **Also: docs.** A small follow-up commit (`docs: backfill ✅`) added the missing ✅ markers on plan.md headings for steps 7.2–7.5, 8.1, and 8.2 — `status.md` had already recorded them complete, but the inline headings were stale.
 
-**Next:** Step 8.4 — Priority editor. Build `PriorityField.tsx` as a segmented control for `none` / `low` / `normal` / `high`. Done when keyboard navigation works (arrow keys traverse, Space/Enter selects) and selecting a different priority writes through `useUpdateTask`.
+**Next:** Step 8.5 — Quadrant editor. Mount the design-system `QuadrantPicker` (Step 3.6) inside view3 with the task's current quadrant highlighted. Done when picking a different quadrant updates the task and the matrix below reflects the move.
 
 ## Environment notes
 
