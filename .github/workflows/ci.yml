@@ -37,3 +37,8 @@ jobs:
       - run: pnpm typecheck
 
       - run: pnpm test
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - run: pnpm e2e

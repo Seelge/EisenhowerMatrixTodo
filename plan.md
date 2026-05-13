@@ -744,7 +744,7 @@ Depends on all prior phases.
 **Outputs.** `docs/a11y-audit.md` (audit results + actions); patches.
 **Done when.** Axe-core e2e check returns 0 critical issues. `prefers-reduced-motion` regression test passes.
 
-### Step 11.4 — E2E golden path
+### Step ✅ 11.4 — E2E golden path
 **Goal.** Playwright test running: open app → see 3 sample tasks → create a new task → drag it from Q3 to Q1 → focus it → set due to "Tomorrow" → mark complete → verify completed state and order.
 **Outputs.** `packages/app/e2e/golden-path.spec.ts`.
 **Done when.** Runs green locally and in CI.
