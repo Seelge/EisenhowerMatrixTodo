@@ -24,6 +24,16 @@ export {
   type QuadrantColorOverrides,
   type ThemeProviderProps,
 } from './ThemeProvider.js';
+export {
+  addDays,
+  computeNextWeekDate,
+  computeWeekendDate,
+  formatLocalDate,
+  getFirstDayOfWeek,
+  parseLocalDate,
+  relativeDateKey,
+  type RelativeDateKey,
+} from './due-date-helpers.js';
 export { useReducedMotion } from './useReducedMotion.js';
 export { COMPONENT_CSS } from './components.js';
 export { RESET_CSS } from './reset.js';

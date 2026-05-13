@@ -729,7 +729,7 @@ Final pass for correctness, accessibility, and shipping.
 
 Depends on all prior phases.
 
-### Step 11.1 — Time-zone handling end-to-end
+### Step ✅ 11.1 — Time-zone handling end-to-end
 **Goal.** Verify dates round-trip through the canonical model and adapters in the user's local zone; document the rule in `packages/backend-core/src/time.md`.
 **Outputs.** Unit tests across DST boundaries; UI string for "Today / Tomorrow / This weekend / Next week" computed from `Date.now()` localized.
 **Done when.** Tests across UTC, Europe/Berlin, America/Los_Angeles pass.

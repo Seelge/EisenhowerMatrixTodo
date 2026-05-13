@@ -27,9 +27,12 @@
  */
 import { useDraggable } from '@dnd-kit/core';
 import type { Task } from '@emt/backend-core';
+import { parseLocalDate, relativeDateKey, type RelativeDateKey } from '@emt/design-system';
 import { motion, type MotionStyle } from 'framer-motion';
 import { useCallback, useMemo, type ReactNode } from 'react';
 
+import { useT } from '../../i18n/provider.js';
+import type { StringKey } from '../../i18n/strings.en.js';
 import { useViewStateStore } from '../../state/view-state.js';
 import { taskLayoutId } from '../zoom/ZoomController.js';
 
@@ -41,27 +44,43 @@ import './task-card.css';
 const dateFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
 const timeFormatter = new Intl.DateTimeFormat(undefined, { timeStyle: 'short' });
 
+const RELATIVE_KEY: Record<RelativeDateKey, StringKey | undefined> = {
+  today: 'app.task.due.today',
+  tomorrow: 'app.task.due.tomorrow',
+  weekend: 'app.task.due.weekend',
+  nextWeek: 'app.task.due.nextWeek',
+  past: undefined,
+  future: undefined,
+};
+
 /**
- * Build a Date from an `IsoDate` (YYYY-MM-DD) using local-time
- * components — `new Date(iso)` would parse it as UTC midnight and
- * shift backwards by the local offset in negative-offset zones.
+ * Format the due-date side of the card label. Returns a relative
+ * label ("Today" / "Tomorrow" / "This weekend" / "Next week") when
+ * the stored date falls into a named bucket relative to `now`,
+ * otherwise the localised absolute date. The relative bucketing is
+ * driven by `relativeDateKey` so the comparison stays consistent
+ * with the picker presets (see `packages/backend-core/src/time.md`).
  */
-function parseLocalDate(iso: string): Date | undefined {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
-  if (!m) return undefined;
-  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+function formatDuePart(
+  dueDate: string,
+  t: (k: StringKey) => string,
+  now: Date,
+  locale: string,
+): string {
+  const bucket = relativeDateKey(dueDate, now, locale);
+  const key = bucket !== undefined ? RELATIVE_KEY[bucket] : undefined;
+  if (key !== undefined) return t(key);
+  const d = parseLocalDate(dueDate);
+  return d ? dateFormatter.format(d) : dueDate;
 }
 
-function formatDueLabel(dueDate?: string, dueTime?: string): string | undefined {
-  if (!dueDate) return undefined;
+function formatTimePart(dueDate: string, dueTime: string): string | undefined {
   const d = parseLocalDate(dueDate);
   if (!d) return undefined;
-  const datePart = dateFormatter.format(d);
-  if (!dueTime) return datePart;
   const timeMatch = /^(\d{2}):(\d{2})/.exec(dueTime);
-  if (!timeMatch) return datePart;
+  if (!timeMatch) return undefined;
   d.setHours(Number(timeMatch[1]), Number(timeMatch[2]), 0, 0);
-  return `${datePart} · ${timeFormatter.format(d)}`;
+  return timeFormatter.format(d);
 }
 
 export interface TaskCardProps {
@@ -69,6 +88,7 @@ export interface TaskCardProps {
 }
 
 export function TaskCard({ task }: TaskCardProps): ReactNode {
+  const t = useT();
   const onOpen = useCallback(() => {
     // Read the latest view-state at click time rather than subscribing
     // to it — the card itself doesn't render anything that depends on
@@ -82,10 +102,17 @@ export function TaskCard({ task }: TaskCardProps): ReactNode {
     });
   }, [task.id]);
 
-  const dueLabel = useMemo(
-    () => formatDueLabel(task.dueDate, task.dueTime),
-    [task.dueDate, task.dueTime],
-  );
+  const dueLabel = useMemo(() => {
+    if (task.dueDate === undefined) return undefined;
+    const locale =
+      typeof navigator !== 'undefined' && typeof navigator.language === 'string'
+        ? navigator.language
+        : 'en-US';
+    const datePart = formatDuePart(task.dueDate, t, new Date(), locale);
+    if (task.dueTime === undefined) return datePart;
+    const timePart = formatTimePart(task.dueDate, task.dueTime);
+    return timePart === undefined ? datePart : `${datePart} · ${timePart}`;
+  }, [task.dueDate, task.dueTime, t]);
   const hasMeta = dueLabel !== undefined || task.tags.length > 0;
 
   const data: DraggableTaskData = useMemo(() => ({ kind: 'task', task }), [task]);
