@@ -702,7 +702,7 @@ Wire the `ConflictResolver` (Step 1.4) to a user-facing modal.
 
 Depends on Phases 2, 3, 4.
 
-### Step 10.1 — Conflict modal
+### Step ✅ 10.1 — Conflict modal
 **Goal.** Modal displaying local vs remote whole-record side by side with the differing fields highlighted; "Keep local" / "Keep remote" actions.
 **Outputs.** `packages/app/src/views/conflict/ConflictModal.tsx`. Uses the design-system Sheet/SidePanel surfaces (or a centered modal — to be decided in the step; default = centered modal because conflict resolution should be focused).
 **Done when.** Opening the modal with a synthetic `ConflictRecord` shows both sides and allows choosing.
