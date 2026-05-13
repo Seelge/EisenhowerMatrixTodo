@@ -749,7 +749,7 @@ Depends on all prior phases.
 **Outputs.** `packages/app/e2e/golden-path.spec.ts`.
 **Done when.** Runs green locally and in CI.
 
-### Step 11.5 — PWA install + offline e2e
+### Step ✅ 11.5 — PWA install + offline e2e
 **Goal.** Playwright test installing the PWA (or simulating offline once installed): kill network → reload → app shell loads → existing tasks visible → new task creation queues; reconnect → queue flushes.
 **Outputs.** `packages/app/e2e/pwa-offline.spec.ts`.
 **Done when.** Runs green locally and in CI.
