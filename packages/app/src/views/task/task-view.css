@@ -115,6 +115,10 @@
   font-size: var(--font-size-sm);
 }
 
+.emt-task-view__skeleton {
+  margin-bottom: var(--space-sm);
+}
+
 .emt-task-view__time-row {
   display: flex;
   align-items: center;

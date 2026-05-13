@@ -734,7 +734,7 @@ Depends on all prior phases.
 **Outputs.** Unit tests across DST boundaries; UI string for "Today / Tomorrow / This weekend / Next week" computed from `Date.now()` localized.
 **Done when.** Tests across UTC, Europe/Berlin, America/Los_Angeles pass.
 
-### Step 11.2 — Loading / error / empty audit
+### Step ✅ 11.2 — Loading / error / empty audit
 **Goal.** Every view shows a skeleton while loading, an inline error banner with retry on failure, and the standardized empty state when applicable.
 **Outputs.** Audit checklist + minor patches per view.
 **Done when.** Each view file references the design-system primitives (mechanical grep verifies coverage).

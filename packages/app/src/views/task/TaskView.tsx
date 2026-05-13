@@ -25,7 +25,8 @@
  * entries for one keystroke.
  */
 import type { Task } from '@emt/backend-core';
-import { ResponsiveSurface } from '@emt/design-system';
+import { EmptyNote, ErrorBanner, ResponsiveSurface, Skeleton } from '@emt/design-system';
+import type { UseQueryResult } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
 import { useT } from '../../i18n/provider.js';
@@ -63,20 +64,38 @@ export function TaskView(): ReactNode {
             <h2 className="emt-task-view__heading">{t('app.task.heading')}</h2>
             {taskQuery.data !== undefined && <TaskActions task={taskQuery.data} />}
           </header>
-          <TaskViewBody task={taskQuery.data} />
+          <TaskViewBody query={taskQuery} />
         </section>
       )}
     </ResponsiveSurface>
   );
 }
 
-function TaskViewBody({ task }: { task: Task | undefined }): ReactNode {
+function TaskViewBody({ query }: { query: UseQueryResult<Task | undefined, Error> }): ReactNode {
   const t = useT();
+  if (query.isPending) {
+    return (
+      <div className="emt-task-view__body" data-state="loading">
+        <Skeleton className="emt-task-view__skeleton" height={32} />
+        <Skeleton className="emt-task-view__skeleton" height={96} />
+        <Skeleton className="emt-task-view__skeleton" height={32} />
+        <Skeleton className="emt-task-view__skeleton" height={32} />
+      </div>
+    );
+  }
+  if (query.isError) {
+    return (
+      <ErrorBanner
+        message={query.error.message}
+        onRetry={() => {
+          void query.refetch();
+        }}
+      />
+    );
+  }
+  const task = query.data;
   if (task === undefined) {
-    // Either the query hasn't resolved yet or no backend holds this id.
-    // A short notice is fine for v1 — Step 8.8 will route deletes
-    // through an undo snackbar so view3 typically only sees real tasks.
-    return <p className="emt-task-view__notice">{t('app.task.notFound')}</p>;
+    return <EmptyNote className="emt-task-view__notice">{t('app.task.notFound')}</EmptyNote>;
   }
   return (
     <div className="emt-task-view__body" key={task.id}>
