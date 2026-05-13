@@ -8,6 +8,9 @@ playwright-report
 test-results
 coverage
 .turbo
+# Lighthouse CLI on WSL2 sometimes drops a Chromium profile dir with a
+# literal `C:\...` name into the cwd. Ignore so it never gets staged.
+C:\\*
 
 # Local tool config
 .claude/
