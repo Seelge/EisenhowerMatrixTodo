@@ -707,7 +707,7 @@ Depends on Phases 2, 3, 4.
 **Outputs.** `packages/app/src/views/conflict/ConflictModal.tsx`. Uses the design-system Sheet/SidePanel surfaces (or a centered modal — to be decided in the step; default = centered modal because conflict resolution should be focused).
 **Done when.** Opening the modal with a synthetic `ConflictRecord` shows both sides and allows choosing.
 
-### Step 10.2 — Resolver wiring
+### Step ✅ 10.2 — Resolver wiring
 **Goal.** Register a `ConflictResolver` on the app's sync-engine instance that opens the modal and awaits the user's choice. Multiple conflicts queue and are presented one at a time.
 **Outputs.** `useConflictResolver` hook + connection in app shell. Resolver returns the chosen side; sync engine writes the choice back.
 **Done when.**

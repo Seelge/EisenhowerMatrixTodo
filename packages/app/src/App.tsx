@@ -27,6 +27,7 @@ import { Router } from './routes/Router.js';
 import { Routes } from './routes/Routes.js';
 import { useAppearanceOverrides, useAppearanceStore } from './state/appearance.js';
 import { useDefaultsStore } from './state/defaults.js';
+import { ConflictResolverHost } from './views/conflict/ConflictResolverHost.js';
 
 export function App(): ReactNode {
   const [queryClient] = useState(
@@ -51,6 +52,7 @@ export function App(): ReactNode {
             <ErrorBoundary>
               <I18nProvider>
                 <Routes />
+                <ConflictResolverHost />
               </I18nProvider>
             </ErrorBoundary>
           </Router>
