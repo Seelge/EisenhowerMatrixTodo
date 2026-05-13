@@ -11,6 +11,12 @@
  * Multiple conflicts arriving in quick succession queue and are
  * presented one at a time (see `useConflictResolver`).
  *
+ * Step 10.3: if the user is mid-action (drag, composing) when a
+ * conflict arrives, the queue still accepts it but the modal stays
+ * hidden until `useIsBusy()` flips back to `false`. This way an
+ * incoming sync never interrupts a drag — the modal pops the moment
+ * the user releases.
+ *
  * The `syncEngine` prop exists for tests — production mounts the
  * host without it and the global engine from `getBackends()` is
  * resolved asynchronously on first effect.
@@ -19,6 +25,7 @@ import type { SyncEngine } from '@emt/backend-core';
 import { useEffect, type ReactNode } from 'react';
 
 import { getBackends } from '../../state/backends.js';
+import { useIsBusy } from '../../state/busy.js';
 
 import { ConflictModal } from './ConflictModal.js';
 import { useConflictResolver } from './use-conflict-resolver.js';
@@ -30,6 +37,7 @@ export interface ConflictResolverHostProps {
 
 export function ConflictResolverHost({ syncEngine }: ConflictResolverHostProps = {}): ReactNode {
   const { current, resolver, resolveCurrent } = useConflictResolver();
+  const isBusy = useIsBusy();
 
   useEffect(() => {
     if (syncEngine !== undefined) {
@@ -46,5 +54,11 @@ export function ConflictResolverHost({ syncEngine }: ConflictResolverHostProps =
     };
   }, [syncEngine, resolver]);
 
-  return <ConflictModal open={current !== undefined} record={current} onResolve={resolveCurrent} />;
+  return (
+    <ConflictModal
+      open={current !== undefined && !isBusy}
+      record={current}
+      onResolve={resolveCurrent}
+    />
+  );
 }

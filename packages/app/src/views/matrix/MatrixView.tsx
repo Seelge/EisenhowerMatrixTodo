@@ -27,6 +27,7 @@ import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { useT } from '../../i18n/provider.js';
 import { useSetTaskRank } from '../../queries/task-order.js';
 import { useUpdateTask } from '../../queries/tasks.js';
+import { useBusyStore } from '../../state/busy.js';
 import { useNewTaskQuadrant } from '../../state/defaults.js';
 import { useViewStateStore } from '../../state/view-state.js';
 import { quadrantAtPoint } from '../zoom/pinch.js';
@@ -48,7 +49,7 @@ export function MatrixView(): ReactNode {
     useSensor(KeyboardSensor),
   );
 
-  const handleDragEnd = useMemo(
+  const dragEnd = useMemo(
     () =>
       createDragEndHandler({
         queryClient,
@@ -57,6 +58,22 @@ export function MatrixView(): ReactNode {
       }),
     [queryClient, updateTask.mutate, setRank.mutate],
   );
+  const handleDragStart = useCallback(() => {
+    useBusyStore.getState().setDragging(true);
+  }, []);
+  const handleDragEnd = useCallback(
+    (event: Parameters<typeof dragEnd>[0]) => {
+      try {
+        dragEnd(event);
+      } finally {
+        useBusyStore.getState().setDragging(false);
+      }
+    },
+    [dragEnd],
+  );
+  const handleDragCancel = useCallback(() => {
+    useBusyStore.getState().setDragging(false);
+  }, []);
 
   const [composerOpen, setComposerOpen] = useState(false);
   const openComposer = useCallback(() => setComposerOpen(true), []);
@@ -76,7 +93,12 @@ export function MatrixView(): ReactNode {
   );
 
   return (
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
       <main
         data-view="matrix"
         className="emt-matrix"

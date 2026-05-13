@@ -44,6 +44,7 @@ import type { StringKey } from '../../i18n/strings.en.js';
 import { useSetTaskRank, useTaskOrder } from '../../queries/task-order.js';
 import { useTasks, useUpdateTask } from '../../queries/tasks.js';
 import type { ViewState } from '../../routes/contract.js';
+import { useBusyStore } from '../../state/busy.js';
 import { useSortBy } from '../../state/defaults.js';
 import { type TaskOrderMap } from '../../state/task-order.js';
 import { useViewStateStore } from '../../state/view-state.js';
@@ -121,7 +122,7 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor),
   );
-  const handleDragEnd = useMemo(
+  const dragEnd = useMemo(
     () =>
       createDragEndHandler({
         queryClient,
@@ -130,6 +131,22 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
       }),
     [queryClient, updateTask.mutate, setRank.mutate],
   );
+  const handleDragStart = useCallback(() => {
+    useBusyStore.getState().setDragging(true);
+  }, []);
+  const handleDragEnd = useCallback(
+    (event: Parameters<typeof dragEnd>[0]) => {
+      try {
+        dragEnd(event);
+      } finally {
+        useBusyStore.getState().setDragging(false);
+      }
+    },
+    [dragEnd],
+  );
+  const handleDragCancel = useCallback(() => {
+    useBusyStore.getState().setDragging(false);
+  }, []);
 
   // Step 6.3 — touch swipe to change focus.
   //
@@ -248,7 +265,12 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
   const closeComposer = useCallback(() => setComposerOpen(false), []);
 
   return (
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
       <main
         data-view="quadrant"
         data-quadrant={quadrant}

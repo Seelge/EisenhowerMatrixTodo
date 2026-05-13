@@ -714,7 +714,7 @@ Depends on Phases 2, 3, 4.
 - Synthetic two-conflict pull: modal opens twice in sequence.
 - Choosing remote produces the same record on both sides after sync.
 
-### Step 10.3 — Backstop for non-modal conflicts
+### Step ✅ 10.3 — Backstop for non-modal conflicts
 **Goal.** If the user is mid-action (drag, composing) when a conflict arrives, queue it; show a small badge on the sync-status icon; the modal opens on next user idle or on click.
 **Outputs.** Idle detector + queue.
 **Done when.** During an active drag, no modal appears; drag completes; modal opens.

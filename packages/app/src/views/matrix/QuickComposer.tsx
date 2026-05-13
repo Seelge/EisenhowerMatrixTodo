@@ -23,12 +23,13 @@ import type { BackendId, Quadrant, Task, TaskDraft, TaskId } from '@emt/backend-
 import { Button, QuadrantPicker, ResponsiveSurface } from '@emt/design-system';
 import type { Quadrant as DsQuadrant } from '@emt/design-system';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
-import { useCallback, useId, useState, type FormEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useState, type FormEvent, type ReactNode } from 'react';
 
 import { useT } from '../../i18n/provider.js';
 import type { StringKey } from '../../i18n/strings.en.js';
 import { useCreateTask } from '../../queries/tasks.js';
 import { getBackends } from '../../state/backends.js';
+import { useBusyStore } from '../../state/busy.js';
 
 import './quick-composer.css';
 
@@ -69,6 +70,19 @@ export function QuickComposer({
 
   const [title, setTitle] = useState('');
   const [quadrant, setQuadrant] = useState<Quadrant>(defaultQuadrant);
+
+  // Step 10.3 — mark the user as composing while the surface is open
+  // so an incoming sync conflict queues silently instead of opening
+  // a modal over the half-typed task.
+  useEffect(() => {
+    useBusyStore.getState().setComposing(open);
+    if (open) {
+      return () => {
+        useBusyStore.getState().setComposing(false);
+      };
+    }
+    return undefined;
+  }, [open]);
 
   const close = useCallback(() => {
     onClose();
