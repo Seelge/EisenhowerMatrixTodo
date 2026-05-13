@@ -739,7 +739,7 @@ Depends on all prior phases.
 **Outputs.** Audit checklist + minor patches per view.
 **Done when.** Each view file references the design-system primitives (mechanical grep verifies coverage).
 
-### Step 11.3 — Accessibility audit
+### Step ✅ 11.3 — Accessibility audit
 **Goal.** Verify WCAG 2.2 AA contrast across the dark palette + glow combinations; full keyboard navigation; screen-reader smoke test (NVDA / VoiceOver) on view1, view2, view3, view4.
 **Outputs.** `docs/a11y-audit.md` (audit results + actions); patches.
 **Done when.** Axe-core e2e check returns 0 critical issues. `prefers-reduced-motion` regression test passes.
