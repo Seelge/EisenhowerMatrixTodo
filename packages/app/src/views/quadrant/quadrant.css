@@ -17,6 +17,10 @@
   padding: var(--space-md);
   background: var(--color-bg);
   overflow: hidden;
+  /* Step 12.8 — `pan-y` keeps the task list scrollable but denies the
+     browser its native pinch-zoom, so `usePinchGesture` reliably
+     catches the pinch-out → view1 gesture on Android Chrome. */
+  touch-action: pan-y;
 }
 
 .emt-quadrant__frame {
@@ -30,6 +34,9 @@
      edges of the frame so the task list never sits underneath one. */
   padding: 24px;
   overflow: hidden;
+  /* See `.emt-quadrant` — keep two-finger gestures away from native
+     pinch-zoom (Step 12.8). */
+  touch-action: pan-y;
 }
 
 .emt-quadrant__header {
@@ -54,6 +61,9 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  /* `pan-y` keeps this list scrollable while denying native
+     pinch-zoom (Step 12.8). */
+  touch-action: pan-y;
   padding-right: var(--space-xs);
   scrollbar-width: thin;
   scrollbar-color: var(--color-surface-elevated) transparent;

@@ -211,6 +211,31 @@ describe('MatrixView — Step 7.2 pinch-in integration', () => {
     });
   }
 
+  it('resolves the pinch on pointermove without waiting for pointerup (Step 12.8)', async () => {
+    // On Android Chrome the browser can steal the gesture for native
+    // page-zoom and never deliver a clean `pointerup`. The gesture must
+    // therefore snap mid-move, the instant the ratio crosses the
+    // threshold — no `pointerup` is dispatched here at all.
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <MatrixView />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+    const main = container.querySelector<HTMLElement>('[data-view="matrix"]')!;
+    stubRect(main, { x: 0, y: 0, w: 400, h: 400 });
+
+    // Two fingers down 50 px apart around Q1's midpoint, then spread to
+    // 200 px apart — ratio 4× clears the in-threshold. No pointerup.
+    dispatchPointer(main, 'pointerdown', { pointerId: 1, clientX: 275, clientY: 100 });
+    dispatchPointer(main, 'pointerdown', { pointerId: 2, clientX: 325, clientY: 100 });
+    dispatchPointer(main, 'pointermove', { pointerId: 1, clientX: 200, clientY: 100 });
+    dispatchPointer(main, 'pointermove', { pointerId: 2, clientX: 400, clientY: 100 });
+
+    expect(useViewStateStore.getState().state.zoom).toBe('quadrant');
+    expect(useViewStateStore.getState().state.focusedQuadrant).toBe('Q1');
+  });
+
   it('does not navigate when the pinch ratio stays inside the deadzone', async () => {
     const { container, unmount } = await renderWithQueryClient(
       <I18nProvider>

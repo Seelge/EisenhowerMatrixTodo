@@ -855,7 +855,7 @@ Reference recordings of the feedback live in the commit that opens this phase. S
 - Use `VirtualKeyboard.overlaysContent = false` + `interactive-widget=resizes-content` viewport hint as the primary mechanism, with a Visual Viewport API fallback for browsers without keyboard inset support.
 - 1 unit test exercising the layout state when `visualViewport.height` is shrunk; manual smoke note in the commit message that the change was confirmed on a real Android device.
 
-### Step 12.8 — Pinch-zoom snap (Android Chrome in particular)
+### Step 12.8 — Pinch-zoom snap (Android Chrome in particular) ✅
 **Goal.** Pinch-in on view1 should snap to view2 (the focused quadrant). On Android Chrome in portrait the gesture currently enlarges the matrix, and only sometimes and unreliably crossing the pinch-controller's threshold.
 
 **Outputs.** `views/zoom/usePinchGesture.ts`, `views/matrix/MatrixView.tsx`.

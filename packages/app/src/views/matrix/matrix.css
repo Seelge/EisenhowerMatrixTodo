@@ -30,6 +30,12 @@
      cell's task list. Pairs with the `overflow-y: auto` rule on
      `.emt-matrix__cell-list` further down. */
   overflow: hidden;
+  /* Step 12.8 — `pan-y` keeps vertical scrolling inside the cell lists
+     but tells the browser not to claim two-finger gestures for native
+     pinch-zoom, so `usePinchGesture` reliably catches the pinch-in →
+     view2 snap on Android Chrome. (Cards already opt out entirely with
+     `touch-action: none` for dnd-kit drags.) */
+  touch-action: pan-y;
 }
 
 .emt-matrix__grid {
@@ -52,6 +58,9 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+  /* See `.emt-matrix` — keep two-finger gestures out of the browser's
+     native pinch-zoom so the page-level pinch handler sees them. */
+  touch-action: pan-y;
 }
 
 .emt-matrix__cell-list {
@@ -67,6 +76,9 @@
    * intrinsic content size so this overflow rule actually kicks in.
    */
   overflow-y: auto;
+  /* `pan-y` keeps this list scrollable while still denying the browser
+     its native pinch-zoom (Step 12.8). */
+  touch-action: pan-y;
   /* A small inset so the scrollbar gutter doesn't crowd the cards. */
   padding-right: var(--space-xs);
   /* Firefox + standards-track scrollbar styling. The thumb uses the
