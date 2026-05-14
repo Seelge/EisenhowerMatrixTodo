@@ -178,14 +178,18 @@
 }
 
 .emt-task-card__menu {
-  /* Anchored under the kebab; the wrapper card is `position: relative`
-     so the menu is positioned within it. Width is intrinsic so the
-     longest "Move to <quadrant>" entry sets it. */
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: var(--space-xs);
-  z-index: 2;
+  /* Step 12.3 — rendered through a portal to `document.body`, so it's
+     positioned with `position: fixed` against the trigger's measured
+     rect (see `TaskCardMenu.tsx`) instead of being anchored within the
+     card. `--layer-tooltip` sits above sheets but below modals, and
+     `fixed` + the portal means a cell's `overflow` box can no longer
+     clip it. Width is intrinsic so the longest "Move to <quadrant>"
+     entry sets it. Starts hidden — `TaskCardMenu.tsx`'s layout effect
+     writes `left` / `top` and flips `visibility` to visible once it
+     has measured the trigger, so the popover never flashes unplaced. */
+  position: fixed;
+  visibility: hidden;
+  z-index: var(--layer-tooltip);
   display: flex;
   flex-direction: column;
   min-width: 160px;

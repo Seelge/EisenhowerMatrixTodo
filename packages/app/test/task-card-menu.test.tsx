@@ -19,6 +19,10 @@
  *
  * The "click outside closes" path is exercised by dispatching a
  * `pointerdown` on a sibling node.
+ *
+ * Step 12.3 — the menu now renders through a portal to `document.body`
+ * (so a view1 cell's `overflow` box can't clip it), so the assertions
+ * here look it up via `document.querySelector`, not `container`.
  */
 import 'fake-indexeddb/auto';
 import { DndContext } from '@dnd-kit/core';
@@ -106,7 +110,31 @@ describe('TaskCardMenu (Step 5.6)', () => {
     expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
     // Menu is closed initially.
-    expect(container.querySelector('[role="menu"]')).toBeNull();
+    expect(document.querySelector('[role="menu"]')).toBeNull();
+  });
+
+  it('renders the open menu in a portal outside the card DOM subtree (Step 12.3)', async () => {
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <DndContext>
+          <TaskCard task={makeFakeTask()} />
+        </DndContext>
+      </I18nProvider>,
+    );
+    teardown = unmount;
+    const trigger = container.querySelector<HTMLButtonElement>('.emt-task-card__menu-button')!;
+    await act(async () => {
+      trigger.click();
+    });
+
+    const menu = document.querySelector<HTMLElement>('[role="menu"]')!;
+    expect(menu).not.toBeNull();
+    // The menu is mounted on document.body, not nested inside the card.
+    const card = container.querySelector<HTMLElement>('.emt-task-card')!;
+    expect(card.contains(menu)).toBe(false);
+    expect(menu.parentElement).toBe(document.body);
+    // It still carries the full item list.
+    expect(menu.querySelectorAll('[role="menuitem"]')).toHaveLength(3);
   });
 
   it('opens via click and lists every quadrant except the current one', async () => {
@@ -125,7 +153,7 @@ describe('TaskCardMenu (Step 5.6)', () => {
     });
 
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
-    const menu = container.querySelector<HTMLElement>('[role="menu"]')!;
+    const menu = document.querySelector<HTMLElement>('[role="menu"]')!;
     expect(menu).not.toBeNull();
     const items = menu.querySelectorAll<HTMLButtonElement>('[role="menuitem"]');
     const quadrants = Array.from(items).map((el) => el.dataset['quadrant']);
@@ -199,7 +227,7 @@ describe('TaskCardMenu (Step 5.6)', () => {
     await act(async () => {
       pressKey(focused(), 'Escape');
     });
-    expect(container.querySelector('[role="menu"]')).toBeNull();
+    expect(document.querySelector('[role="menu"]')).toBeNull();
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
     await waitForAsync(() => document.activeElement === trigger);
   });
@@ -223,7 +251,7 @@ describe('TaskCardMenu (Step 5.6)', () => {
       trigger.click();
     });
 
-    const item = container.querySelector<HTMLButtonElement>('[data-quadrant="Q1"]')!;
+    const item = document.querySelector<HTMLButtonElement>('[data-quadrant="Q1"]')!;
     await act(async () => {
       item.click();
     });
@@ -235,7 +263,7 @@ describe('TaskCardMenu (Step 5.6)', () => {
     });
 
     // Menu closes after activation.
-    expect(container.querySelector('[role="menu"]')).toBeNull();
+    expect(document.querySelector('[role="menu"]')).toBeNull();
   });
 
   it('outside pointerdown closes the menu', async () => {
@@ -251,7 +279,7 @@ describe('TaskCardMenu (Step 5.6)', () => {
     await act(async () => {
       trigger.click();
     });
-    expect(container.querySelector('[role="menu"]')).not.toBeNull();
+    expect(document.querySelector('[role="menu"]')).not.toBeNull();
 
     // Synthesize a pointerdown outside both the trigger and any menu item.
     const elsewhere = document.createElement('div');
@@ -260,7 +288,38 @@ describe('TaskCardMenu (Step 5.6)', () => {
       await act(async () => {
         elsewhere.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
       });
-      expect(container.querySelector('[role="menu"]')).toBeNull();
+      expect(document.querySelector('[role="menu"]')).toBeNull();
+    } finally {
+      elsewhere.remove();
+    }
+  });
+
+  it('closes when focus leaves the menu (Step 12.3 focus-loss guard)', async () => {
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <DndContext>
+          <TaskCard task={makeFakeTask()} />
+        </DndContext>
+      </I18nProvider>,
+    );
+    teardown = unmount;
+    const trigger = container.querySelector<HTMLButtonElement>('.emt-task-card__menu-button')!;
+    await act(async () => {
+      trigger.click();
+    });
+    await waitForAsync(() => document.activeElement?.getAttribute('role') === 'menuitem');
+
+    // Move focus to an unrelated element outside the menu and trigger.
+    const elsewhere = document.createElement('button');
+    document.body.append(elsewhere);
+    try {
+      await act(async () => {
+        elsewhere.focus();
+        // Let the onBlur microtask settle.
+        await Promise.resolve();
+      });
+      expect(document.querySelector('[role="menu"]')).toBeNull();
+      expect(trigger.getAttribute('aria-expanded')).toBe('false');
     } finally {
       elsewhere.remove();
     }

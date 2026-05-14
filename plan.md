@@ -801,7 +801,7 @@ Reference recordings of the feedback live in the commit that opens this phase. S
 - The diagonal neighbour exposes a small but real drop area (e.g. a corner triangle) so the user can drop directly into the opposite quadrant without two zoom-flips.
 - 1 e2e or unit test exercises a corner drop and asserts the resolved quadrant.
 
-### Step 12.3 — TaskCardMenu as a portal popover (not inline)
+### Step 12.3 — TaskCardMenu as a portal popover (not inline) ✅
 **Goal.** The 3-dot kebab on a task card currently opens its menu inline. In view1 cells, the menu is clipped to the cell's bottom — only "Move to Do" is visible and a sub-menu scrollbar appears that's hard to navigate.
 
 **Outputs.** `views/matrix/TaskCardMenu.tsx` (and CSS). Render the menu in a portal anchored to the trigger button, with `z-index: var(--layer-tooltip)` (above sheets but below modals).
