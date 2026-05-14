@@ -25,7 +25,7 @@
  * The priority dot is decorative (`aria-hidden`); the visible button
  * text — title, due date, and tags — carries the meaning for AT.
  */
-import { useDraggable } from '@dnd-kit/core';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 import type { Task } from '@emt/backend-core';
 import { parseLocalDate, relativeDateKey, type RelativeDateKey } from '@emt/design-system';
 import { motion, type MotionStyle } from 'framer-motion';
@@ -36,7 +36,7 @@ import type { StringKey } from '../../i18n/strings.en.js';
 import { useViewStateStore } from '../../state/view-state.js';
 import { taskLayoutId } from '../zoom/ZoomController.js';
 
-import type { DraggableTaskData } from './dnd.js';
+import type { DraggableTaskData, DroppableCardData } from './dnd.js';
 import { TaskCardMenu } from './TaskCardMenu.js';
 
 import './task-card.css';
@@ -116,10 +116,37 @@ export function TaskCard({ task }: TaskCardProps): ReactNode {
   const hasMeta = dueLabel !== undefined || task.tags.length > 0;
 
   const data: DraggableTaskData = useMemo(() => ({ kind: 'task', task }), [task]);
-  const { setNodeRef, attributes, listeners, transform, isDragging } = useDraggable({
+  const {
+    setNodeRef: setDragRef,
+    attributes,
+    listeners,
+    transform,
+    isDragging,
+  } = useDraggable({
     id: task.id,
     data,
   });
+
+  // Step 12.1 — the card is also a drop target so a same-quadrant drop
+  // onto it reorders the list (the matrix otherwise has just one drop
+  // target per cell). Disable it while *this* card is the one being
+  // dragged so dnd-kit never resolves a drop onto itself.
+  const dropData: DroppableCardData = useMemo(() => ({ kind: 'card', task }), [task]);
+  const { setNodeRef: setDropRef } = useDroppable({
+    id: `card-drop-${task.id}`,
+    data: dropData,
+    disabled: isDragging,
+  });
+
+  // Both dnd-kit hooks target the same DOM node — fan the ref out to
+  // each so the wrapper is simultaneously draggable and droppable.
+  const setNodeRef = useCallback(
+    (node: HTMLElement | null) => {
+      setDragRef(node);
+      setDropRef(node);
+    },
+    [setDragRef, setDropRef],
+  );
 
   // While dragging, follow the pointer with a CSS transform; dnd-kit
   // updates `transform` on every pointermove. `touch-action: none` is
@@ -135,7 +162,16 @@ export function TaskCard({ task }: TaskCardProps): ReactNode {
       data-priority={task.priority}
       data-status={task.status}
       data-dragging={isDragging ? 'true' : 'false'}
-      layoutId={taskLayoutId(task.backendId, task.id)}
+      // Step 12.1 — the shared-layout `layoutId` (used for the view1↔view2
+      // zoom morph) and dnd-kit's pointer `transform` both mutate this
+      // node, and while dragging they fight: framer-motion keeps trying to
+      // animate the card back to its measured layout box, producing
+      // visible jitter. Drop `layoutId` for the duration of the drag so
+      // the transform is the only thing moving the node; it comes back on
+      // drop, when the card is already at rest in its destination cell.
+      // (Conditional spread rather than `layoutId={undefined}` because
+      // `exactOptionalPropertyTypes` rejects the explicit `undefined`.)
+      {...(isDragging ? {} : { layoutId: taskLayoutId(task.backendId, task.id) })}
       style={dragStyle}
       {...attributes}
       {...listeners}

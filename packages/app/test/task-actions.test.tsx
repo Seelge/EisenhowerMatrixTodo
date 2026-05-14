@@ -15,6 +15,7 @@
 import 'fake-indexeddb/auto';
 import type { Task, TaskDraft } from '@emt/backend-core';
 import { SnackbarProvider } from '@emt/design-system';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { IDBFactory } from 'fake-indexeddb';
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -25,6 +26,7 @@ import { useViewStateStore } from '../src/state/view-state.ts';
 import { TaskActions } from '../src/views/task/TaskActions.tsx';
 
 import { renderWithQueryClient } from './query-render.tsx';
+import { renderToContainer } from './render.ts';
 
 const DRAFT: TaskDraft = {
   title: 'Task',
@@ -105,6 +107,54 @@ describe('TaskActions — Step 8.8', () => {
     expect(deleteSpy).not.toHaveBeenCalled();
     // Original task still on the source.
     expect(await adapter.get(task.id)).toBeDefined();
+  });
+
+  it('clicking trash removes the card from the tasks cache synchronously (Step 12.1)', async () => {
+    const task = await seedTask();
+    useViewStateStore.getState().replace({ zoom: 'matrix', focusedTaskId: task.id });
+
+    // A bespoke client with the default gcTime so the seeded cache
+    // entries (which have no live observer in this isolated render)
+    // survive until the click — `createTestQueryClient`'s `gcTime: 0`
+    // would garbage-collect them first.
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+    // Seed the cache as the matrix views would have it.
+    client.setQueryData(['tasks', 'list', 'all'], [task]);
+    client.setQueryData(['tasks', 'list', task.quadrant], [task]);
+    client.setQueryData(['tasks', 'one', task.id], task);
+
+    const { container, unmount } = await renderToContainer(
+      <QueryClientProvider client={client}>
+        {wrap(<TaskActions task={task} snackbarDuration={10000} />)}
+      </QueryClientProvider>,
+    );
+    teardown = () => {
+      unmount();
+      client.clear();
+    };
+
+    const trash = container.querySelector<HTMLButtonElement>('[data-field="delete"]')!;
+    await act(async () => {
+      trash.click();
+    });
+
+    // The card is gone from every cached list immediately — before the
+    // snackbar window elapses and the real adapter delete runs.
+    expect(client.getQueryData(['tasks', 'list', 'all'])).toEqual([]);
+    expect(client.getQueryData(['tasks', 'list', task.quadrant])).toEqual([]);
+    expect(client.getQueryData(['tasks', 'one', task.id])).toBeUndefined();
+
+    // Undo restores the optimistic removal.
+    const undo = Array.from(container.querySelectorAll('button')).find((b) =>
+      /undo/i.test(b.textContent ?? ''),
+    )!;
+    await act(async () => {
+      undo.click();
+    });
+    expect(client.getQueryData(['tasks', 'list', 'all'])).toEqual([task]);
+    expect(client.getQueryData(['tasks', 'one', task.id])).toEqual(task);
   });
 
   it('clicking Undo cancels the delete and restores focusedTaskId', async () => {

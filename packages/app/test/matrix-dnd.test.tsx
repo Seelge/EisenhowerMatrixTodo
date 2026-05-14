@@ -31,6 +31,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { I18nProvider } from '../src/i18n/provider.tsx';
 import { __resetBackendsCacheForTesting, getBackends } from '../src/state/backends.ts';
+import { taskOrderKey } from '../src/state/task-order.ts';
 import { createDragEndHandler } from '../src/views/matrix/dnd.ts';
 import { MatrixCell } from '../src/views/matrix/MatrixCell.tsx';
 import { MatrixView } from '../src/views/matrix/MatrixView.tsx';
@@ -82,6 +83,25 @@ function makeDragEndEvent(task: Task, toQuadrant: Task['quadrant'] | null): Drag
             rect: { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 },
             disabled: false,
           } as unknown as NonNullable<DragEndEvent['over']>),
+  };
+}
+
+function makeCardDragEndEvent(task: Task, targetCard: Task): DragEndEvent {
+  return {
+    activatorEvent: new Event('pointerup'),
+    active: {
+      id: task.id,
+      data: { current: { kind: 'task', task } },
+      rect: { current: { initial: null, translated: null } },
+    } as unknown as DragEndEvent['active'],
+    collisions: null,
+    delta: { x: 0, y: 0 },
+    over: {
+      id: `card-drop-${targetCard.id}`,
+      data: { current: { kind: 'card', task: targetCard } },
+      rect: { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 },
+      disabled: false,
+    } as unknown as NonNullable<DragEndEvent['over']>,
   };
 }
 
@@ -258,6 +278,114 @@ describe('Matrix drag-and-drop wiring (Step 5.5)', () => {
     handler(makeDragEndEvent(task, 'Q2'));
 
     expect(setRank).not.toHaveBeenCalled();
+  });
+
+  it('intra-quadrant card drop reorders via a rank between neighbours (Step 12.1)', () => {
+    const a = makeTask({ id: 'a' as TaskId, quadrant: 'Q2' });
+    const b = makeTask({ id: 'b' as TaskId, quadrant: 'Q2' });
+    const dragged = makeTask({ id: 'd' as TaskId, quadrant: 'Q2' });
+    const qc = createTestQueryClient();
+    qc.setQueryData(['tasks', 'list', 'Q2'], [a, b, dragged]);
+    qc.setQueryData(
+      ['taskOrder'],
+      new Map([
+        [taskOrderKey(a.backendId, a.id), 100],
+        [taskOrderKey(b.backendId, b.id), 200],
+      ]),
+    );
+    const mutate = vi.fn();
+    const setRank = vi.fn();
+    const handler = createDragEndHandler({ queryClient: qc, mutate, setRank });
+
+    // Drop the unranked card onto B → land between A (100) and B (200).
+    handler(makeCardDragEndEvent(dragged, b));
+
+    expect(mutate).not.toHaveBeenCalled();
+    expect(setRank).toHaveBeenCalledWith({
+      backendId: dragged.backendId,
+      taskId: dragged.id,
+      rank: 150,
+    });
+  });
+
+  it('intra-quadrant card drop onto the first ranked card uses targetRank - 1', () => {
+    const a = makeTask({ id: 'a' as TaskId, quadrant: 'Q2' });
+    const dragged = makeTask({ id: 'd' as TaskId, quadrant: 'Q2' });
+    const qc = createTestQueryClient();
+    qc.setQueryData(['tasks', 'list', 'Q2'], [a, dragged]);
+    qc.setQueryData(['taskOrder'], new Map([[taskOrderKey(a.backendId, a.id), 100]]));
+    const setRank = vi.fn();
+    const handler = createDragEndHandler({ queryClient: qc, mutate: vi.fn(), setRank });
+
+    handler(makeCardDragEndEvent(dragged, a));
+
+    expect(setRank).toHaveBeenCalledWith({
+      backendId: dragged.backendId,
+      taskId: dragged.id,
+      rank: 99,
+    });
+  });
+
+  it('intra-quadrant card drop onto an unranked card falls back to now()', () => {
+    const target = makeTask({ id: 'target' as TaskId, quadrant: 'Q2' });
+    const dragged = makeTask({ id: 'd' as TaskId, quadrant: 'Q2' });
+    const qc = createTestQueryClient();
+    qc.setQueryData(['tasks', 'list', 'Q2'], [target, dragged]);
+    qc.setQueryData(['taskOrder'], new Map());
+    const setRank = vi.fn();
+    const handler = createDragEndHandler({
+      queryClient: qc,
+      mutate: vi.fn(),
+      setRank,
+      now: () => 1_700_000_000_000,
+    });
+
+    handler(makeCardDragEndEvent(dragged, target));
+
+    expect(setRank).toHaveBeenCalledWith({
+      backendId: dragged.backendId,
+      taskId: dragged.id,
+      rank: 1_700_000_000_000,
+    });
+  });
+
+  it('dropping a card onto itself is a no-op', () => {
+    const task = makeTask({ id: 'self' as TaskId, quadrant: 'Q2' });
+    const qc = createTestQueryClient();
+    const mutate = vi.fn();
+    const setRank = vi.fn();
+    const handler = createDragEndHandler({ queryClient: qc, mutate, setRank });
+
+    handler(makeCardDragEndEvent(task, task));
+
+    expect(mutate).not.toHaveBeenCalled();
+    expect(setRank).not.toHaveBeenCalled();
+  });
+
+  it('cross-quadrant card drop still moves the task and ranks it to now()', () => {
+    const dragged = makeTask({ id: 'd' as TaskId, quadrant: 'Q2' });
+    const targetCard = makeTask({ id: 't' as TaskId, quadrant: 'Q1' });
+    const qc = createTestQueryClient();
+    qc.setQueryData(['tasks', 'list', 'Q2'], [dragged]);
+    qc.setQueryData(['tasks', 'list', 'Q1'], [targetCard]);
+    const mutate = vi.fn();
+    const setRank = vi.fn();
+    const handler = createDragEndHandler({
+      queryClient: qc,
+      mutate,
+      setRank,
+      now: () => 1_700_000_009_999,
+    });
+
+    handler(makeCardDragEndEvent(dragged, targetCard));
+
+    expect(mutate).toHaveBeenCalledOnce();
+    expect(mutate.mock.calls[0]?.[0]).toMatchObject({ patch: { quadrant: 'Q1' } });
+    expect(setRank).toHaveBeenCalledWith({
+      backendId: dragged.backendId,
+      taskId: dragged.id,
+      rank: 1_700_000_009_999,
+    });
   });
 
   it('MatrixView mounts the DndContext and seeds appear in their cells', async () => {

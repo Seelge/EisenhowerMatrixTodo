@@ -20,6 +20,8 @@ import type { DragEndEvent } from '@dnd-kit/core';
 import type { BackendId, Quadrant, Task, TaskId, TaskPatch } from '@emt/backend-core';
 import type { QueryClient } from '@tanstack/react-query';
 
+import { taskOrderKey, type TaskOrderMap } from '../../state/task-order.js';
+
 export interface DraggableTaskData {
   readonly kind: 'task';
   readonly task: Task;
@@ -28,6 +30,17 @@ export interface DraggableTaskData {
 export interface DroppableCellData {
   readonly kind: 'cell';
   readonly quadrant: Quadrant;
+}
+
+/**
+ * A task card as a drop target — Step 12.1's intra-quadrant reorder.
+ * Carries the card's own task so the drag-end handler can both read the
+ * destination quadrant (`task.quadrant`) and use the card as a position
+ * anchor when the drop stays inside the same quadrant.
+ */
+export interface DroppableCardData {
+  readonly kind: 'card';
+  readonly task: Task;
 }
 
 /**
@@ -41,7 +54,7 @@ export interface DroppableEdgeData {
   readonly quadrant: Quadrant;
 }
 
-export type DroppableTargetData = DroppableCellData | DroppableEdgeData;
+export type DroppableTargetData = DroppableCellData | DroppableEdgeData | DroppableCardData;
 
 export function isDraggableTaskData(value: unknown): value is DraggableTaskData {
   return (
@@ -70,8 +83,22 @@ export function isDroppableEdgeData(value: unknown): value is DroppableEdgeData 
   );
 }
 
+export function isDroppableCardData(value: unknown): value is DroppableCardData {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    (value as { kind?: unknown }).kind === 'card' &&
+    typeof (value as { task?: { id?: unknown } }).task?.id === 'string'
+  );
+}
+
 export function isDroppableTargetData(value: unknown): value is DroppableTargetData {
-  return isDroppableCellData(value) || isDroppableEdgeData(value);
+  return isDroppableCellData(value) || isDroppableEdgeData(value) || isDroppableCardData(value);
+}
+
+/** The destination quadrant a drop target routes a dropped task to. */
+function targetQuadrant(data: DroppableTargetData): Quadrant {
+  return data.kind === 'card' ? data.task.quadrant : data.quadrant;
 }
 
 /**
@@ -128,6 +155,93 @@ export function applyOptimisticMove(
 }
 
 /**
+ * Optimistically remove a task from every cached tasks query — Step
+ * 12.1's "delete is immediate" fix.
+ *
+ * `TaskActions` queues the real adapter delete behind a 5 s undo
+ * snackbar, so without this the card lingered in the matrix until some
+ * unrelated invalidation happened to refetch. We mirror
+ * {@link applyOptimisticMove}'s shape: drop the task from every
+ * `['tasks', 'list', ...]` array and clear its `['tasks', 'one', id]`
+ * entry, returning a rollback closure the snackbar's `onUndo` invokes.
+ *
+ * On snackbar commit the real `useDeleteTask` runs and its `onSuccess`
+ * invalidation re-fetches — the authoritative empty result then
+ * replaces this optimistic state. (If the commit's adapter delete
+ * fails, the optimistic removal stands but storage still has the task;
+ * that window is the same pre-existing risk the delete flow always
+ * carried and is out of scope for 12.1.)
+ */
+export function applyOptimisticDelete(queryClient: QueryClient, task: Task): () => void {
+  const snapshots = queryClient.getQueriesData<unknown>({ queryKey: ['tasks'] });
+
+  for (const [key, value] of snapshots) {
+    const [, sub] = key as readonly [string, string, string | undefined];
+    if (sub === 'list') {
+      queryClient.setQueryData<readonly Task[] | undefined>(key, (prev) =>
+        prev === undefined ? prev : prev.filter((t) => t.id !== task.id),
+      );
+    } else if (sub === 'one' && (value as Task | undefined)?.id === task.id) {
+      // `setQueryData(key, undefined)` is a no-op in React Query (an
+      // `undefined` updater result means "skip"), so drop the entry
+      // outright; the rollback closure re-seeds it from the snapshot.
+      queryClient.removeQueries({ queryKey: key, exact: true });
+    }
+  }
+
+  return () => {
+    for (const [key, value] of snapshots) {
+      queryClient.setQueryData(key, value);
+    }
+  };
+}
+
+/**
+ * Compute the manual rank that slots `dragged` directly above
+ * `targetCard` within their shared quadrant — Step 12.1's
+ * intra-quadrant reorder.
+ *
+ * The matrix only has one drop target per cell, so before 12.1 a drop
+ * that didn't change quadrant was a pure no-op. Now each card is also a
+ * droppable; dropping onto card B assigns the dragged card a rank that
+ * places it just before B:
+ *
+ *  - If B already has a manual rank, take the midpoint between B and
+ *    B's predecessor in the ranked section (or `B.rank - 1` when B is
+ *    first). Fractional ranks are fine — the comparator subtracts.
+ *  - If B has no manual rank yet, B is still in the due-date/createdAt
+ *    section. A single rank write can't position the dragged card
+ *    *between* two unranked tasks, so we fall back to `now()`: the
+ *    dragged card lands at the bottom of the manual section, which is
+ *    immediately above the unranked tasks — i.e. just above B when B is
+ *    the first unranked task, the common case for a "pull this one up".
+ */
+function computeReorderRank(
+  queryClient: QueryClient,
+  dragged: Task,
+  targetCard: Task,
+  now: () => number,
+): number {
+  const orderMap = queryClient.getQueryData<TaskOrderMap>(['taskOrder']);
+  const targetRank = orderMap?.get(taskOrderKey(targetCard.backendId, targetCard.id));
+  if (orderMap === undefined || targetRank === undefined) {
+    return now();
+  }
+  const list =
+    queryClient.getQueryData<readonly Task[]>(['tasks', 'list', targetCard.quadrant]) ??
+    queryClient.getQueryData<readonly Task[]>(['tasks', 'list', 'all']) ??
+    [];
+  const ranked = list
+    .filter((t) => t.quadrant === targetCard.quadrant && t.id !== dragged.id)
+    .map((t) => ({ id: t.id, rank: orderMap.get(taskOrderKey(t.backendId, t.id)) }))
+    .filter((e): e is { id: TaskId; rank: number } => e.rank !== undefined)
+    .sort((a, b) => a.rank - b.rank);
+  const targetIdx = ranked.findIndex((e) => e.id === targetCard.id);
+  const predRank = targetIdx > 0 ? ranked[targetIdx - 1]!.rank : undefined;
+  return predRank !== undefined ? (predRank + targetRank) / 2 : targetRank - 1;
+}
+
+/**
  * Build the `onDragEnd` callback wired to `<DndContext>`. Extracted
  * from `MatrixView` so unit tests can drive it directly with
  * synthesized `DragEndEvent`s — happy-dom has no layout engine, so
@@ -135,13 +249,20 @@ export function applyOptimisticMove(
  * the "next" target) can't run end-to-end in vitest.
  *
  * The callback is a no-op when:
- *  - there's no `over` (drop happened outside any cell)
- *  - the dragged element isn't a task or the drop target isn't a cell
- *  - the task's quadrant equals the destination quadrant (no move).
+ *  - there's no `over` (drop happened outside any drop target)
+ *  - the dragged element isn't a task or the drop target isn't a
+ *    recognised cell / edge / card target
+ *  - a card was dropped onto itself.
  *
- * On a real move it applies the optimistic cache mutation and queues
- * the adapter write through the supplied `mutate` function. Errors
- * trigger the rollback closure returned by `applyOptimisticMove`.
+ * Otherwise:
+ *  - A cross-quadrant drop applies the optimistic cache mutation,
+ *    queues the adapter write through `mutate` (errors trigger the
+ *    `applyOptimisticMove` rollback), and ranks the card to the bottom
+ *    of the destination's manual section.
+ *  - A same-quadrant drop onto another card reorders within the
+ *    quadrant via {@link computeReorderRank} (Step 12.1) — no adapter
+ *    write, since the canonical `Task` is unchanged.
+ *  - A same-quadrant drop onto empty cell space does nothing.
  */
 export interface DragEndHandlerDeps {
   readonly queryClient: QueryClient;
@@ -177,24 +298,45 @@ export function createDragEndHandler(deps: DragEndHandlerDeps): (event: DragEndE
     const dragData = active.data.current;
     const dropData = over.data.current;
     if (!isDraggableTaskData(dragData) || !isDroppableTargetData(dropData)) return;
-    if (dragData.task.quadrant === dropData.quadrant) return;
 
-    const rollback = applyOptimisticMove(deps.queryClient, dragData.task, dropData.quadrant);
-    deps.mutate(
-      {
-        backendId: dragData.task.backendId,
-        id: dragData.task.id,
-        patch: { quadrant: dropData.quadrant },
-      },
-      { onError: rollback },
-    );
+    const dragged = dragData.task;
+    const toQuadrant = targetQuadrant(dropData);
+    // The anchor card for an intra-quadrant reorder (Step 12.1); a cell
+    // or edge drop has no anchor.
+    const anchorCard = isDroppableCardData(dropData) ? dropData.task : undefined;
+
+    // Dropping a card onto itself is a no-op — nothing moved.
+    if (anchorCard !== undefined && anchorCard.id === dragged.id) return;
+
+    const isCrossQuadrant = dragged.quadrant !== toQuadrant;
+
+    if (isCrossQuadrant) {
+      const rollback = applyOptimisticMove(deps.queryClient, dragged, toQuadrant);
+      deps.mutate(
+        {
+          backendId: dragged.backendId,
+          id: dragged.id,
+          patch: { quadrant: toQuadrant },
+        },
+        { onError: rollback },
+      );
+    }
 
     if (deps.setRank) {
-      deps.setRank({
-        backendId: dragData.task.backendId,
-        taskId: dragData.task.id,
-        rank: now(),
-      });
+      if (isCrossQuadrant) {
+        // Cross-quadrant drop: the card lands at the bottom of the
+        // destination's manual section (`now()`), as before.
+        deps.setRank({ backendId: dragged.backendId, taskId: dragged.id, rank: now() });
+      } else if (anchorCard !== undefined) {
+        // Same-quadrant drop onto another card: reorder so the dragged
+        // card sits just above the anchor card.
+        deps.setRank({
+          backendId: dragged.backendId,
+          taskId: dragged.id,
+          rank: computeReorderRank(deps.queryClient, dragged, anchorCard, now),
+        });
+      }
+      // Same-quadrant drop onto empty cell space: no anchor, no reorder.
     }
   };
 }

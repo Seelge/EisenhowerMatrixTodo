@@ -6,10 +6,10 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 **Phase:** Implementation.
 
-**Next:** Phase 12 — Post-deployment feedback batch (`plan.md` § Phase 12). Ten discrete steps logged after the v0.1 deploy was tried in desktop Chrome (view1 + view2) and Android Firefox in portrait. Each step is sized for a single session and the `Done when` block stands on its own — pick whichever step is most relevant and start there. Suggested ordering is the plan order (bugs → layout → gestures → palette), but the steps are otherwise independent.
+**Next:** Phase 12 — Post-deployment feedback batch (`plan.md` § Phase 12), continuing from **Step 12.2**. Ten discrete steps logged after the v0.1 deploy was tried in desktop Chrome (view1 + view2) and Android Firefox in portrait. Each step is sized for a single session and the `Done when` block stands on its own — pick whichever step is most relevant and start there. Suggested ordering is the plan order (bugs → layout → gestures → palette), but the steps are otherwise independent.
 
 Quick index:
-- **12.1** — DnD correctness: delete is immediate, intra-quadrant reorder works, no card jitter during drag.
+- **12.1** — ✅ DnD correctness: delete is immediate, intra-quadrant reorder works, no card jitter during drag.
 - **12.2** — view2 neighbour-edge drop precedence (diagonal becomes reachable).
 - **12.3** — `TaskCardMenu` rendered as a portal popover so the kebab menu isn't clipped by the cell.
 - **12.4** — view3 dismisses on click-outside, not just Esc.
@@ -28,7 +28,9 @@ Quick index:
 
 Phase 12 should probably land before v0.1.0 is tagged, since several items are real bugs (12.1, 12.5).
 
-**Last completed:** Step 11.5 — PWA install + offline e2e. `packages/app/e2e/pwa-offline.spec.ts` covers the offline loop within one page session: confirm a seed task online; `setOffline(true)` + reload → shell + seed task survive; create a task while offline → it lands in Q2 directly via the local IDB adapter; reconnect → page still healthy, offline-created task remains. Outbox-flush-on-reconnect is a no-op at v0.1 (only the local backend is registered). CI run `25823960061` + Deploy `25823963195` green on `main`.
+**Last completed:** Step 12.1 — DnD correctness sweep. Three view1 bugs fixed: (1) **delete is immediate** — `TaskActions` now calls `applyOptimisticDelete` (new helper in `views/matrix/dnd.ts`) so the card leaves every cached tasks query synchronously; `onUndo` rolls the cache back, `onCommit` runs the real `useDeleteTask`. (2) **intra-quadrant reorder works** — each `TaskCard` is now also a dnd-kit droppable (`kind: 'card'`); dropping a card onto another card in the same quadrant writes a manual rank via `useSetTaskRank` (fractional midpoint between the anchor card and its predecessor, or `now()` when the anchor is unranked), computed by `computeReorderRank`. Cross-quadrant card drops still move + rank to `now()`. (3) **no drag jitter** — `TaskCard` drops its shared-layout `layoutId` while `isDragging` so framer-motion's morph stops fighting dnd-kit's `transform`. Tests: `applyOptimisticDelete` unit cases in `dnd-cache.test.ts`, card-drop reorder cases in `matrix-dnd.test.tsx`, optimistic-delete-through-`TaskActions` case in `task-actions.test.tsx`, plus a delete step appended to `golden-path.spec.ts`. `MatrixCell.tsx` ended up untouched (the droppable lives on the card, not the cell).
+
+**Earlier:** Step 11.5 — PWA install + offline e2e. `packages/app/e2e/pwa-offline.spec.ts` covers the offline loop within one page session: confirm a seed task online; `setOffline(true)` + reload → shell + seed task survive; create a task while offline → it lands in Q2 directly via the local IDB adapter; reconnect → page still healthy, offline-created task remains. Outbox-flush-on-reconnect is a no-op at v0.1 (only the local backend is registered). CI run `25823960061` + Deploy `25823963195` green on `main`.
 
 Earlier history lives in `git log --oneline` and the ✅ markers on `plan.md` step headings.
 

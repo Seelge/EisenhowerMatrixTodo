@@ -13,6 +13,9 @@
  *   6. Toggle Mark complete.
  *   7. Close view3 → the task now renders with `data-status="done"`
  *      under Q1 (after the move and the completion).
+ *   8. Re-open it and delete it → the card leaves the matrix
+ *      immediately (Step 12.1's optimistic-delete fix), with the undo
+ *      snackbar still offered.
  *
  * Drag is simulated with raw pointer events (dnd-kit uses pointer,
  * not HTML5 drag-and-drop): pointerdown on the card, move past the
@@ -108,4 +111,18 @@ test('golden path: seed → create → drag → focus → due tomorrow → compl
     .locator('[data-quadrant="Q1"] .emt-task-card[data-status="done"]')
     .filter({ has: page.locator('.emt-task-card__title', { hasText: 'Refactor module' }) });
   await expect(doneCard).toBeVisible();
+
+  // (8) Re-open it and delete it. The card must leave the matrix
+  // immediately — Step 12.1 removes it optimistically rather than
+  // waiting out the undo-snackbar window.
+  await doneCard.locator('.emt-task-card__open').click();
+  await expect(page.locator('[data-view="task"]')).toBeVisible();
+  await page.locator('[data-field="delete"]').click();
+  await expect(
+    page
+      .locator('[data-quadrant="Q1"] .emt-task-card__title')
+      .filter({ hasText: 'Refactor module' }),
+  ).toHaveCount(0, { timeout: 1000 });
+  // The undo affordance is still offered while the delete is pending.
+  await expect(page.getByRole('button', { name: /undo/i })).toBeVisible();
 });

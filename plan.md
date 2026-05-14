@@ -775,7 +775,7 @@ Reported after the v0.1 deploy went live and was tried in desktop Chrome (view1 
 
 Reference recordings of the feedback live in the commit that opens this phase. Steps are ordered functional-bugs → layout / overflow → gestures → visual polish so a partial completion still ships a more correct app.
 
-### Step 12.1 — DnD correctness sweep (delete, intra-quadrant reorder, jitter)
+### Step 12.1 — DnD correctness sweep (delete, intra-quadrant reorder, jitter) ✅
 **Goal.** Three bugs reported in view1 (4-quadrant matrix):
 - Deleting a task does not remove the card immediately; the card lingers until the next unrelated UI refresh. Likely a React-Query cache-invalidation / undo-snackbar timing issue in `TaskActions` → `useDeleteTask`.
 - Drag-reorder *within* a quadrant has no effect (cross-quadrant drag works; the reset-order button works, which proves the rank store does). The single-cell drop target probably doesn't compute a destination rank when the cell already owns the task.

@@ -15,7 +15,7 @@ import type { BackendId, Task, TaskId } from '@emt/backend-core';
 import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
 
-import { applyOptimisticMove } from '../src/views/matrix/dnd.ts';
+import { applyOptimisticDelete, applyOptimisticMove } from '../src/views/matrix/dnd.ts';
 
 function makeTask(id: string, overrides: Partial<Task> = {}): Task {
   return {
@@ -115,5 +115,48 @@ describe('applyOptimisticMove', () => {
 
     expect(qc.getQueryData<readonly Task[]>(['tasks', 'list', 'all'])![0]!.quadrant).toBe('Q2');
     expect(qc.getQueryData<readonly Task[]>(['tasks', 'list', 'Q2'])).toHaveLength(1);
+  });
+});
+
+describe('applyOptimisticDelete (Step 12.1)', () => {
+  it('drops the task from every list bucket and clears its one-cache', () => {
+    const doomed = makeTask('t1', { quadrant: 'Q2' });
+    const sibling = makeTask('t2', { quadrant: 'Q2' });
+    const stranger = makeTask('t3', { quadrant: 'Q4' });
+    const qc = makeClient();
+    qc.setQueryData(['tasks', 'list', 'all'], [doomed, sibling, stranger]);
+    qc.setQueryData(['tasks', 'list', 'Q2'], [doomed, sibling]);
+    qc.setQueryData(['tasks', 'list', 'Q4'], [stranger]);
+    qc.setQueryData(['tasks', 'one', doomed.id], doomed);
+    qc.setQueryData(['tasks', 'one', sibling.id], sibling);
+
+    applyOptimisticDelete(qc, doomed);
+
+    expect(qc.getQueryData<readonly Task[]>(['tasks', 'list', 'all'])).toEqual([sibling, stranger]);
+    expect(qc.getQueryData<readonly Task[]>(['tasks', 'list', 'Q2'])).toEqual([sibling]);
+    expect(qc.getQueryData(['tasks', 'list', 'Q4'])).toEqual([stranger]);
+    expect(qc.getQueryData<Task>(['tasks', 'one', doomed.id])).toBeUndefined();
+    // The unrelated one-cache entry is left intact.
+    expect(qc.getQueryData<Task>(['tasks', 'one', sibling.id])).toEqual(sibling);
+  });
+
+  it('rollback restores every snapshot exactly', () => {
+    const doomed = makeTask('t1', { quadrant: 'Q2' });
+    const sibling = makeTask('t2', { quadrant: 'Q2' });
+    const qc = makeClient();
+    const allBefore = [doomed, sibling];
+    const q2Before = [doomed, sibling];
+    qc.setQueryData(['tasks', 'list', 'all'], allBefore);
+    qc.setQueryData(['tasks', 'list', 'Q2'], q2Before);
+    qc.setQueryData(['tasks', 'one', doomed.id], doomed);
+
+    const rollback = applyOptimisticDelete(qc, doomed);
+    expect(qc.getQueryData(['tasks', 'list', 'Q2'])).not.toEqual(q2Before);
+
+    rollback();
+
+    expect(qc.getQueryData(['tasks', 'list', 'all'])).toEqual(allBefore);
+    expect(qc.getQueryData(['tasks', 'list', 'Q2'])).toEqual(q2Before);
+    expect(qc.getQueryData<Task>(['tasks', 'one', doomed.id])).toEqual(doomed);
   });
 });
