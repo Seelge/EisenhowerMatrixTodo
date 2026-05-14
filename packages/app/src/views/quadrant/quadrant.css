@@ -177,6 +177,104 @@
 }
 
 /*
+ * Step 12.2 — corner inset. The two strips of a focused quadrant meet
+ * at one corner (`data-inset` names the strip's corner-facing end).
+ * Pulling that end back 24 px vacates a 24×24 square for the diagonal
+ * drop zone below, and guarantees the two strips never overlap — so a
+ * drop resolves deterministically by region. These two-attribute
+ * selectors out-specify the single-attribute `data-edge` rules above.
+ */
+.emt-quadrant__edge[data-edge='top'][data-inset='left'],
+.emt-quadrant__edge[data-edge='bottom'][data-inset='left'] {
+  left: 24px;
+}
+.emt-quadrant__edge[data-edge='top'][data-inset='right'],
+.emt-quadrant__edge[data-edge='bottom'][data-inset='right'] {
+  right: 24px;
+}
+.emt-quadrant__edge[data-edge='left'][data-inset='top'],
+.emt-quadrant__edge[data-edge='right'][data-inset='top'] {
+  top: 24px;
+}
+.emt-quadrant__edge[data-edge='left'][data-inset='bottom'],
+.emt-quadrant__edge[data-edge='right'][data-inset='bottom'] {
+  bottom: 24px;
+}
+
+/*
+ * Diagonal corner drop zone (Step 12.2). A 24×24 square in the corner
+ * the two strips share — geometrically the direction of the diagonal
+ * quadrant. The hit area is the full square (dnd-kit collides on
+ * rects); `clip-path` clips the *visual* to a triangle hugging the
+ * corner so it reads as "drop here to go diagonal" without implying a
+ * larger target than the strips. Colour / drop-active styling mirrors
+ * `.emt-quadrant__edge`.
+ */
+.emt-quadrant__corner {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  pointer-events: none;
+  opacity: 0.4;
+  z-index: var(--layer-quadrant-edge);
+  transition:
+    opacity var(--motion-duration-short) var(--motion-easing-standard),
+    filter var(--motion-duration-short) var(--motion-easing-standard);
+}
+
+.emt-quadrant__corner[data-corner='top-left'] {
+  top: 0;
+  left: 0;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+.emt-quadrant__corner[data-corner='top-right'] {
+  top: 0;
+  right: 0;
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+.emt-quadrant__corner[data-corner='bottom-left'] {
+  bottom: 0;
+  left: 0;
+  clip-path: polygon(0 0, 0 100%, 100% 100%);
+}
+.emt-quadrant__corner[data-corner='bottom-right'] {
+  bottom: 0;
+  right: 0;
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+
+.emt-quadrant__corner[data-drop-active='true'] {
+  opacity: 1;
+  filter: brightness(1.2);
+}
+
+.emt-quadrant__corner[data-emt-edge-color='q1'] {
+  background-color: var(--color-q1);
+}
+.emt-quadrant__corner[data-emt-edge-color='q2'] {
+  background-color: var(--color-q2);
+}
+.emt-quadrant__corner[data-emt-edge-color='q3'] {
+  background-color: var(--color-q3);
+}
+.emt-quadrant__corner[data-emt-edge-color='q4'] {
+  background-color: var(--color-q4);
+}
+
+.emt-quadrant__corner[data-drop-active='true'][data-emt-edge-color='q1'] {
+  box-shadow: var(--glow-q1);
+}
+.emt-quadrant__corner[data-drop-active='true'][data-emt-edge-color='q2'] {
+  box-shadow: var(--glow-q2);
+}
+.emt-quadrant__corner[data-drop-active='true'][data-emt-edge-color='q3'] {
+  box-shadow: var(--glow-q3);
+}
+.emt-quadrant__corner[data-drop-active='true'][data-emt-edge-color='q4'] {
+  box-shadow: var(--glow-q4);
+}
+
+/*
  * The view2 FAB — anchored to the quadrant container's bottom-right
  * corner. `.emt-quadrant` is already `position: relative`, so the FAB
  * just needs absolute positioning within it. The safe-area inset keeps

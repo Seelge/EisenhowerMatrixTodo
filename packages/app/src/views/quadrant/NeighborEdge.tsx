@@ -21,6 +21,17 @@
  * `data-drop-active` flips to `true` when a draggable is over the
  * strip; `quadrant.css` brightens it (full opacity, neighbor-glow
  * outline) so the user sees which neighbor will receive the drop.
+ *
+ * Step 12.2 — corner precedence. The focused quadrant's two orthogonal
+ * neighbor strips meet at exactly one corner; before 12.2 each strip
+ * spanned the full edge, so they overlapped in a 24×24 square and a
+ * drop there resolved non-deterministically (and the diagonal quadrant
+ * was unreachable without two zoom-flips). Now that shared corner is
+ * carved out as a dedicated drop zone for the *diagonal* neighbor
+ * ({@link DiagonalCorner}), and each edge strip is inset 24 px at its
+ * corner-facing end (`data-inset`) so the three regions never overlap.
+ * Drops therefore resolve purely by region: corner square → diagonal,
+ * the rest of each strip → its own orthogonal neighbor.
  */
 import { useDroppable } from '@dnd-kit/core';
 import type { Quadrant } from '@emt/backend-core';
@@ -30,6 +41,9 @@ import { useMemo, type ReactNode } from 'react';
 import type { DroppableEdgeData } from '../matrix/dnd.js';
 
 export type Edge = 'top' | 'right' | 'bottom' | 'left';
+
+/** The corner at which a focused quadrant's two neighbor strips meet. */
+export type Corner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
 export interface NeighborSpec {
   readonly edge: Edge;
@@ -49,9 +63,8 @@ export interface NeighborSpec {
  *      left col = not urgent · right col = urgent
  *
  * So Q1's left edge is shared with Q2 and its bottom edge with Q3, and
- * so on. Diagonals (e.g. Q1 ↔ Q4) are not edge-adjacent and intentionally
- * have no strip — matches `design-input.md`'s "shared edge" wording and
- * the swipe contract from Step 6.3 which only handles axis flips.
+ * so on. Diagonals (e.g. Q1 ↔ Q4) are not edge-adjacent — Step 12.2
+ * gives them the {@link DiagonalCorner} drop zone instead of a strip.
  */
 export const NEIGHBORS: Readonly<Record<Quadrant, readonly NeighborSpec[]>> = {
   Q1: [
@@ -72,6 +85,25 @@ export const NEIGHBORS: Readonly<Record<Quadrant, readonly NeighborSpec[]>> = {
   ],
 };
 
+/**
+ * The diagonal neighbor per focused quadrant, plus the corner the two
+ * orthogonal strips share — which is geometrically the direction of
+ * that diagonal quadrant (e.g. Q1's strips meet at bottom-left, and
+ * down-and-left of Q1 in the matrix is Q4). Each pairing is its own
+ * inverse, matching the matrix diagonals Q1↔Q4 and Q2↔Q3.
+ */
+export interface DiagonalSpec {
+  readonly corner: Corner;
+  readonly quadrant: Quadrant;
+}
+
+export const DIAGONALS: Readonly<Record<Quadrant, DiagonalSpec>> = {
+  Q1: { corner: 'bottom-left', quadrant: 'Q4' },
+  Q2: { corner: 'bottom-right', quadrant: 'Q3' },
+  Q3: { corner: 'top-left', quadrant: 'Q2' },
+  Q4: { corner: 'top-right', quadrant: 'Q1' },
+};
+
 const NEIGHBOR_COLOR: Record<Quadrant, GlowColor> = {
   Q1: 'q1',
   Q2: 'q2',
@@ -79,12 +111,29 @@ const NEIGHBOR_COLOR: Record<Quadrant, GlowColor> = {
   Q4: 'q4',
 };
 
+/**
+ * Which end of a strip to inset by 24 px so it doesn't reach into the
+ * shared corner. A vertical strip (`left` / `right`) clips at its
+ * top or bottom — whichever the corner names; a horizontal strip
+ * (`top` / `bottom`) clips at its left or right end.
+ */
+function insetEnd(edge: Edge, corner: Corner): Edge {
+  const [vertical, horizontal] = corner.split('-') as [Edge, Edge];
+  return edge === 'left' || edge === 'right' ? vertical : horizontal;
+}
+
 export interface NeighborEdgeProps {
   edge: Edge;
   neighbor: Quadrant;
+  /**
+   * The focused quadrant's shared corner. The strip is inset 24 px at
+   * its corner-facing end so it never overlaps the sibling strip or
+   * the {@link DiagonalCorner} drop zone.
+   */
+  corner: Corner;
 }
 
-export function NeighborEdge({ edge, neighbor }: NeighborEdgeProps): ReactNode {
+export function NeighborEdge({ edge, neighbor, corner }: NeighborEdgeProps): ReactNode {
   const data: DroppableEdgeData = useMemo(() => ({ kind: 'edge', quadrant: neighbor }), [neighbor]);
   const { setNodeRef, isOver } = useDroppable({ id: `edge-${neighbor}`, data });
   return (
@@ -92,8 +141,42 @@ export function NeighborEdge({ edge, neighbor }: NeighborEdgeProps): ReactNode {
       ref={setNodeRef}
       className="emt-quadrant__edge"
       data-edge={edge}
+      data-inset={insetEnd(edge, corner)}
       data-neighbor={neighbor}
       data-emt-edge-color={NEIGHBOR_COLOR[neighbor]}
+      data-drop-active={isOver ? 'true' : 'false'}
+      aria-hidden="true"
+    />
+  );
+}
+
+export interface DiagonalCornerProps {
+  /** The corner the two neighbor strips share — where this zone sits. */
+  corner: Corner;
+  /** The diagonal quadrant a drop here routes the task to. */
+  diagonal: Quadrant;
+}
+
+/**
+ * The shared-corner drop zone for the diagonal neighbor (Step 12.2).
+ *
+ * Reuses {@link DroppableEdgeData} so `createDragEndHandler` routes a
+ * drop here exactly like an edge-strip drop — the diagonal quadrant is
+ * never one of the two orthogonal neighbors, so the `edge-<quadrant>`
+ * droppable id stays unique across the view. The hit area is the full
+ * 24×24 corner square (dnd-kit collides on rects); `quadrant.css`
+ * clips the *visual* to a corner triangle pointing at the diagonal.
+ */
+export function DiagonalCorner({ corner, diagonal }: DiagonalCornerProps): ReactNode {
+  const data: DroppableEdgeData = useMemo(() => ({ kind: 'edge', quadrant: diagonal }), [diagonal]);
+  const { setNodeRef, isOver } = useDroppable({ id: `edge-${diagonal}`, data });
+  return (
+    <div
+      ref={setNodeRef}
+      className="emt-quadrant__corner"
+      data-corner={corner}
+      data-neighbor={diagonal}
+      data-emt-edge-color={NEIGHBOR_COLOR[diagonal]}
       data-drop-active={isOver ? 'true' : 'false'}
       aria-hidden="true"
     />

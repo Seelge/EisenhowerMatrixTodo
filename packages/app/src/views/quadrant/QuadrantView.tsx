@@ -56,7 +56,7 @@ import { usePinchHighlightStore } from '../zoom/highlight.js';
 import { usePinchGesture } from '../zoom/usePinchGesture.js';
 import { quadrantLayoutId } from '../zoom/ZoomController.js';
 
-import { NEIGHBORS, NeighborEdge } from './NeighborEdge.js';
+import { DIAGONALS, DiagonalCorner, NEIGHBORS, NeighborEdge } from './NeighborEdge.js';
 import { DEFAULT_SWIPE_OPTIONS, resolveSwipeDirection, resolveSwipeTarget } from './swipe.js';
 
 import './quadrant.css';
@@ -114,6 +114,7 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
   );
 
   const neighbors = NEIGHBORS[quadrant];
+  const diagonal = DIAGONALS[quadrant];
 
   const queryClient = useQueryClient();
   const updateTask = useUpdateTask();
@@ -318,8 +319,14 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
               ))}
             </div>
             {neighbors.map((n) => (
-              <NeighborEdge key={n.edge} edge={n.edge} neighbor={n.quadrant} />
+              <NeighborEdge
+                key={n.edge}
+                edge={n.edge}
+                neighbor={n.quadrant}
+                corner={diagonal.corner}
+              />
             ))}
+            <DiagonalCorner corner={diagonal.corner} diagonal={diagonal.quadrant} />
           </Glow>
         </motion.div>
         <Fab

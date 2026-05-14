@@ -31,7 +31,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '../src/i18n/provider.tsx';
 import { __resetBackendsCacheForTesting, getBackends } from '../src/state/backends.ts';
 import { createDragEndHandler } from '../src/views/matrix/dnd.ts';
-import { NeighborEdge } from '../src/views/quadrant/NeighborEdge.tsx';
+import { DiagonalCorner, NeighborEdge } from '../src/views/quadrant/NeighborEdge.tsx';
 import { QuadrantView } from '../src/views/quadrant/QuadrantView.tsx';
 
 import { createTestQueryClient, renderWithQueryClient } from './query-render.tsx';
@@ -111,7 +111,7 @@ describe('Quadrant drop-on-edge wiring (Step 6.2)', () => {
   it('NeighborEdge registers as a droppable and exposes drop-active', async () => {
     const { container, unmount } = await renderWithQueryClient(
       <DndContext>
-        <NeighborEdge edge="left" neighbor="Q2" />
+        <NeighborEdge edge="left" neighbor="Q2" corner="bottom-left" />
       </DndContext>,
     );
     teardown = unmount;
@@ -120,10 +120,50 @@ describe('Quadrant drop-on-edge wiring (Step 6.2)', () => {
     expect(strip.dataset['neighbor']).toBe('Q2');
     expect(strip.dataset['emtEdgeColor']).toBe('q2');
     expect(strip.dataset['dropActive']).toBe('false');
+    // Step 12.2 — a `left` strip sharing a `bottom-left` corner is
+    // inset at its bottom end so it never overlaps the sibling strip
+    // or the diagonal corner zone.
+    expect(strip.dataset['inset']).toBe('bottom');
     // `aria-hidden` so the decorative strip stays out of the AT tree;
     // the destination quadrant carries the meaning for AT via its own
     // verb-labelled cell elsewhere.
     expect(strip.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('DiagonalCorner registers a droppable for the diagonal neighbour (Step 12.2)', async () => {
+    const { container, unmount } = await renderWithQueryClient(
+      <DndContext>
+        <DiagonalCorner corner="bottom-left" diagonal="Q4" />
+      </DndContext>,
+    );
+    teardown = unmount;
+    const corner = container.querySelector<HTMLElement>('.emt-quadrant__corner')!;
+    expect(corner.dataset['corner']).toBe('bottom-left');
+    expect(corner.dataset['neighbor']).toBe('Q4');
+    expect(corner.dataset['emtEdgeColor']).toBe('q4');
+    expect(corner.dataset['dropActive']).toBe('false');
+    expect(corner.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('createDragEndHandler routes a corner drop to the diagonal quadrant (Step 12.2)', async () => {
+    // The diagonal corner reuses `DroppableEdgeData`, so a drop on it
+    // is just an edge drop whose quadrant is the diagonal — exercise
+    // the resolved destination directly.
+    const task = makeTask({ id: 'corner-drop' as TaskId, quadrant: 'Q1' });
+    const qc = createTestQueryClient();
+    qc.setQueryData(['tasks', 'list', 'all'], [task]);
+    qc.setQueryData(['tasks', 'list', 'Q1'], [task]);
+    qc.setQueryData(['tasks', 'list', 'Q4'], [] as readonly Task[]);
+    const mutate = vi.fn();
+    const handler = createDragEndHandler({ queryClient: qc, mutate });
+
+    // Q1's diagonal is Q4 — the corner droppable carries quadrant Q4.
+    handler(makeEdgeDragEndEvent(task, 'Q4'));
+
+    expect(qc.getQueryData<readonly Task[]>(['tasks', 'list', 'Q1'])).toEqual([]);
+    expect(qc.getQueryData<readonly Task[]>(['tasks', 'list', 'Q4'])![0]!.quadrant).toBe('Q4');
+    expect(mutate).toHaveBeenCalledOnce();
+    expect(mutate.mock.calls[0]?.[0]).toMatchObject({ patch: { quadrant: 'Q4' } });
   });
 
   it('createDragEndHandler accepts edge drops and moves the task', async () => {
@@ -240,6 +280,13 @@ describe('Quadrant drop-on-edge wiring (Step 6.2)', () => {
     }
     const neighbors = strips.map((s) => s.dataset['neighbor']).sort();
     expect(neighbors).toEqual(['Q2', 'Q3']);
+
+    // Step 12.2 — plus exactly one diagonal corner zone. Q1's diagonal
+    // is Q4, sitting in the bottom-left corner the two strips share.
+    const corners = Array.from(container.querySelectorAll<HTMLElement>('.emt-quadrant__corner'));
+    expect(corners.length).toBe(1);
+    expect(corners[0]!.dataset['neighbor']).toBe('Q4');
+    expect(corners[0]!.dataset['corner']).toBe('bottom-left');
 
     // The route doesn't change after a drop — the focused quadrant
     // attribute stays put. (The actual drop is exercised in the

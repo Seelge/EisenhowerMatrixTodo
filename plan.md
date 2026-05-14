@@ -791,7 +791,7 @@ Reference recordings of the feedback live in the commit that opens this phase. S
 - Dragging a card up or down within its own quadrant persists the new order across reload.
 - A held / dragged card has no visible jitter — `layoutId` either pauses or is disabled while `isDragging`.
 
-### Step 12.2 — view2 neighbour drop-edge precedence
+### Step 12.2 — view2 neighbour drop-edge precedence ✅
 **Goal.** In view2 (single-quadrant zoom) the four neighbour-edge drop targets overlap at the corners, so the diagonal neighbour is effectively unreachable and the two orthogonal neighbours fight for the corner pixels.
 
 **Outputs.** `views/quadrant/NeighborEdge.tsx` (or its CSS); possibly a small geometry helper.
