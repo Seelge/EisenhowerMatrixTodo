@@ -35,6 +35,12 @@ export {
   type RelativeDateKey,
 } from './due-date-helpers.js';
 export { useReducedMotion } from './useReducedMotion.js';
+export {
+  keyboardAwareLayout,
+  useKeyboardAwareLayout,
+  type KeyboardAwareLayout,
+  type ViewportMetrics,
+} from './visual-viewport.js';
 export { COMPONENT_CSS } from './components.js';
 export { RESET_CSS } from './reset.js';
 export { tokens } from './tokens.js';

@@ -2,7 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      `interactive-widget=resizes-content` (Step 12.7): when the on-screen
+      keyboard opens, shrink the layout viewport itself so bottom-anchored
+      surfaces (the QuickComposer sheet) stay clear of the keyboard rather
+      than ending up behind it. Browsers without support fall back to the
+      Visual Viewport API path in the design-system `<Sheet>`.
+    -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content"
+    />
     <meta name="theme-color" content="#0A0E14" />
     <title>Eisenhower Matrix Todo</title>
   </head>

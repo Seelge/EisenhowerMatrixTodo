@@ -845,7 +845,7 @@ Reference recordings of the feedback live in the commit that opens this phase. S
 - The i18n keys `app.matrix.axis.important` / `…urgent` are removed (or kept with a TODO if the toggle path is chosen).
 - e2e suite still green; the keyboard arrow-navigation cell focus order is unchanged.
 
-### Step 12.7 — Mobile composer: keyboard-aware layout
+### Step 12.7 — Mobile composer: keyboard-aware layout ✅
 **Goal.** On Android (touch keyboard up), the quick-composer's quadrant picker is sometimes hidden behind the keyboard. User can't see which quadrant they're choosing unless they scroll.
 
 **Outputs.** `views/matrix/QuickComposer.tsx`, `views/matrix/quick-composer.css`, possibly `design-system/Sheet.tsx` if the fix belongs at the surface level.

@@ -126,6 +126,44 @@ describe('Sheet', () => {
     expect(document.activeElement).toBe(opener);
     opener.remove();
   });
+
+  it('lifts clear of the keyboard when the visual viewport shrinks (Step 12.7)', async () => {
+    // Simulate an on-screen keyboard: layout viewport 800px, visual
+    // viewport shrunk to 480px (keyboard occupies the bottom 320px).
+    const originalVV = window.visualViewport;
+    const originalInner = window.innerHeight;
+    Object.defineProperty(window, 'innerHeight', { value: 800, configurable: true });
+    Object.defineProperty(window, 'visualViewport', {
+      value: {
+        height: 480,
+        offsetTop: 0,
+        addEventListener: (): void => {},
+        removeEventListener: (): void => {},
+      },
+      configurable: true,
+    });
+    try {
+      const { container, unmount } = await renderToContainer(
+        <Sheet open onClose={() => {}} aria-label="Edit">
+          <button>field</button>
+        </Sheet>,
+      );
+      teardown = unmount;
+      const dialog = container.querySelector<HTMLElement>('[role="dialog"]')!;
+      // Lifted by the keyboard height and capped to the visible area.
+      expect(dialog.style.bottom).toBe('320px');
+      expect(dialog.style.maxHeight).toBe('480px');
+    } finally {
+      Object.defineProperty(window, 'visualViewport', {
+        value: originalVV,
+        configurable: true,
+      });
+      Object.defineProperty(window, 'innerHeight', {
+        value: originalInner,
+        configurable: true,
+      });
+    }
+  });
 });
 
 describe('SidePanel', () => {
