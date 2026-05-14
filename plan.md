@@ -769,6 +769,127 @@ Depends on all prior phases.
 
 ---
 
+## Phase 12 — Post-deployment feedback batch
+
+Reported after the v0.1 deploy went live and was tried in desktop Chrome (view1 + view2) and Android Chrome in portrait. Each step is sized to land in a single session — assume a future session may resume cold, so the goal / outputs / done-when blocks must stand alone without referring to working memory.
+
+Reference recordings of the feedback live in the commit that opens this phase. Steps are ordered functional-bugs → layout / overflow → gestures → visual polish so a partial completion still ships a more correct app.
+
+### Step 12.1 — DnD correctness sweep (delete, intra-quadrant reorder, jitter)
+**Goal.** Three bugs reported in view1 (4-quadrant matrix):
+- Deleting a task does not remove the card immediately; the card lingers until the next unrelated UI refresh. Likely a React-Query cache-invalidation / undo-snackbar timing issue in `TaskActions` → `useDeleteTask`.
+- Drag-reorder *within* a quadrant has no effect (cross-quadrant drag works; the reset-order button works, which proves the rank store does). The single-cell drop target probably doesn't compute a destination rank when the cell already owns the task.
+- The card flickers / jitters while it's being dragged or held. Likely a fight between framer-motion's shared `layoutId` morph and dnd-kit's `transform` — both are mutating the same DOM node concurrently.
+
+**Outputs.**
+- Patches in `views/matrix/dnd.ts`, `views/matrix/TaskCard.tsx`, `views/matrix/MatrixCell.tsx`, `views/task/TaskActions.tsx`.
+- Vitest case for the delete-immediate path; vitest case for an intra-quadrant reorder writing through `useSetTaskRank`.
+- Update or add to `golden-path.spec.ts` if the regression surface is reachable from the existing e2e flow.
+
+**Done when.**
+- Clicking delete in view3 removes the card from the matrix synchronously (with the undo snackbar still functional).
+- Dragging a card up or down within its own quadrant persists the new order across reload.
+- A held / dragged card has no visible jitter — `layoutId` either pauses or is disabled while `isDragging`.
+
+### Step 12.2 — view2 neighbour drop-edge precedence
+**Goal.** In view2 (single-quadrant zoom) the four neighbour-edge drop targets overlap at the corners, so the diagonal neighbour is effectively unreachable and the two orthogonal neighbours fight for the corner pixels.
+
+**Outputs.** `views/quadrant/NeighborEdge.tsx` (or its CSS); possibly a small geometry helper.
+
+**Done when.**
+- A drop on a corner pixel resolves deterministically to the closer-axis neighbour (vertical vs horizontal — pick one convention and document it inline).
+- The diagonal neighbour exposes a small but real drop area (e.g. a corner triangle) so the user can drop directly into the opposite quadrant without two zoom-flips.
+- 1 e2e or unit test exercises a corner drop and asserts the resolved quadrant.
+
+### Step 12.3 — TaskCardMenu as a portal popover (not inline)
+**Goal.** The 3-dot kebab on a task card currently opens its menu inline. In view1 cells, the menu is clipped to the cell's bottom — only "Move to Do" is visible and a sub-menu scrollbar appears that's hard to navigate.
+
+**Outputs.** `views/matrix/TaskCardMenu.tsx` (and CSS). Render the menu in a portal anchored to the trigger button, with `z-index: var(--layer-tooltip)` (above sheets but below modals).
+
+**Done when.**
+- Opening the menu on any card in any cell shows the full item list, regardless of how close the card is to a cell edge.
+- The menu closes on outside click, Escape, and focus-loss.
+- Existing roving-tabindex keyboard navigation still works (Arrow up/down, Home/End, Enter to commit).
+- 1 unit test asserts the menu portal mounts outside the card's DOM subtree.
+
+### Step 12.4 — view3 dismiss on click-outside
+**Goal.** Currently the right-side panel (view3 on desktop) can be dismissed with Esc, but clicking on the matrix / quadrant behind it does nothing. The panel covers the right column and is awkward to dismiss with the keyboard if the user is already mousing.
+
+**Outputs.** `views/task/TaskView.tsx`; possibly extending `useDialogBehavior` in the design system if the change is generic.
+
+**Done when.**
+- Clicking anywhere outside the view3 panel (matrix grid, axis labels, FAB) routes through `closeViewState` (Step 8.9) and closes the panel.
+- Clicking *inside* the panel (any field, label, button) does not dismiss.
+- Esc still works.
+- The narrow-viewport bottom sheet variant still has its scrim click and is unaffected.
+- 1 unit test for the click-outside path on the desktop side-panel variant.
+
+### Step 12.5 — Card readability on narrow viewports
+**Goal.** On Android Chrome in portrait, task titles in view1 truncate after 2-3 characters. The cells are too narrow to show meaningful text.
+
+**Outputs.** `views/matrix/task-card.css`, `views/matrix/matrix.css`, possibly tweaks to `MatrixCell` layout.
+
+**Done when.**
+- A title up to ~24 characters fits on one line at 360 px viewport width without ellipsis in view1.
+- Longer titles use a 2-line clamp with ellipsis (rather than a single-line clip after 3 chars).
+- 1 visual e2e check at 360 × 720 viewport asserts the title text content extends past 10 characters before ellipsis.
+
+### Step 12.6 — Remove "Important" / "Urgent" axis labels
+**Goal.** User feedback (Phase 12 report): the two axis-label strips eat real estate that the cells need on narrow viewports. The quadrant labels (Do / Schedule / Delegate / Delete) already imply the axes — the explicit "Important ↑" / "Urgent →" strips can go.
+
+**Outputs.** `views/matrix/MatrixView.tsx`, `views/matrix/matrix.css`. Update screenshot in `design-input.md` only if one exists referencing the labels.
+
+**Done when.**
+- The two `.emt-matrix__axis` spans are removed (or hidden behind a future "show axes" toggle that defaults off).
+- The grid expands to fill the reclaimed space (`MatrixView` no longer reserves rows/columns for the axis strips).
+- The i18n keys `app.matrix.axis.important` / `…urgent` are removed (or kept with a TODO if the toggle path is chosen).
+- e2e suite still green; the keyboard arrow-navigation cell focus order is unchanged.
+
+### Step 12.7 — Mobile composer: keyboard-aware layout
+**Goal.** On Android (touch keyboard up), the quick-composer's quadrant picker is sometimes hidden behind the keyboard. User can't see which quadrant they're choosing unless they scroll.
+
+**Outputs.** `views/matrix/QuickComposer.tsx`, `views/matrix/quick-composer.css`, possibly `design-system/Sheet.tsx` if the fix belongs at the surface level.
+
+**Done when.**
+- When the composer is open and the keyboard is shown, the quadrant picker stays visible (sheet pins to the *top* of the visible viewport, or the picker appears above the input rather than below).
+- Use `VirtualKeyboard.overlaysContent = false` + `interactive-widget=resizes-content` viewport hint as the primary mechanism, with a Visual Viewport API fallback for browsers without keyboard inset support.
+- 1 unit test exercising the layout state when `visualViewport.height` is shrunk; manual smoke note in the commit message that the change was confirmed on a real Android device.
+
+### Step 12.8 — Pinch-zoom snap (Android Chrome in particular)
+**Goal.** Pinch-in on view1 should snap to view2 (the focused quadrant). On Android Chrome in portrait the gesture currently enlarges the matrix, and only sometimes and unreliably crossing the pinch-controller's threshold.
+
+**Outputs.** `views/zoom/usePinchGesture.ts`, `views/matrix/MatrixView.tsx`.
+
+**Done when.**
+- The pinch-controller catches the gesture on Android Chrome (the issue is likely `touch-action` or the Visual-Viewport zoom intercepting before the page-level pointer events fire).
+- Pinch-in beyond the existing threshold navigates to `/q/:quadrant` and shows view2.
+- Pinch-out on view2 navigates back to view1.
+- 1 unit test covers the gesture math; the manual confirmation lives in the commit message.
+
+### Step 12.9 — Ctrl+wheel zoom hijack prevention
+**Goal.** On desktop Chrome, Ctrl+mouse-wheel sometimes triggers the browser's own page-zoom (font scaling) instead of our zoom-controller, depending on where the cursor lands.
+
+**Outputs.** `views/zoom/usePinchGesture.ts` or a sibling wheel handler at the `MatrixView` root.
+
+**Done when.**
+- Ctrl+wheel always invokes our zoom logic (call `preventDefault` on the wheel event when `e.ctrlKey === true`).
+- Plain wheel scrolling continues to scroll the cell list as before.
+- 1 unit test on the wheel handler; e2e check that Ctrl+wheel does not change `document.documentElement.style.zoom` or the computed font-size.
+
+### Step 12.10 — Neon-brighter palette refresh
+**Goal.** User feedback: bring the dark palette up a notch — brighter, more futuristic neon. The four quadrant colours and the cyan accent are the load-bearing tokens; the surface / text greys may or may not need changes.
+
+**Outputs.** `packages/design-system/src/tokens.css` + `tokens.ts`; refreshed glow rgba triplets; updated contrast figures in `docs/a11y-audit.md`; re-run `pnpm test` to refresh any tests that pin specific colour values.
+
+**Done when.**
+- The four quadrant colours and the accent each move toward higher saturation / luminance without breaking AA contrast against `--color-bg` and `--color-surface` (re-run the audit table in `docs/a11y-audit.md`).
+- All axe-core e2e specs still pass with 0 critical findings.
+- A side-by-side screenshot in `docs/release-screenshots/palette-before-after.png` shows the change (optional, but helpful for the v0.1 → v0.2 release notes).
+
+**Phase 12 exit:** all reported items either fixed, deferred with an issue link in the release notes, or proved out-of-scope and documented as expected behaviour.
+
+---
+
 ## After the first release
 
 Out of scope for this plan; tracked here as forward-looking notes only:
