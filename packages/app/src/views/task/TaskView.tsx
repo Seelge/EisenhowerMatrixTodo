@@ -6,7 +6,11 @@
  * panel on desktop (the matrix or focused quadrant stays fully visible
  * alongside). Both branches share the same dialog plumbing — initial
  * focus, focus trap, restore-on-close, Escape-to-close — supplied by
- * `useDialogBehavior` inside the design-system surface.
+ * `useDialogBehavior` inside the design-system surface. The desktop
+ * side panel additionally dismisses on a click outside it (Step 12.4):
+ * it has no scrim, so without that, mouse users had to reach for
+ * Escape. Either way `onClose` here routes the dismissal through
+ * `closeViewState`.
  *
  * Step 8.2 wires the first three field editors: title, notes, status.
  * The surface loads the focused task via `useTask` and re-mounts the

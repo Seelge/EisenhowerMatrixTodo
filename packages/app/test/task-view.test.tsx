@@ -168,4 +168,44 @@ describe('TaskView — Step 8.1 surface container', () => {
 
     expect(container.querySelector('[data-view="task"]')).toBeNull();
   });
+
+  it('click outside the desktop side panel closes view3 via closeViewState (Step 12.4)', async () => {
+    media = stubMatchMedia(true);
+    resetTo('/q/Q2?task=abc&from=quadrant');
+    const { container, unmount } = await renderWithQueryClient(<Tree />);
+    teardown = unmount;
+
+    expect(container.querySelector('.emt-side-panel')).not.toBeNull();
+    expect(container.querySelector('[data-view="task"]')).not.toBeNull();
+
+    // Pointerdown on the focused quadrant behind the scrimless panel.
+    const quadrant = container.querySelector<HTMLElement>('[data-view="quadrant"]')!;
+    await act(async () => {
+      quadrant.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    });
+
+    const state = useViewStateStore.getState().state;
+    expect(state.focusedTaskId).toBeUndefined();
+    // Same closeViewState routing as Escape — the underlying zoom level
+    // is preserved.
+    expect(state.zoom).toBe('quadrant');
+    expect(state.focusedQuadrant).toBe('Q2');
+    expect(window.location.search).toBe('');
+    expect(container.querySelector('[data-view="task"]')).toBeNull();
+  });
+
+  it('click inside the desktop side panel does not close view3 (Step 12.4)', async () => {
+    media = stubMatchMedia(true);
+    resetTo('/q/Q2?task=abc&from=quadrant');
+    const { container, unmount } = await renderWithQueryClient(<Tree />);
+    teardown = unmount;
+
+    const panel = container.querySelector<HTMLElement>('.emt-side-panel')!;
+    await act(async () => {
+      panel.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    });
+
+    expect(useViewStateStore.getState().state.focusedTaskId).toBe('abc');
+    expect(container.querySelector('[data-view="task"]')).not.toBeNull();
+  });
 });

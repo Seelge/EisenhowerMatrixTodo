@@ -812,7 +812,7 @@ Reference recordings of the feedback live in the commit that opens this phase. S
 - Existing roving-tabindex keyboard navigation still works (Arrow up/down, Home/End, Enter to commit).
 - 1 unit test asserts the menu portal mounts outside the card's DOM subtree.
 
-### Step 12.4 — view3 dismiss on click-outside
+### Step 12.4 — view3 dismiss on click-outside ✅
 **Goal.** Currently the right-side panel (view3 on desktop) can be dismissed with Esc, but clicking on the matrix / quadrant behind it does nothing. The panel covers the right column and is awkward to dismiss with the keyboard if the user is already mousing.
 
 **Outputs.** `views/task/TaskView.tsx`; possibly extending `useDialogBehavior` in the design system if the change is generic.

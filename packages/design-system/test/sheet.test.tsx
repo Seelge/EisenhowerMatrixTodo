@@ -160,6 +160,31 @@ describe('SidePanel', () => {
     teardown = unmount;
     expect(container.querySelector('[role="dialog"]')).toBeNull();
   });
+
+  it('closes on a pointerdown outside the panel (Step 12.4)', async () => {
+    const onClose = vi.fn();
+    // A sibling node standing in for the matrix behind the scrimless panel.
+    const outside = document.createElement('button');
+    document.body.append(outside);
+    const { container, unmount } = await renderToContainer(
+      <SidePanel open onClose={onClose} aria-label="Task details">
+        <button>field</button>
+      </SidePanel>,
+    );
+    teardown = () => {
+      unmount();
+      outside.remove();
+    };
+
+    // Pointerdown inside the panel must NOT dismiss it.
+    const field = container.querySelector<HTMLButtonElement>('[role="dialog"] button')!;
+    field.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    expect(onClose).not.toHaveBeenCalled();
+
+    // Pointerdown outside dismisses it.
+    outside.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('ResponsiveSurface', () => {

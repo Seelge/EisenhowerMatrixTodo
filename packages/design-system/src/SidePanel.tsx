@@ -3,7 +3,9 @@
  *
  * Per design-input, the panel "does not fully obscure the underlying
  * matrix" — there is no scrim. Focus and Esc handling match `<Sheet>`
- * via the shared `useDialogBehavior` hook.
+ * via the shared `useDialogBehavior` hook. Because there's no scrim to
+ * click, the panel opts into `closeOnOutsidePointer` (Step 12.4) so a
+ * pointerdown anywhere on the matrix behind it dismisses the panel.
  */
 import { useRef, type HTMLAttributes, type ReactNode } from 'react';
 
@@ -27,7 +29,7 @@ export function SidePanel({
   ...rest
 }: SidePanelProps): ReactNode {
   const ref = useRef<HTMLDivElement | null>(null);
-  useDialogBehavior(open, onClose, ref);
+  useDialogBehavior(open, onClose, ref, { closeOnOutsidePointer: true });
   if (!open) return null;
   const classes = className ? `emt-side-panel ${className}` : 'emt-side-panel';
   return (
