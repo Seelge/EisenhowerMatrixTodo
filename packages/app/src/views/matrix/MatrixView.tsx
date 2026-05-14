@@ -114,12 +114,6 @@ export function MatrixView(): ReactNode {
           <MatrixCell quadrant="Q4" />
           <MatrixCell quadrant="Q3" />
         </div>
-        <span className="emt-matrix__axis emt-matrix__axis--important" aria-hidden="true">
-          {t('app.matrix.axis.important')} ↑
-        </span>
-        <span className="emt-matrix__axis emt-matrix__axis--urgent" aria-hidden="true">
-          {t('app.matrix.axis.urgent')} →
-        </span>
         <Fab
           className="emt-matrix__fab"
           aria-label={t('app.matrix.fab.add')}

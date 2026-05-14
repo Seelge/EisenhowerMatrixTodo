@@ -15,8 +15,6 @@ export const strings = {
   'app.matrix.cell.q2.label': 'Schedule',
   'app.matrix.cell.q3.label': 'Delegate',
   'app.matrix.cell.q4.label': 'Delete',
-  'app.matrix.axis.important': 'Important',
-  'app.matrix.axis.urgent': 'Urgent',
   'app.matrix.cell.reset': 'Reset order',
   'app.matrix.fab.add': 'Add task',
   'app.quadrant.empty': 'Nothing here yet.',

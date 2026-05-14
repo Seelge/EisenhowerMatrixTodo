@@ -12,17 +12,19 @@
  *     | Delete   | Delegate |
  *     +----------+----------+
  *
- * Faint axis labels float in the outer padding (`Important ↑` along
- * the left edge, `Urgent →` along the bottom edge); they're decorative
- * and `aria-hidden`. The verb-labelled cells already carry the meaning
- * for assistive tech.
+ * The verb-labelled cells (Do / Schedule / Delegate / Delete) carry
+ * the meaning on their own — Step 12.6 dropped the faint "Important ↑"
+ * / "Urgent →" axis strips that used to float in the outer padding, so
+ * the grid now fills the whole surface with only uniform breathing
+ * room around it.
  */
 
 .emt-matrix {
   position: relative;
   width: 100%;
   height: 100%;
-  padding: var(--space-2xl) var(--space-md) var(--space-2xl) var(--space-2xl);
+  /* Uniform padding — no axis-label gutter to reserve anymore. */
+  padding: var(--space-md);
   background: var(--color-bg);
   /* Matrix container itself never scrolls — overflow lives inside each
      cell's task list. Pairs with the `overflow-y: auto` rule on
@@ -197,42 +199,17 @@
   cursor: not-allowed;
 }
 
-.emt-matrix__axis {
-  position: absolute;
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-text-secondary);
-  opacity: 0.55;
-  pointer-events: none;
-  white-space: nowrap;
-}
-
-.emt-matrix__axis--important {
-  top: 50%;
-  left: var(--space-sm);
-  transform: translate(-50%, -50%) rotate(-90deg);
-  transform-origin: center;
-}
-
-.emt-matrix__axis--urgent {
-  bottom: var(--space-sm);
-  left: 50%;
-  transform: translate(-50%, 50%);
-}
-
 /*
  * Step 12.5 — narrow-viewport readability. On a ~360 px portrait
- * screen the wide left axis-label gutter plus the default cell padding
- * left card titles only a couple of characters wide. Tighten the
- * matrix chrome so the cells — and their card titles — get the room.
- * The axis strips still fit inside the reduced padding; Step 12.6
- * removes them outright and reclaims the rest.
+ * screen the default cell padding and grid gap left card titles only
+ * a couple of characters wide. Tighten the matrix chrome so the cells
+ * — and their card titles — get the room. (Step 12.6 dropped the axis
+ * strips, so the base padding is already uniform; this just trims it
+ * further at the narrow breakpoint.)
  */
 @media (max-width: 540px) {
   .emt-matrix {
-    padding: var(--space-md) var(--space-sm);
+    padding: var(--space-sm);
   }
   .emt-matrix__grid {
     gap: var(--space-sm);

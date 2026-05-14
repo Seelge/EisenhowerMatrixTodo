@@ -102,7 +102,10 @@ describe('MatrixView', () => {
     expect(order).toEqual(['Q2', 'Q1', 'Q4', 'Q3']);
   });
 
-  it('renders both axis labels as decorative (aria-hidden) markers', async () => {
+  it('renders no axis-label strips (Step 12.6)', async () => {
+    // Step 12.6 removed the faint "Important ↑" / "Urgent →" strips —
+    // the verb-labelled cells already imply the axes, and the strips
+    // ate space the cells need on narrow viewports.
     const { container, unmount } = await renderWithQueryClient(
       <I18nProvider>
         <MatrixView />
@@ -110,16 +113,8 @@ describe('MatrixView', () => {
     );
     teardown = unmount;
 
-    const important = container.querySelector<HTMLElement>('.emt-matrix__axis--important');
-    const urgent = container.querySelector<HTMLElement>('.emt-matrix__axis--urgent');
-
-    expect(important).not.toBeNull();
-    expect(urgent).not.toBeNull();
-    expect(important!.getAttribute('aria-hidden')).toBe('true');
-    expect(urgent!.getAttribute('aria-hidden')).toBe('true');
-    expect(important!.textContent).toContain(strings['app.matrix.axis.important']);
-    expect(important!.textContent).toContain('↑');
-    expect(urgent!.textContent).toContain(strings['app.matrix.axis.urgent']);
-    expect(urgent!.textContent).toContain('→');
+    expect(container.querySelector('.emt-matrix__axis')).toBeNull();
+    expect(container.querySelector('.emt-matrix__axis--important')).toBeNull();
+    expect(container.querySelector('.emt-matrix__axis--urgent')).toBeNull();
   });
 });

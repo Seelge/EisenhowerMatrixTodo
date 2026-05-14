@@ -66,7 +66,7 @@ The design input is intended for the prompt to create the initial implementation
 ### view1 — Eisenhower matrix
 
 - Shows all four quadrants.
-- Quadrants are labeled with the short verbs **Do** / **Schedule** / **Delegate** / **Delete**. Faint axis labels ("Important ↑", "Urgent →") on the outer edges; hidden in view2.
+- Quadrants are labeled with the short verbs **Do** / **Schedule** / **Delegate** / **Delete**. _(Originally also had faint "Important ↑" / "Urgent →" axis-label strips on the outer edges; removed in Phase 12 — Step 12.6 — after post-deploy feedback that they ate space the cells needed on narrow viewports, and the verb labels already imply the axes.)_
 - Each task card displays title, full due date, priority, and tags.
 - Each quadrant cell scrolls vertically and independently.
 - **Default sort within a quadrant**: manual (drag-to-reorder), with due date as the secondary order when no manual order is set. A "reset to secondary order" action is available.

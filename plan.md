@@ -834,7 +834,7 @@ Reference recordings of the feedback live in the commit that opens this phase. S
 - Longer titles use a 2-line clamp with ellipsis (rather than a single-line clip after 3 chars).
 - 1 visual e2e check at 360 × 720 viewport asserts the title text content extends past 10 characters before ellipsis.
 
-### Step 12.6 — Remove "Important" / "Urgent" axis labels
+### Step 12.6 — Remove "Important" / "Urgent" axis labels ✅
 **Goal.** User feedback (Phase 12 report): the two axis-label strips eat real estate that the cells need on narrow viewports. The quadrant labels (Do / Schedule / Delegate / Delete) already imply the axes — the explicit "Important ↑" / "Urgent →" strips can go.
 
 **Outputs.** `views/matrix/MatrixView.tsx`, `views/matrix/matrix.css`. Update screenshot in `design-input.md` only if one exists referencing the labels.
