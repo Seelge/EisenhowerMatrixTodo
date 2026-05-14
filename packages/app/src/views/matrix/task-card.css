@@ -110,9 +110,19 @@
   align-self: center;
   font-size: var(--font-size-md);
   color: var(--color-text-primary);
-  white-space: nowrap;
+  /* Step 12.5 — clamp to two lines instead of a single-line clip. On
+     narrow viewports (Android portrait) the cell was so tight that the
+     old `white-space: nowrap` truncated titles after 2-3 characters;
+     two wrapped lines keep a meaningful amount of the title readable,
+     and the ellipsis only kicks in past the second line.
+     `overflow-wrap: anywhere` makes a single very long word break
+     rather than overflow the column. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
   min-width: 0;
 }
 
@@ -216,4 +226,19 @@
 .emt-task-card__menu-item:focus-visible {
   background: var(--color-surface);
   outline: 0;
+}
+
+/*
+ * Step 12.5 — narrow-viewport readability. The view1 cells are barely
+ * a third of a 360 px screen wide; the default open-button padding and
+ * column gap ate most of what was left for the title. Tighten both so
+ * the title column gets real width to pair with the two-line clamp
+ * above. (`matrix.css` reclaims the surrounding matrix / cell padding
+ * at the same breakpoint.)
+ */
+@media (max-width: 540px) {
+  .emt-task-card__open {
+    padding: var(--space-sm);
+    column-gap: var(--space-xs);
+  }
 }

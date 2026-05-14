@@ -221,3 +221,23 @@
   left: 50%;
   transform: translate(-50%, 50%);
 }
+
+/*
+ * Step 12.5 — narrow-viewport readability. On a ~360 px portrait
+ * screen the wide left axis-label gutter plus the default cell padding
+ * left card titles only a couple of characters wide. Tighten the
+ * matrix chrome so the cells — and their card titles — get the room.
+ * The axis strips still fit inside the reduced padding; Step 12.6
+ * removes them outright and reclaims the rest.
+ */
+@media (max-width: 540px) {
+  .emt-matrix {
+    padding: var(--space-md) var(--space-sm);
+  }
+  .emt-matrix__grid {
+    gap: var(--space-sm);
+  }
+  .emt-matrix__cell {
+    padding: var(--space-sm);
+  }
+}

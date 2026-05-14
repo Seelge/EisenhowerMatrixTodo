@@ -824,7 +824,7 @@ Reference recordings of the feedback live in the commit that opens this phase. S
 - The narrow-viewport bottom sheet variant still has its scrim click and is unaffected.
 - 1 unit test for the click-outside path on the desktop side-panel variant.
 
-### Step 12.5 — Card readability on narrow viewports
+### Step 12.5 — Card readability on narrow viewports ✅
 **Goal.** On Android Chrome in portrait, task titles in view1 truncate after 2-3 characters. The cells are too narrow to show meaningful text.
 
 **Outputs.** `views/matrix/task-card.css`, `views/matrix/matrix.css`, possibly tweaks to `MatrixCell` layout.
