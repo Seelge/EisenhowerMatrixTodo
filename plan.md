@@ -886,6 +886,15 @@ Reference recordings of the feedback live in the commit that opens this phase. S
 - All axe-core e2e specs still pass with 0 critical findings.
 - A side-by-side screenshot in `docs/release-screenshots/palette-before-after.png` shows the change (optional, but helpful for the v0.1 → v0.2 release notes).
 
+### Step 12.12 — Drop the hardcoded high-priority glow literal ✅
+**Goal.** `views/matrix/task-card.css:105` pinned a `rgba(255, 77, 109, 0.6)` literal (the pre-Step 12.10 Q1) for the high-priority dot's glow, so the glow stayed pink-red after the palette refresh and ignored per-quadrant AppearancePanel overrides. Route it through the live `--color-q1` token instead.
+
+**Outputs.** `packages/app/src/views/matrix/task-card.css` — swap the literal for `color-mix(in oklab, var(--color-q1), transparent 40%)` to preserve the original 60 % alpha while following the token.
+
+**Done when.**
+- No `#ff4d6d` / `rgba(255, 77, 109, …)` literal remains in the source tree (comment references are fine).
+- Existing tests stay green; visual change confirmed on the live deploy by setting a task to high priority.
+
 ### Step 12.11 — Settings button in the app shell ✅
 **Goal.** User feedback after deploying Step 12.10: the only way to reach view4 (Options) was to type `/options` by hand. Add a typical Android-style settings affordance so the user can dismiss persisted appearance overrides (and reach the rest of view4) without leaving the app.
 

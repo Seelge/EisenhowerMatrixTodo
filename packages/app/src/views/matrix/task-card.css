@@ -102,7 +102,12 @@
 }
 .emt-task-card__priority[data-priority='high'] {
   background: var(--color-q1);
-  box-shadow: 0 0 6px rgba(255, 77, 109, 0.6);
+  /* Step 12.12 — drive the high-priority glow from the live --color-q1
+     token instead of a hardcoded #ff4d6d literal, so palette swaps
+     (Step 12.10) and per-quadrant AppearancePanel overrides flow
+     through here automatically. The `color-mix` preserves the original
+     60 % alpha via 40 % transparency. */
+  box-shadow: 0 0 6px color-mix(in oklab, var(--color-q1), transparent 40%);
 }
 
 .emt-task-card__title {
