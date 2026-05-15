@@ -52,6 +52,7 @@ import { createDragEndHandler } from '../matrix/dnd.js';
 import { QuickComposer } from '../matrix/QuickComposer.js';
 import { sortTasks } from '../matrix/sort.js';
 import { TaskCard } from '../matrix/TaskCard.js';
+import { SettingsButton } from '../options/SettingsButton.js';
 import { usePinchHighlightStore } from '../zoom/highlight.js';
 import { usePinchGesture } from '../zoom/usePinchGesture.js';
 import { quadrantLayoutId } from '../zoom/ZoomController.js';
@@ -329,6 +330,7 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
             <DiagonalCorner corner={diagonal.corner} diagonal={diagonal.quadrant} />
           </Glow>
         </motion.div>
+        <SettingsButton className="emt-quadrant__settings" />
         <Fab
           className="emt-quadrant__fab"
           aria-label={t('app.matrix.fab.add')}

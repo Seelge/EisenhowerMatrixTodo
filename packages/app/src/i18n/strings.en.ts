@@ -56,6 +56,7 @@ export const strings = {
   'app.task.delete.snackbar': 'Task deleted.',
   'app.task.delete.undo': 'Undo',
   'app.options.heading': 'Options',
+  'app.options.open': 'Settings',
   'app.options.back': 'Back to options',
   'app.options.panel.placeholder': 'This panel is coming soon.',
   'app.options.group.backends': 'Backends',

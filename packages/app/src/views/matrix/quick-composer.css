@@ -81,3 +81,24 @@
   bottom: max(var(--space-lg), env(safe-area-inset-bottom));
   z-index: 1;
 }
+
+/*
+ * Step 12.11 — Settings (gear) entry into view4 / Options.
+ *
+ * Anchored top-right, mirroring Material Design's app-bar action
+ * placement on phones without a dedicated app bar (the matrix fills
+ * the viewport, so there's nowhere else to put it). Stays clear of the
+ * notch / status-bar via `safe-area-inset-top`. The IconButton's 48px
+ * touch target satisfies the Android touch-target spec.
+ */
+.emt-matrix__settings {
+  position: absolute;
+  top: max(var(--space-sm), env(safe-area-inset-top));
+  right: max(var(--space-sm), env(safe-area-inset-right));
+  z-index: 1;
+  color: var(--color-text-secondary);
+}
+.emt-matrix__settings:hover:not(:disabled),
+.emt-matrix__settings:focus-visible {
+  color: var(--color-text-primary);
+}

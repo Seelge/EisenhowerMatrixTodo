@@ -297,3 +297,22 @@
   bottom: max(var(--space-lg), env(safe-area-inset-bottom));
   z-index: var(--layer-fab);
 }
+
+/*
+ * Step 12.11 — Settings (gear) entry into view4 / Options.
+ *
+ * Same anchor + colour treatment as `.emt-matrix__settings`, so the
+ * affordance lands in the same place across view1 and view2 (matrix
+ * and focused quadrant) and reads as the same control.
+ */
+.emt-quadrant__settings {
+  position: absolute;
+  top: max(var(--space-sm), env(safe-area-inset-top));
+  right: max(var(--space-sm), env(safe-area-inset-right));
+  z-index: var(--layer-fab);
+  color: var(--color-text-secondary);
+}
+.emt-quadrant__settings:hover:not(:disabled),
+.emt-quadrant__settings:focus-visible {
+  color: var(--color-text-primary);
+}

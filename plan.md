@@ -886,6 +886,17 @@ Reference recordings of the feedback live in the commit that opens this phase. S
 - All axe-core e2e specs still pass with 0 critical findings.
 - A side-by-side screenshot in `docs/release-screenshots/palette-before-after.png` shows the change (optional, but helpful for the v0.1 → v0.2 release notes).
 
+### Step 12.11 — Settings button in the app shell ✅
+**Goal.** User feedback after deploying Step 12.10: the only way to reach view4 (Options) was to type `/options` by hand. Add a typical Android-style settings affordance so the user can dismiss persisted appearance overrides (and reach the rest of view4) without leaving the app.
+
+**Outputs.** New shared `SettingsButton` component (`packages/app/src/views/options/SettingsButton.tsx`) wrapping the design-system `IconButton` with a Material gear glyph and a navigate-to-`/options` handler. Wired into `MatrixView` and `QuadrantView` via positioning classes (`.emt-matrix__settings`, `.emt-quadrant__settings`) that anchor it top-right with `safe-area-inset-top`/`-right`, mirroring the FAB convention. New i18n key `app.options.open` ("Settings"). Unit coverage in `matrix-view.test.tsx` + `quadrant-view.test.tsx`; e2e in `e2e/options-entry.spec.ts`.
+
+**Done when.**
+- A 48 × 48 gear button renders top-right of both view1 and view2, clear of the notch and the FAB.
+- Clicking it pushes `/options` onto the history stack (browser back returns to whatever view the user came from).
+- The button announces "Settings" via `aria-label` and is reachable by Tab.
+- `pnpm test` and the a11y / keyboard e2e specs stay green.
+
 **Phase 12 exit:** all reported items either fixed, deferred with an issue link in the release notes, or proved out-of-scope and documented as expected behaviour.
 
 ---

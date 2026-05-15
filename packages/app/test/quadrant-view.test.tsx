@@ -234,3 +234,39 @@ describe('QuadrantView — Step 6.6 empty state', () => {
     expect(container.querySelector('.emt-empty-note')).toBeNull();
   });
 });
+
+describe('QuadrantView — Step 12.11 Settings entry', () => {
+  let teardown: (() => void) | undefined;
+
+  beforeEach(() => {
+    globalThis.indexedDB = new IDBFactory();
+    __resetBackendsCacheForTesting();
+  });
+
+  afterEach(() => {
+    teardown?.();
+    teardown = undefined;
+    __resetBackendsCacheForTesting();
+  });
+
+  it('renders a top-right Settings button that navigates to /options', async () => {
+    const startPath = window.location.pathname;
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <QuadrantView quadrant="Q1" />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+
+    const button = container.querySelector<HTMLButtonElement>(
+      '[data-action="open-options"]',
+    );
+    expect(button).not.toBeNull();
+    expect(button!.getAttribute('aria-label')).toBe(strings['app.options.open']);
+    expect(button!.classList.contains('emt-quadrant__settings')).toBe(true);
+
+    button!.click();
+    expect(window.location.pathname).toBe('/options');
+    window.history.replaceState(null, '', startPath);
+  });
+});

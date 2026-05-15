@@ -117,4 +117,32 @@ describe('MatrixView', () => {
     expect(container.querySelector('.emt-matrix__axis--important')).toBeNull();
     expect(container.querySelector('.emt-matrix__axis--urgent')).toBeNull();
   });
+
+  it('exposes a top-right Settings button that navigates to /options (Step 12.11)', async () => {
+    // Step 12.11 added a gear-icon entry into view4 (Options) on the
+    // matrix shell. Asserts the structural contract: the button exists
+    // with the canonical `[data-action="open-options"]` hook, carries
+    // the localized aria-label, and clicking it pushes `/options` onto
+    // the history stack so browser back returns to the matrix.
+    const startPath = window.location.pathname;
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <MatrixView />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+
+    const button = container.querySelector<HTMLButtonElement>(
+      '[data-action="open-options"]',
+    );
+    expect(button).not.toBeNull();
+    expect(button!.getAttribute('aria-label')).toBe(strings['app.options.open']);
+    // The positioning class hooks the shell-level top-right anchor.
+    expect(button!.classList.contains('emt-matrix__settings')).toBe(true);
+
+    button!.click();
+    expect(window.location.pathname).toBe('/options');
+    // Restore the URL so sibling tests don't inherit it.
+    window.history.replaceState(null, '', startPath);
+  });
 });
