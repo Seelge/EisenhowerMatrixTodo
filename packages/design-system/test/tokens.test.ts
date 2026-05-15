@@ -11,10 +11,21 @@ describe('design-system tokens', () => {
   });
 
   it('every quadrant has a matching glow', () => {
-    expect(tokens.glow.q1).toContain('rgba(255, 77, 109');
-    expect(tokens.glow.q2).toContain('rgba(125, 249, 255');
-    expect(tokens.glow.q3).toContain('rgba(255, 209, 102');
-    expect(tokens.glow.q4).toContain('rgba(139, 150, 165');
+    // Derive the expected `rgba(r, g, b` prefix from each colour token
+    // so a palette refresh (e.g. Step 12.10) only needs to update the
+    // tokens themselves, not the test pins.
+    const hexToRgbPrefix = (hex: string): string => {
+      const [r, g, b] = hex
+        .replace('#', '')
+        .match(/.{2}/g)!
+        .map((h) => Number.parseInt(h, 16));
+      return `rgba(${r}, ${g}, ${b}`;
+    };
+    expect(tokens.glow.q1).toContain(hexToRgbPrefix(tokens.color.q1));
+    expect(tokens.glow.q2).toContain(hexToRgbPrefix(tokens.color.q2));
+    expect(tokens.glow.q3).toContain(hexToRgbPrefix(tokens.color.q3));
+    expect(tokens.glow.q4).toContain(hexToRgbPrefix(tokens.color.q4));
+    expect(tokens.glow.accent).toContain(hexToRgbPrefix(tokens.color.accent));
   });
 
   it('space scale is monotonically increasing', () => {

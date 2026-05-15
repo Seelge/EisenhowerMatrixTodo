@@ -876,7 +876,7 @@ Reference recordings of the feedback live in the commit that opens this phase. S
 - Plain wheel scrolling continues to scroll the cell list as before.
 - 1 unit test on the wheel handler; e2e check that Ctrl+wheel does not change `document.documentElement.style.zoom` or the computed font-size.
 
-### Step 12.10 — Neon-brighter palette refresh
+### Step 12.10 — Neon-brighter palette refresh ✅
 **Goal.** User feedback: bring the dark palette up a notch — brighter, more futuristic neon. The four quadrant colours and the cyan accent are the load-bearing tokens; the surface / text greys may or may not need changes.
 
 **Outputs.** `packages/design-system/src/tokens.css` + `tokens.ts`; refreshed glow rgba triplets; updated contrast figures in `docs/a11y-audit.md`; re-run `pnpm test` to refresh any tests that pin specific colour values.

@@ -22,17 +22,17 @@ export const tokens = {
     /** Secondary text, muted captions. */
     textSecondary: '#8B96A5',
     /** Focus rings, active states, primary accent. */
-    accent: '#7DF9FF',
+    accent: '#3DF1FF',
     /** Q1 — Important + Urgent (Do). */
-    q1: '#FF4D6D',
+    q1: '#FF3370',
     /** Q2 — Important, not Urgent (Schedule). */
-    q2: '#7DF9FF',
+    q2: '#3DF1FF',
     /** Q3 — Urgent, not Important (Delegate). */
-    q3: '#FFD166',
+    q3: '#FFB800',
     /** Q4 — Neither (Delete). */
-    q4: '#8B96A5',
+    q4: '#A7B4C4',
     /** Error / destructive — shares Q1 hue. */
-    error: '#FF4D6D',
+    error: '#FF3370',
   },
   space: {
     xs: '4px',
@@ -90,11 +90,11 @@ export const tokens = {
   },
   /** Per-quadrant glow box-shadows. Outer halo + soft inner shadow. */
   glow: {
-    q1: '0 0 20px rgba(255, 77, 109, 0.6), inset 0 0 8px rgba(255, 77, 109, 0.25)',
-    q2: '0 0 20px rgba(125, 249, 255, 0.6), inset 0 0 8px rgba(125, 249, 255, 0.25)',
-    q3: '0 0 20px rgba(255, 209, 102, 0.6), inset 0 0 8px rgba(255, 209, 102, 0.25)',
-    q4: '0 0 20px rgba(139, 150, 165, 0.6), inset 0 0 8px rgba(139, 150, 165, 0.25)',
-    accent: '0 0 16px rgba(125, 249, 255, 0.5), inset 0 0 6px rgba(125, 249, 255, 0.2)',
+    q1: '0 0 20px rgba(255, 51, 112, 0.6), inset 0 0 8px rgba(255, 51, 112, 0.25)',
+    q2: '0 0 20px rgba(61, 241, 255, 0.6), inset 0 0 8px rgba(61, 241, 255, 0.25)',
+    q3: '0 0 20px rgba(255, 184, 0, 0.6), inset 0 0 8px rgba(255, 184, 0, 0.25)',
+    q4: '0 0 20px rgba(167, 180, 196, 0.6), inset 0 0 8px rgba(167, 180, 196, 0.25)',
+    accent: '0 0 16px rgba(61, 241, 255, 0.5), inset 0 0 6px rgba(61, 241, 255, 0.2)',
   },
   /** Z-index layers. */
   layer: {

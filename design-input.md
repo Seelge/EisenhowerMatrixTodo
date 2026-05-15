@@ -57,11 +57,11 @@ The design input is intended for the prompt to create the initial implementation
 - Background: `#0A0E14`
 - Surface: `#121821`
 - Text primary: `#E6EDF3`; secondary: `#8B96A5`
-- Accent (focus, active): `#7DF9FF` electric cyan
-- Q1 Do (urgent + important): `#FF4D6D` red glow
-- Q2 Schedule (important, not urgent): `#7DF9FF` cyan glow
-- Q3 Delegate (urgent, not important): `#FFD166` amber glow
-- Q4 Delete (neither): `#8B96A5` muted gray glow
+- Accent (focus, active): `#3DF1FF` electric cyan _(refreshed Phase 12 — Step 12.10; originally `#7DF9FF`)_
+- Q1 Do (urgent + important): `#FF3370` neon pink-red glow _(Step 12.10; originally `#FF4D6D`)_
+- Q2 Schedule (important, not urgent): `#3DF1FF` neon cyan glow _(Step 12.10; originally `#7DF9FF`)_
+- Q3 Delegate (urgent, not important): `#FFB800` neon amber glow _(Step 12.10; originally `#FFD166`)_
+- Q4 Delete (neither): `#A7B4C4` muted gray glow _(Step 12.10; originally `#8B96A5`)_
 
 ### view1 — Eisenhower matrix
 

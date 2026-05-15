@@ -12,12 +12,12 @@
   --color-surface-elevated: #1a2230;
   --color-text-primary: #e6edf3;
   --color-text-secondary: #8b96a5;
-  --color-accent: #7df9ff;
-  --color-q1: #ff4d6d;
-  --color-q2: #7df9ff;
-  --color-q3: #ffd166;
-  --color-q4: #8b96a5;
-  --color-error: #ff4d6d;
+  --color-accent: #3df1ff;
+  --color-q1: #ff3370;
+  --color-q2: #3df1ff;
+  --color-q3: #ffb800;
+  --color-q4: #a7b4c4;
+  --color-error: #ff3370;
 
   /* Space */
   --space-xs: 4px;
@@ -64,11 +64,11 @@
   --motion-easing-accelerated: cubic-bezier(0.3, 0, 1, 1);
 
   /* Glow */
-  --glow-q1: 0 0 20px rgba(255, 77, 109, 0.6), inset 0 0 8px rgba(255, 77, 109, 0.25);
-  --glow-q2: 0 0 20px rgba(125, 249, 255, 0.6), inset 0 0 8px rgba(125, 249, 255, 0.25);
-  --glow-q3: 0 0 20px rgba(255, 209, 102, 0.6), inset 0 0 8px rgba(255, 209, 102, 0.25);
-  --glow-q4: 0 0 20px rgba(139, 150, 165, 0.6), inset 0 0 8px rgba(139, 150, 165, 0.25);
-  --glow-accent: 0 0 16px rgba(125, 249, 255, 0.5), inset 0 0 6px rgba(125, 249, 255, 0.2);
+  --glow-q1: 0 0 20px rgba(255, 51, 112, 0.6), inset 0 0 8px rgba(255, 51, 112, 0.25);
+  --glow-q2: 0 0 20px rgba(61, 241, 255, 0.6), inset 0 0 8px rgba(61, 241, 255, 0.25);
+  --glow-q3: 0 0 20px rgba(255, 184, 0, 0.6), inset 0 0 8px rgba(255, 184, 0, 0.25);
+  --glow-q4: 0 0 20px rgba(167, 180, 196, 0.6), inset 0 0 8px rgba(167, 180, 196, 0.25);
+  --glow-accent: 0 0 16px rgba(61, 241, 255, 0.5), inset 0 0 6px rgba(61, 241, 255, 0.2);
 
   /* Layers */
   --layer-base: 0;

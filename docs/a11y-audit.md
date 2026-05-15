@@ -22,16 +22,21 @@ contrast (icons, focus rings, etc.).
 
 | Foreground             | Background          | Ratio  | Outcome  |
 | ---------------------- | ------------------- | ------ | -------- |
-| `--color-text-primary` (#e6edf3) | `--color-bg` (#0a0e14) | ≈ 15.6:1 | AAA |
-| `--color-text-primary` | `--color-surface` (#121821) | ≈ 14.8:1 | AAA |
-| `--color-text-secondary` (#8b96a5) | `--color-bg` | ≈ 6.0:1 | AA |
-| `--color-text-secondary` | `--color-surface` | ≈ 5.7:1 | AA |
-| `--color-accent` (#7df9ff) | `--color-bg` | ≈ 16:1 | AAA |
-| `--color-q1` (#ff4d6d) | `--color-bg` | ≈ 7.5:1 | AA |
-| `--color-q2` (#7df9ff) | `--color-bg` | ≈ 16:1 | AAA |
-| `--color-q3` (#ffd166) | `--color-bg` | ≈ 13.8:1 | AAA |
-| `--color-q4` (#8b96a5) | `--color-bg` | ≈ 6.0:1 | AA |
-| `--color-error` (#ff4d6d) | `--color-bg` | ≈ 7.5:1 | AA |
+| `--color-text-primary` (#e6edf3) | `--color-bg` (#0a0e14) | ≈ 16.4:1 | AAA |
+| `--color-text-primary` | `--color-surface` (#121821) | ≈ 15.1:1 | AAA |
+| `--color-text-secondary` (#8b96a5) | `--color-bg` | ≈ 6.5:1 | AA |
+| `--color-text-secondary` | `--color-surface` | ≈ 5.9:1 | AA |
+| `--color-accent` (#3df1ff) | `--color-bg` | ≈ 14.0:1 | AAA |
+| `--color-q1` (#ff3370) | `--color-bg` | ≈ 5.5:1 | AA |
+| `--color-q2` (#3df1ff) | `--color-bg` | ≈ 14.0:1 | AAA |
+| `--color-q3` (#ffb800) | `--color-bg` | ≈ 11.2:1 | AAA |
+| `--color-q4` (#a7b4c4) | `--color-bg` | ≈ 9.2:1 | AAA |
+| `--color-error` (#ff3370) | `--color-bg` | ≈ 5.5:1 | AA |
+
+> Refreshed Step 12.10: the four quadrant colours + the cyan accent
+> were pushed toward higher saturation / luminance ("neon-brighter"
+> palette). All ratios above are AA or better against both `--color-bg`
+> and `--color-surface`. Q4 ticks up from AA → AAA at the same time.
 
 The quadrant colors are also load-bearing for the matrix glow
 borders. The glow effect overlays a faint colored ring on top of the
