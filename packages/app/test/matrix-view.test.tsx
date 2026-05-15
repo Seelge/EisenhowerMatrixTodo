@@ -132,9 +132,7 @@ describe('MatrixView', () => {
     );
     teardown = unmount;
 
-    const button = container.querySelector<HTMLButtonElement>(
-      '[data-action="open-options"]',
-    );
+    const button = container.querySelector<HTMLButtonElement>('[data-action="open-options"]');
     expect(button).not.toBeNull();
     expect(button!.getAttribute('aria-label')).toBe(strings['app.options.open']);
     // The positioning class hooks the shell-level top-right anchor.

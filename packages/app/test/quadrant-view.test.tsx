@@ -258,9 +258,7 @@ describe('QuadrantView — Step 12.11 Settings entry', () => {
     );
     teardown = unmount;
 
-    const button = container.querySelector<HTMLButtonElement>(
-      '[data-action="open-options"]',
-    );
+    const button = container.querySelector<HTMLButtonElement>('[data-action="open-options"]');
     expect(button).not.toBeNull();
     expect(button!.getAttribute('aria-label')).toBe(strings['app.options.open']);
     expect(button!.classList.contains('emt-quadrant__settings')).toBe(true);
