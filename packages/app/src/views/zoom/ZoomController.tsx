@@ -18,13 +18,7 @@
 import type { Quadrant } from '@emt/backend-core';
 import { useReducedMotion } from '@emt/design-system';
 import { AnimatePresence, LayoutGroup, MotionConfig, motion } from 'framer-motion';
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  type ReactNode,
-  type WheelEvent as ReactWheelEvent,
-} from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 
 import type { ViewState } from '../../routes/contract.js';
 import { useViewStateStore } from '../../state/view-state.js';
@@ -94,10 +88,23 @@ export function ZoomController({ state, children }: ZoomControllerProps): ReactN
   const prefersReducedMotion = useReducedMotion();
   const transition = selectZoomTransition(prefersReducedMotion);
 
-  const lastWheelAt = useRef<number>(0);
+  // `-Infinity` so the first wheel event after mount is never gated by
+  // the cooldown — `performance.now()` is small (< 300 ms) when the
+  // user spins the wheel right after page load, and an initial value
+  // of `0` would otherwise eat that first event.
+  const lastWheelAt = useRef<number>(Number.NEGATIVE_INFINITY);
 
-  const onWheel = useCallback(
-    (e: ReactWheelEvent<HTMLDivElement>) => {
+  // Step 12.9 — React's synthetic `onWheel` is registered as a *passive*
+  // listener, so calling `preventDefault()` inside the handler is a no-op
+  // and Chrome still runs its native `Ctrl + wheel` page-zoom (font
+  // scaling on `document.documentElement`). We bind the listener
+  // ourselves on `window` with `{ passive: false }` so the
+  // `preventDefault()` actually takes effect. `window`-scoped so it
+  // catches events regardless of which descendant the cursor is over;
+  // the scene element is looked up via `document.querySelector` only
+  // to resolve the cursor → quadrant mapping.
+  useEffect(() => {
+    const onWheel = (e: WheelEvent): void => {
       // Plain wheel is the per-cell / per-quadrant scroll affordance —
       // never intercept it. Only `Ctrl + wheel` is our zoom binding.
       // (macOS trackpad pinch synthesizes `ctrlKey: true` on wheel
@@ -114,7 +121,9 @@ export function ZoomController({ state, children }: ZoomControllerProps): ReactN
       if (direction === undefined) return;
       const { navigate } = useViewStateStore.getState();
       if (state.zoom === 'matrix' && direction === 'up') {
-        const rect = e.currentTarget.getBoundingClientRect();
+        const scene = document.querySelector<HTMLElement>('.emt-zoom__scene');
+        if (!scene) return;
+        const rect = scene.getBoundingClientRect();
         const target = quadrantAtPoint({ x: e.clientX, y: e.clientY }, rect);
         navigate({ ...state, zoom: 'quadrant', focusedQuadrant: target });
         lastWheelAt.current = now;
@@ -124,9 +133,10 @@ export function ZoomController({ state, children }: ZoomControllerProps): ReactN
         navigate(toMatrixState(state));
         lastWheelAt.current = now;
       }
-    },
-    [state],
-  );
+    };
+    window.addEventListener('wheel', onWheel, { passive: false });
+    return () => window.removeEventListener('wheel', onWheel);
+  }, [state]);
 
   // Step 7.4 — global keyboard bindings: Esc / +/- always; Enter /
   // arrows are only meaningful when a `[data-quadrant]` cell has
@@ -215,7 +225,6 @@ export function ZoomController({ state, children }: ZoomControllerProps): ReactN
             data-reduced-motion={prefersReducedMotion ? 'true' : 'false'}
             layout
             transition={transition}
-            onWheel={onWheel}
           >
             {children}
           </motion.div>

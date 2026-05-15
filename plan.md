@@ -866,7 +866,7 @@ Reference recordings of the feedback live in the commit that opens this phase. S
 - Pinch-out on view2 navigates back to view1.
 - 1 unit test covers the gesture math; the manual confirmation lives in the commit message.
 
-### Step 12.9 — Ctrl+wheel zoom hijack prevention
+### Step 12.9 — Ctrl+wheel zoom hijack prevention ✅
 **Goal.** On desktop Chrome, Ctrl+mouse-wheel sometimes triggers the browser's own page-zoom (font scaling) instead of our zoom-controller, depending on where the cursor lands.
 
 **Outputs.** `views/zoom/usePinchGesture.ts` or a sibling wheel handler at the `MatrixView` root.

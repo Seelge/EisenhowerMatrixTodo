@@ -20,7 +20,7 @@
  */
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { I18nProvider } from '../src/i18n/provider.tsx';
 import { Routes } from '../src/routes/Routes.tsx';
@@ -223,6 +223,48 @@ describe('ZoomController — Step 7.3 wheel integration', () => {
 
     expect(event.defaultPrevented).toBe(true);
     expect(useViewStateStore.getState().state.focusedQuadrant).toBe('Q1');
+  });
+
+  it('binds the wheel listener as non-passive on window (Step 12.9)', async () => {
+    // React's synthetic `onWheel` is registered passive, so a
+    // `preventDefault()` inside it is ignored and the browser still
+    // runs its native Ctrl+wheel page-zoom. The fix binds the listener
+    // ourselves with `{ passive: false }` on `window`.
+    const addSpy = vi.spyOn(window, 'addEventListener');
+    const { unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <Routes />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+
+    const wheelCall = addSpy.mock.calls.find((call) => call[0] === 'wheel');
+    expect(wheelCall).toBeDefined();
+    expect(wheelCall![2]).toMatchObject({ passive: false });
+    addSpy.mockRestore();
+  });
+
+  it('Ctrl + wheel dispatched directly on window still drives our zoom (Step 12.9)', async () => {
+    // The listener is global, not scoped to the scene element — a wheel
+    // event that never bubbles through the scene still resolves.
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <Routes />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+    const scene = container.querySelector<HTMLElement>('.emt-zoom__scene')!;
+    stubRect(scene, { x: 0, y: 0, w: 400, h: 400 });
+
+    const event = dispatchWheel(window, {
+      deltaY: -100,
+      ctrlKey: true,
+      clientX: 300,
+      clientY: 300,
+    });
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(useViewStateStore.getState().state.focusedQuadrant).toBe('Q3');
   });
 
   it('rapid second wheel-up does not double-fire (cooldown)', async () => {
