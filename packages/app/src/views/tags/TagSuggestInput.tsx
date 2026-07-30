@@ -120,7 +120,9 @@ export function TagSuggestInput({
           return;
         }
       }
-      // Free-text commit — parent form may also handle submit.
+      // Always stop form submit so free-text commit cannot trigger
+      // parent "Add task" / other submit handlers (composer vs view3).
+      e.preventDefault();
       onCommitFreeText();
       return;
     }

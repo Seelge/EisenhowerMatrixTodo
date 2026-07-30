@@ -337,18 +337,12 @@ export interface DragEndHandlerDeps {
   readonly queryClient: QueryClient;
   readonly mutate: (
     input: { backendId: BackendId; id: TaskId; patch: TaskPatch },
-    options: { onError: () => void },
+    options: { onError: () => void; onSuccess?: () => void },
   ) => void;
   /**
-   * Persist a manual rank for a moved task (Step 5.7). The cross-cell
-   * drop assigns `Date.now()` as the rank — newer drops sort below
-   * older drops within the manual section of the destination cell, so
-   * the just-dropped card lands at the bottom of the manual list.
-   *
-   * Errors are swallowed: a rank is a UI nicety, and the rest of the
-   * move (which the user can see) has already happened. Logging the
-   * failure to console keeps the diagnostic trail without surfacing a
-   * cryptic toast for a non-functional concern.
+   * Persist a manual rank for a moved task (Step 5.7). Cross-quadrant
+   * ranks are written only after the quadrant mutate succeeds so a
+   * failed move cannot leave a stale rank on the unmoved task.
    */
   readonly setRank?: (input: { backendId: BackendId; taskId: TaskId; rank: number }) => void;
   /**
@@ -381,32 +375,37 @@ export function createDragEndHandler(deps: DragEndHandlerDeps): (event: DragEndE
 
     if (isCrossQuadrant) {
       const rollback = applyOptimisticMove(deps.queryClient, dragged, toQuadrant);
+      const rank = now();
       deps.mutate(
         {
           backendId: dragged.backendId,
           id: dragged.id,
           patch: { quadrant: toQuadrant },
         },
-        { onError: rollback },
+        {
+          onError: rollback,
+          onSuccess: () => {
+            deps.setRank?.({
+              backendId: dragged.backendId,
+              taskId: dragged.id,
+              rank,
+            });
+          },
+        },
       );
+      return;
     }
 
-    if (deps.setRank) {
-      if (isCrossQuadrant) {
-        // Cross-quadrant drop: the card lands at the bottom of the
-        // destination's manual section (`now()`), as before.
-        deps.setRank({ backendId: dragged.backendId, taskId: dragged.id, rank: now() });
-      } else if (anchorCard !== undefined) {
-        // Same-quadrant drop onto another card: reorder so the dragged
-        // card sits just above the anchor card.
-        deps.setRank({
-          backendId: dragged.backendId,
-          taskId: dragged.id,
-          rank: computeReorderRank(deps.queryClient, dragged, anchorCard, now),
-        });
-      }
-      // Same-quadrant drop onto empty cell space: no anchor, no reorder.
+    if (deps.setRank && anchorCard !== undefined) {
+      // Same-quadrant drop onto another card: reorder so the dragged
+      // card sits just above the anchor card.
+      deps.setRank({
+        backendId: dragged.backendId,
+        taskId: dragged.id,
+        rank: computeReorderRank(deps.queryClient, dragged, anchorCard, now),
+      });
     }
+    // Same-quadrant drop onto empty cell space: no anchor, no reorder.
   };
 }
 

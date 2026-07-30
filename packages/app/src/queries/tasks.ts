@@ -24,6 +24,7 @@ import {
   type TaskId,
   type TaskPatch,
 } from '@emt/backend-core';
+import { useSnackbar } from '@emt/design-system';
 import {
   useMutation,
   useQuery,
@@ -32,8 +33,12 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query';
 
+import { useT } from '../i18n/provider.js';
 import { getBackends } from '../state/backends.js';
+import { clearTaskRanks } from '../state/task-order.js';
 import { applyOptimisticPatch, findCachedTask } from '../views/matrix/dnd.js';
+
+import { TASK_ORDER_KEY } from './task-order.js';
 
 const TASKS_KEY = ['tasks'] as const;
 
@@ -126,6 +131,8 @@ export function useUpdateTask(): UseMutationResult<
   UpdateTaskContext
 > {
   const qc = useQueryClient();
+  const snackbar = useSnackbar();
+  const t = useT();
   return useMutation<Task, Error, UpdateTaskInput, UpdateTaskContext>({
     mutationFn: async ({ backendId, id, patch }) => {
       const { registry } = await getBackends();
@@ -143,6 +150,7 @@ export function useUpdateTask(): UseMutationResult<
     },
     onError: (_err, _input, ctx) => {
       ctx?.rollback?.();
+      snackbar.show({ message: t('app.task.save.failed') });
     },
     onSettled: () => invalidateAll(qc),
   });
@@ -164,7 +172,16 @@ export function useDeleteTask(): UseMutationResult<void, Error, DeleteTaskInput>
       }
       await adapter.delete(id);
     },
-    onSuccess: () => invalidateAll(qc),
+    onSuccess: async (_void, { backendId, id }) => {
+      try {
+        const { taskOrderDb } = await getBackends();
+        await clearTaskRanks(taskOrderDb, [{ backendId, taskId: id }]);
+        await qc.invalidateQueries({ queryKey: TASK_ORDER_KEY });
+      } catch {
+        // Rank cleanup is best-effort UI state.
+      }
+      await invalidateAll(qc);
+    },
   });
 }
 

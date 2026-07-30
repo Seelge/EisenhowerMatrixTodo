@@ -170,8 +170,9 @@ export async function importTasks(
     readonly getAdapter: (id: BackendId) => BackendAdapter | undefined;
     readonly fallback: BackendAdapter;
     /**
-     * When set, wipe this adapter before importing (Replace mode).
-     * Typically the local backend so re-import does not duplicate.
+     * When set, wipe this adapter *after* a successful create pass
+     * (Replace mode). Creates run first so a mid-import failure keeps
+     * the previous local data (new rows are rolled back).
      */
     readonly clearBefore?: BackendAdapter;
   },
@@ -179,26 +180,51 @@ export async function importTasks(
   if (file.version !== 1) {
     throw new Error(`Unsupported export version: ${String(file.version)}`);
   }
-  if (options.clearBefore !== undefined) {
-    await clearLocalBackend(options.clearBefore);
-  }
+  const previous =
+    options.clearBefore !== undefined ? await options.clearBefore.list() : ([] as readonly Task[]);
+  const previousIds = new Set(previous.map((t) => t.id));
+
   let imported = 0;
   let fellBack = 0;
   const missing = new Set<BackendId>();
-  for (const group of file.backends) {
-    const matched = options.getAdapter(group.backendId);
-    const target = matched ?? options.fallback;
-    if (matched === undefined) {
-      missing.add(group.backendId);
-    }
-    for (const task of group.tasks) {
-      await target.create(taskToDraft(task));
-      imported += 1;
+  /** Newly created tasks — deleted if any create in the batch fails. */
+  const created: { adapter: BackendAdapter; id: TaskId }[] = [];
+
+  try {
+    for (const group of file.backends) {
+      const matched = options.getAdapter(group.backendId);
+      const target = matched ?? options.fallback;
       if (matched === undefined) {
-        fellBack += 1;
+        missing.add(group.backendId);
+      }
+      for (const task of group.tasks) {
+        const made = await target.create(taskToDraft(task));
+        created.push({ adapter: target, id: made.id });
+        imported += 1;
+        if (matched === undefined) {
+          fellBack += 1;
+        }
+      }
+    }
+  } catch (err) {
+    for (const row of created.reverse()) {
+      try {
+        await row.adapter.delete(row.id);
+      } catch {
+        // Best-effort rollback; surface the original create error.
+      }
+    }
+    throw err;
+  }
+
+  if (options.clearBefore !== undefined) {
+    for (const task of previous) {
+      if (previousIds.has(task.id)) {
+        await options.clearBefore.delete(task.id);
       }
     }
   }
+
   return { imported, fellBack, missingBackends: [...missing] };
 }
 

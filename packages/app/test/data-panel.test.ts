@@ -137,7 +137,7 @@ describe('Data panel pipeline — Step 9.6', () => {
     ).toThrow(/quadrant|Invalid/i);
   });
 
-  it('import replace mode clears local first', async () => {
+  it('import replace mode keeps only imported tasks', async () => {
     const { registry } = await getBackends();
     const local = registry.list()[0]!;
     await local.create(DRAFT_A);
@@ -154,6 +154,49 @@ describe('Data panel pipeline — Step 9.6', () => {
     expect(result.imported).toBe(2);
     const titles = (await local.list()).map((t) => t.title).sort();
     expect(titles).toEqual(['A', 'B']);
+  });
+
+  it('import replace rolls back creates and keeps prior data on failure', async () => {
+    const { registry } = await getBackends();
+    const local = registry.list()[0]!;
+    await local.create(DRAFT_A);
+    const prior = await local.list();
+    expect(prior).toHaveLength(1);
+
+    const file = await buildExportFile([local]);
+    let calls = 0;
+    const originalCreate = local.create.bind(local);
+    local.create = async (draft) => {
+      calls += 1;
+      if (calls === 1) return originalCreate(draft);
+      throw new Error('quota');
+    };
+
+    // Two tasks in file → second create fails.
+    const bloated = {
+      ...file,
+      backends: [
+        {
+          ...file.backends[0]!,
+          tasks: [
+            ...file.backends[0]!.tasks,
+            { ...file.backends[0]!.tasks[0]!, id: 'x2' as never },
+          ],
+        },
+      ],
+    };
+
+    await expect(
+      importTasks(bloated, {
+        getAdapter: (id) => registry.get(id),
+        fallback: local,
+        clearBefore: local,
+      }),
+    ).rejects.toThrow(/quota/);
+
+    const after = await local.list();
+    expect(after.map((t) => t.title)).toEqual(['A']);
+    expect(after[0]!.id).toBe(prior[0]!.id);
   });
 
   it('formatImportSummary mentions fallback backends when present', () => {

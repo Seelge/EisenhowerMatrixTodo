@@ -248,6 +248,22 @@ describe('SnackbarProvider + useSnackbar', () => {
     });
     expect(onCommit).not.toHaveBeenCalled();
   });
+
+  it('pagehide commits a pending undo snackbar', async () => {
+    const { api, unmount } = await renderProvider();
+    teardown = unmount;
+
+    const onCommit = vi.fn();
+    const onUndo = vi.fn();
+    await act(async () => {
+      api.show({ message: 'Deleted', onCommit, onUndo });
+    });
+    await act(async () => {
+      window.dispatchEvent(new Event('pagehide'));
+    });
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onUndo).not.toHaveBeenCalled();
+  });
 });
 
 describe('Snackbar reduced-motion', () => {

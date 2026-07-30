@@ -9,6 +9,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 
 import { useT } from '../../i18n/provider.js';
+import { useClearAllTaskRanks } from '../../queries/task-order.js';
 import { getBackends } from '../../state/backends.js';
 
 import {
@@ -42,6 +43,7 @@ function triggerDownload(filename: string, contents: string): void {
 export function DataPanel(): ReactNode {
   const t = useT();
   const queryClient = useQueryClient();
+  const clearAllRanks = useClearAllTaskRanks();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<SummaryMessage | null>(null);
   const [busy, setBusy] = useState(false);
@@ -87,6 +89,9 @@ export function DataPanel(): ReactNode {
         fallback,
         ...(importMode === 'replace' && local !== undefined ? { clearBefore: local } : {}),
       });
+      if (importMode === 'replace') {
+        await clearAllRanks.mutateAsync();
+      }
       await queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setMessage({
         kind: 'info',
@@ -127,6 +132,7 @@ export function DataPanel(): ReactNode {
         throw new Error('Local backend not registered');
       }
       const removed = await clearLocalBackend(local);
+      await clearAllRanks.mutateAsync();
       await queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setMessage({
         kind: 'info',
@@ -207,6 +213,8 @@ export function DataPanel(): ReactNode {
         accept="application/json,.json"
         className="emt-data-panel__file-input"
         data-field="import-file"
+        aria-label={t('app.options.data.import')}
+        tabIndex={-1}
         onChange={(e) => {
           void onImportFile(e);
         }}

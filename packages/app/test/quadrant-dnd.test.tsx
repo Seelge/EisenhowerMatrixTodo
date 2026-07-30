@@ -228,9 +228,14 @@ describe('Quadrant drop-on-edge wiring (Step 6.2)', () => {
     const task = makeTask({ id: 'edge-ranked' as TaskId, quadrant: 'Q1' });
     const qc = createTestQueryClient();
     const setRank = vi.fn();
+    const mutate = vi.fn(
+      (_input: unknown, options?: { onError?: () => void; onSuccess?: () => void }) => {
+        options?.onSuccess?.();
+      },
+    );
     const handler = createDragEndHandler({
       queryClient: qc,
-      mutate: vi.fn(),
+      mutate,
       setRank,
       now: () => 1_700_000_001_234,
     });

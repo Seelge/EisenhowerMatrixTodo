@@ -33,15 +33,14 @@ import { useSearchStore } from './search-store.js';
 
 import './search.css';
 
-const QUADRANT_LABEL: Record<Task['quadrant'], string> = {
-  Q1: 'Do',
-  Q2: 'Schedule',
-  Q3: 'Delegate',
-  Q4: 'Delete',
-};
-
 export function SearchOverlay(): ReactNode {
   const t = useT();
+  const quadrantLabel: Record<Task['quadrant'], string> = {
+    Q1: t('app.matrix.cell.q1.label'),
+    Q2: t('app.matrix.cell.q2.label'),
+    Q3: t('app.matrix.cell.q3.label'),
+    Q4: t('app.matrix.cell.q4.label'),
+  };
   const open = useSearchStore((s) => s.open);
   const query = useSearchStore((s) => s.query);
   const setQuery = useSearchStore((s) => s.setQuery);
@@ -183,7 +182,7 @@ export function SearchOverlay(): ReactNode {
                 >
                   <span className="emt-search__result-title">{task.title}</span>
                   <span className="emt-search__result-meta">
-                    {QUADRANT_LABEL[task.quadrant]}
+                    {quadrantLabel[task.quadrant]}
                     {task.dueDate !== undefined ? ` · ${task.dueDate}` : ''}
                   </span>
                 </button>

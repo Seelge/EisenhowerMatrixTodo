@@ -114,4 +114,7 @@ Phase 6.
   “Undo available for 5 seconds” (polite live region).
 - ~~Search dialog behavior~~ — Phase 30: `useDialogBehavior` focus trap
   + restore on the search overlay.
+- ~~Conflict modal focus trap~~ — Phase 31: `useDialogBehavior`.
+- ~~Status / due / import labels~~ — Phase 31: reopen label, DueDatePicker
+  i18n labels, named import file input.
 - Manual NVDA / VoiceOver smoke still open before a store cut.

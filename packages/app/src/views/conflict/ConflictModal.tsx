@@ -15,8 +15,8 @@ import {
   type DifferingField,
   type Task,
 } from '@emt/backend-core';
-import { Button } from '@emt/design-system';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Button, useDialogBehavior } from '@emt/design-system';
+import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { useT } from '../../i18n/provider.js';
 import type { StringKey } from '../../i18n/strings.en.js';
@@ -86,23 +86,11 @@ function ConflictModalBody({
   );
   const [picks, setPicks] = useState(() => defaultPicks(fields));
 
-  useEffect(() => {
-    const button = dialogRef.current?.querySelector<HTMLButtonElement>(
-      '[data-action="keep-local"]',
-    );
-    button?.focus();
-  }, []);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onCancel?.();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+  const dismiss = useCallback(() => {
+    onCancel?.();
   }, [onCancel]);
+
+  useDialogBehavior(true, dismiss, dialogRef);
 
   const setPick = (field: DifferingField, side: 'local' | 'remote'): void => {
     setPicks((prev) => ({ ...prev, [field]: side }));

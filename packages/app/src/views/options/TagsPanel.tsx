@@ -32,12 +32,27 @@ type RowMode =
 async function applyPatches(patches: readonly TagBulkPatch[]): Promise<void> {
   if (patches.length === 0) return;
   const { registry } = await getBackends();
-  for (const patch of patches) {
-    const adapter = registry.get(patch.backendId);
-    if (adapter === undefined) {
-      throw new Error(`Unknown backend "${String(patch.backendId)}"`);
+  const applied: TagBulkPatch[] = [];
+  try {
+    for (const patch of patches) {
+      const adapter = registry.get(patch.backendId);
+      if (adapter === undefined) {
+        throw new Error(`Unknown backend "${String(patch.backendId)}"`);
+      }
+      await adapter.update(patch.id, { tags: [...patch.tags] });
+      applied.push(patch);
     }
-    await adapter.update(patch.id, { tags: [...patch.tags] });
+  } catch (err) {
+    for (const patch of applied.reverse()) {
+      const adapter = registry.get(patch.backendId);
+      if (adapter === undefined) continue;
+      try {
+        await adapter.update(patch.id, { tags: [...patch.previousTags] });
+      } catch {
+        // Best-effort reverse; surface the original error.
+      }
+    }
+    throw err;
   }
 }
 

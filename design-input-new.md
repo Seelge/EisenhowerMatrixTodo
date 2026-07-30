@@ -917,6 +917,64 @@ optional quadrant via `select`. Fewer IDB list round-trips on matrix.
 **Done (Phase 30).** README reflects usable local-IDB v0.1; remote
 adapters / recurrence still deferred.
 
+## TODO 34 — Snackbar commit on page unload ✅
+
+**Done (Phase 31).** Pending undo snackbars call `onCommit` on
+`pagehide` so deferred deletes survive tab close / PWA kill.
+
+## TODO 35 — Atomic replace-import ✅
+
+**Done (Phase 31).** `importTasks` with `clearBefore` creates all
+imported tasks first, then deletes previous local rows. Create failure
+rolls back only the newly created ids (original data kept).
+
+## TODO 36 — Update failure snackbar ✅
+
+**Done (Phase 31).** `useUpdateTask` shows `app.task.save.failed` on
+error (string was unused).
+
+## TODO 37 — Cross-quadrant rank only after mutate success ✅
+
+**Done (Phase 31).** `createDragEndHandler` writes `setRank` in mutate
+`onSuccess`, not before the adapter write.
+
+## TODO 38 — Empty title guard on view3 ✅
+
+**Done (Phase 31).** `TitleField` refuses blank/whitespace commits and
+restores the prior title.
+
+## TODO 39 — Orphan taskOrder cleanup ✅
+
+**Done (Phase 31).** Delete clears that task's rank; clear-local and
+replace-import wipe the order store.
+
+## TODO 40 — Tag bulk write rollback ✅
+
+**Done (Phase 31).** Rename/delete applies patches with reverse restore
+on mid-batch failure.
+
+## TODO 41 — Conflict modal focus trap ✅
+
+**Done (Phase 31).** Conflict dialog uses `useDialogBehavior`.
+
+## TODO 42 — Status toggle label by state ✅
+
+**Done (Phase 31).** Checkbox label switches Mark complete / Reopen.
+
+## TODO 43 — DueDatePicker + search + file input i18n/a11y ✅
+
+**Done (Phase 31).** Optional DueDatePicker labels from app i18n; search
+quadrant labels via `t()`; import file input named + `tabIndex={-1}`.
+
+## TODO 44 — Composer tags Enter commits token ✅
+
+**Done (Phase 31).** QuickComposer `onCommitFreeText` commits the draft
+token like view3 (does not submit the Add form).
+
+## TODO 45 — Dead options stub cleanup ✅
+
+**Done (Phase 31).** Unreachable options panel stub removed; exhaustive
+group handling.
+
 ## TODO 1 / 11 / 11.6 — external (unchanged)
 
-Device pinch smoke, recurrence design, PWA release tag remain human.

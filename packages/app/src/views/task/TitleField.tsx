@@ -26,19 +26,30 @@ export function TitleField({ task }: TitleFieldProps): ReactNode {
 
   const commit = useCallback(
     (next: string) => {
+      const trimmed = next.trim();
+      if (trimmed === '') return;
+      if (trimmed === task.title) return;
       updateTask.mutate({
         backendId: task.backendId,
         id: task.id,
-        patch: { title: next },
+        patch: { title: trimmed },
       });
     },
-    [updateTask, task.backendId, task.id],
+    [updateTask, task.backendId, task.id, task.title],
   );
 
   const { value, setValue, flush } = useDebouncedCommit(task.title, commit);
 
   const onChange = (e: ChangeEvent<HTMLInputElement>): void => {
     setValue(e.currentTarget.value);
+  };
+
+  const onBlur = (): void => {
+    if (value.trim() === '') {
+      setValue(task.title);
+      return;
+    }
+    flush();
   };
 
   return (
@@ -53,9 +64,10 @@ export function TitleField({ task }: TitleFieldProps): ReactNode {
         data-field="title"
         value={value}
         onChange={onChange}
-        onBlur={flush}
+        onBlur={onBlur}
         placeholder={t('app.task.fields.titlePlaceholder')}
         autoComplete="off"
+        required
       />
     </div>
   );

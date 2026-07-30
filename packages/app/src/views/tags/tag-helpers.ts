@@ -220,6 +220,8 @@ export interface TagBulkPatch {
   readonly id: Task['id'];
   readonly backendId: Task['backendId'];
   readonly tags: readonly string[];
+  /** Prior tags — used to reverse a partial bulk apply. */
+  readonly previousTags: readonly string[];
 }
 
 /** Plan per-task tag patches for a global rename. Empty when nothing matches. */
@@ -232,7 +234,12 @@ export function planTagRename(
   for (const task of tasks) {
     const next = renameTagInList(task.tags, from, to);
     if (next === task.tags) continue;
-    patches.push({ id: task.id, backendId: task.backendId, tags: next });
+    patches.push({
+      id: task.id,
+      backendId: task.backendId,
+      tags: next,
+      previousTags: [...task.tags],
+    });
   }
   return patches;
 }
@@ -244,7 +251,12 @@ export function planTagDelete(tasks: readonly Task[], tag: string): readonly Tag
   const patches: TagBulkPatch[] = [];
   for (const task of tasks) {
     if (!task.tags.some((t) => tagKey(t) === key)) continue;
-    patches.push({ id: task.id, backendId: task.backendId, tags: removeTag(task.tags, tag) });
+    patches.push({
+      id: task.id,
+      backendId: task.backendId,
+      tags: removeTag(task.tags, tag),
+      previousTags: [...task.tags],
+    });
   }
   return patches;
 }

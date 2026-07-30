@@ -4,25 +4,28 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 ## Current activity
 
-**Phase:** Phase 30 — **done** (committing). Reliability / a11y / data polish after full-project analysis.
+**Phase:** Phase 31 — **done** (committing). Data-loss + a11y + mutation polish after full-project analysis.
 
-### Shipped (TODOs 26–33)
+### Shipped (TODOs 34–45)
 
 | TODO | Notes |
 |------|--------|
-| 26 | Create/delete failure snackbars; delete-commit rolls cache back |
-| 27 | Search `useDialogBehavior`; delete undo-window copy for SR |
-| 28 | `parseExportFile` + Import (add) / Replace local |
-| 29 | `encodeEmbeddedFields` / `decodeEmbeddedFields` in backend-core |
-| 30 | Single `useTasks` list query + quadrant `select` |
-| 31 | View3 field order + clear `completedAt` on reopen |
-| 32 | Card menu Move up / Move down |
-| 33 | README honest “usable local” status |
+| 34 | Snackbar `pagehide` commits pending undo actions |
+| 35 | Atomic replace-import (create-then-clear + create rollback) |
+| 36 | `useUpdateTask` surfaces `app.task.save.failed` |
+| 37 | Cross-quadrant `setRank` only on mutate success |
+| 38 | TitleField blocks empty title |
+| 39 | Rank cleanup on delete / clear / replace |
+| 40 | Tag bulk rename/delete rollback |
+| 41 | Conflict modal `useDialogBehavior` |
+| 42 | Status label Mark complete / Reopen |
+| 43 | DueDatePicker labels, search quadrant i18n, file input a11y |
+| 44 | Composer tags Enter commits token |
+| 45 | Options panel stub cleanup |
 
 ### Privacy / API
 
 - Local-only; no network/telemetry.
-- Notes encoding is pure string helpers (no I/O).
 - `rewrite-email.sh` untracked.
 
 ### Remaining open (external / design)
@@ -34,4 +37,3 @@ Live handoff document for cross-session continuity. Updated at the start and end
 ## How to resume
 
 1. Only external/design items remain for product TODOs.
-2. Optional next: SegmentedControl DS primitive, hide-completed chip on matrix, taskOrder in export v2.

@@ -25,6 +25,7 @@ import {
 
 import { getBackends } from '../state/backends.js';
 import {
+  clearAllTaskRanks,
   clearTaskRanks,
   loadTaskOrderMap,
   setTaskRank,
@@ -70,6 +71,18 @@ export function useClearTaskRanks(): UseMutationResult<void, Error, ClearTaskRan
     mutationFn: async ({ refs }) => {
       const { taskOrderDb } = await getBackends();
       await clearTaskRanks(taskOrderDb, refs);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: TASK_ORDER_KEY }),
+  });
+}
+
+/** Drop every manual rank (clear-local / replace-import). */
+export function useClearAllTaskRanks(): UseMutationResult<void, Error, void> {
+  const qc = useQueryClient();
+  return useMutation<void, Error, void>({
+    mutationFn: async () => {
+      const { taskOrderDb } = await getBackends();
+      await clearAllTaskRanks(taskOrderDb);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: TASK_ORDER_KEY }),
   });

@@ -84,31 +84,24 @@ export function OptionsView(): ReactNode {
 }
 
 function GroupPanel({ group }: { group: OptionsGroup }): ReactNode {
-  const t = useT();
-  if (group === 'backends') {
-    return <BackendsPanel />;
+  switch (group) {
+    case 'backends':
+      return <BackendsPanel />;
+    case 'account':
+      return <AccountPanel />;
+    case 'appearance':
+      return <AppearancePanel />;
+    case 'defaults':
+      return <DefaultsPanel />;
+    case 'tags':
+      return <TagsPanel />;
+    case 'data':
+      return <DataPanel />;
+    case 'about':
+      return <AboutPanel />;
+    default: {
+      const _exhaustive: never = group;
+      return _exhaustive;
+    }
   }
-  if (group === 'account') {
-    return <AccountPanel />;
-  }
-  if (group === 'appearance') {
-    return <AppearancePanel />;
-  }
-  if (group === 'defaults') {
-    return <DefaultsPanel />;
-  }
-  if (group === 'tags') {
-    return <TagsPanel />;
-  }
-  if (group === 'data') {
-    return <DataPanel />;
-  }
-  if (group === 'about') {
-    return <AboutPanel />;
-  }
-  return (
-    <div className="emt-options__panel" data-options-group={group}>
-      <p className="emt-options__panel-stub">{t('app.options.panel.placeholder')}</p>
-    </div>
-  );
 }

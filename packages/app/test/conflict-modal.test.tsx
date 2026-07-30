@@ -162,7 +162,7 @@ describe('ConflictModal — Step 10.1', () => {
     teardown = unmount;
 
     await act(async () => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     });
     expect(onCancel).toHaveBeenCalled();
   });

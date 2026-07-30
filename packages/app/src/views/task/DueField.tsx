@@ -46,7 +46,19 @@ export function DueField({ task }: DueFieldProps): ReactNode {
   return (
     <div className="emt-task-view__field" data-field-group="due">
       <span className="emt-task-view__label">{t('app.task.fields.due')}</span>
-      <DueDatePicker value={task.dueDate ?? null} onChange={onDateChange} />
+      <DueDatePicker
+        value={task.dueDate ?? null}
+        onChange={onDateChange}
+        labels={{
+          today: t('app.due.today'),
+          tomorrow: t('app.due.tomorrow'),
+          weekend: t('app.due.weekend'),
+          nextWeek: t('app.due.nextWeek'),
+          none: t('app.due.none'),
+          quickGroup: t('app.due.quickGroup'),
+          pickDate: t('app.due.pickDate'),
+        }}
+      />
       <div className="emt-task-view__time-row">
         <label htmlFor={timeId} className="emt-task-view__label emt-task-view__label--inline">
           {t('app.task.fields.dueTime')}

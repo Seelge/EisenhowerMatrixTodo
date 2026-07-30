@@ -120,10 +120,12 @@ describe('tag-helpers', () => {
     expect(renamed).toHaveLength(2);
     expect(renamed.map((p) => p.id).sort()).toEqual(['a', 'b']);
     expect(renamed.find((p) => p.id === 'a')?.tags).toEqual(['job', 'home']);
+    expect(renamed.find((p) => p.id === 'a')?.previousTags).toEqual(['work', 'home']);
 
     const deleted = planTagDelete(tasks, 'work');
     expect(deleted).toHaveLength(2);
     expect(deleted.find((p) => p.id === 'a')?.tags).toEqual(['home']);
+    expect(deleted.find((p) => p.id === 'a')?.previousTags).toEqual(['work', 'home']);
     expect(planTagDelete(tasks, 'missing')).toEqual([]);
   });
 });

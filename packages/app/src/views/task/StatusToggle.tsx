@@ -44,7 +44,7 @@ export function StatusToggle({ task }: StatusToggleProps): ReactNode {
         onChange={onChange}
       />
       <label htmlFor={inputId} className="emt-task-view__label emt-task-view__label--inline">
-        {t('app.task.fields.status')}
+        {checked ? t('app.task.fields.status.reopen') : t('app.task.fields.status')}
       </label>
     </div>
   );

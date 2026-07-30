@@ -9,6 +9,7 @@ import { SnackbarProvider } from '@emt/design-system';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
+import { I18nProvider } from '../src/i18n/provider.tsx';
 import { useComposerStore } from '../src/views/matrix/composer-store.ts';
 
 import { renderToContainer, type RenderHandle } from './render.ts';
@@ -30,11 +31,12 @@ export async function renderWithQueryClient(node: ReactNode): Promise<QueryRende
   // Shared zustand store — reset so parallel files don't leak open state.
   useComposerStore.setState({ open: false });
   const client = createTestQueryClient();
-  // SnackbarProvider is always present in App; TaskCardMenu (Phase 16)
-  // needs it for delete+undo, so tests share the same shell.
+  // Match App shell: Snackbar + I18n (useUpdateTask surfaces save errors).
   const { container, unmount } = await renderToContainer(
     <QueryClientProvider client={client}>
-      <SnackbarProvider>{node}</SnackbarProvider>
+      <SnackbarProvider>
+        <I18nProvider>{node}</I18nProvider>
+      </SnackbarProvider>
     </QueryClientProvider>,
   );
   return {

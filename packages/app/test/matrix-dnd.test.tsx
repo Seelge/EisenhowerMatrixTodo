@@ -242,10 +242,14 @@ describe('Matrix drag-and-drop wiring (Step 5.5)', () => {
     expect(mutate).not.toHaveBeenCalled();
   });
 
-  it('writes a manual rank for the dropped task (Step 5.7)', () => {
+  it('writes a manual rank for the dropped task after mutate success (Step 5.7)', () => {
     const task = makeTask({ id: 'ranked' as TaskId, quadrant: 'Q2' });
     const qc = createTestQueryClient();
-    const mutate = vi.fn();
+    const mutate = vi.fn(
+      (_input: unknown, options?: { onError?: () => void; onSuccess?: () => void }) => {
+        options?.onSuccess?.();
+      },
+    );
     const setRank = vi.fn();
     const handler = createDragEndHandler({
       queryClient: qc,
@@ -262,6 +266,28 @@ describe('Matrix drag-and-drop wiring (Step 5.5)', () => {
       taskId: task.id,
       rank: 1_700_000_000_000,
     });
+  });
+
+  it('does not write rank when cross-quadrant mutate fails', () => {
+    const task = makeTask({ id: 'ranked' as TaskId, quadrant: 'Q2' });
+    const qc = createTestQueryClient();
+    const mutate = vi.fn(
+      (_input: unknown, options?: { onError?: () => void; onSuccess?: () => void }) => {
+        options?.onError?.();
+      },
+    );
+    const setRank = vi.fn();
+    const handler = createDragEndHandler({
+      queryClient: qc,
+      mutate,
+      setRank,
+      now: () => 1_700_000_000_000,
+    });
+
+    handler(makeDragEndEvent(task, 'Q1'));
+
+    expect(mutate).toHaveBeenCalledOnce();
+    expect(setRank).not.toHaveBeenCalled();
   });
 
   it('does not write a rank for a no-op drop (same quadrant or no over)', () => {
@@ -368,7 +394,11 @@ describe('Matrix drag-and-drop wiring (Step 5.5)', () => {
     const qc = createTestQueryClient();
     qc.setQueryData(['tasks', 'list', 'Q2'], [dragged]);
     qc.setQueryData(['tasks', 'list', 'Q1'], [targetCard]);
-    const mutate = vi.fn();
+    const mutate = vi.fn(
+      (_input: unknown, options?: { onError?: () => void; onSuccess?: () => void }) => {
+        options?.onSuccess?.();
+      },
+    );
     const setRank = vi.fn();
     const handler = createDragEndHandler({
       queryClient: qc,

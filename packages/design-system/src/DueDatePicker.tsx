@@ -20,6 +20,26 @@ import {
   formatLocalDate,
 } from './due-date-helpers.js';
 
+export interface DueDatePickerLabels {
+  readonly today: string;
+  readonly tomorrow: string;
+  readonly weekend: string;
+  readonly nextWeek: string;
+  readonly none: string;
+  readonly quickGroup: string;
+  readonly pickDate: string;
+}
+
+const DEFAULT_LABELS: DueDatePickerLabels = {
+  today: 'Today',
+  tomorrow: 'Tomorrow',
+  weekend: 'This weekend',
+  nextWeek: 'Next week',
+  none: 'No date',
+  quickGroup: 'Quick due dates',
+  pickDate: 'Pick a date',
+};
+
 export interface DueDatePickerProps {
   /** ISO date string (`YYYY-MM-DD`) or `null` for no due date. */
   value: string | null;
@@ -28,6 +48,8 @@ export interface DueDatePickerProps {
   today?: Date;
   /** BCP-47 locale tag; controls the first day of the week. */
   locale?: string;
+  /** Optional i18n labels; defaults to English. */
+  labels?: Partial<DueDatePickerLabels>;
 }
 
 function defaultLocale(): string {
@@ -41,24 +63,35 @@ interface Preset {
   value: string | null;
 }
 
-function buildPresets(today: Date, locale: string): readonly Preset[] {
+function buildPresets(today: Date, locale: string, labels: DueDatePickerLabels): readonly Preset[] {
   return [
-    { key: 'today', label: 'Today', value: formatLocalDate(today) },
-    { key: 'tomorrow', label: 'Tomorrow', value: formatLocalDate(addDays(today, 1)) },
-    { key: 'weekend', label: 'This weekend', value: formatLocalDate(computeWeekendDate(today)) },
+    { key: 'today', label: labels.today, value: formatLocalDate(today) },
+    { key: 'tomorrow', label: labels.tomorrow, value: formatLocalDate(addDays(today, 1)) },
+    {
+      key: 'weekend',
+      label: labels.weekend,
+      value: formatLocalDate(computeWeekendDate(today)),
+    },
     {
       key: 'next-week',
-      label: 'Next week',
+      label: labels.nextWeek,
       value: formatLocalDate(computeNextWeekDate(today, locale)),
     },
-    { key: 'none', label: 'No date', value: null },
+    { key: 'none', label: labels.none, value: null },
   ];
 }
 
-export function DueDatePicker({ value, onChange, today, locale }: DueDatePickerProps): ReactNode {
+export function DueDatePicker({
+  value,
+  onChange,
+  today,
+  locale,
+  labels: labelOverrides,
+}: DueDatePickerProps): ReactNode {
   const now = today ?? new Date();
   const loc = locale ?? defaultLocale();
-  const presets = buildPresets(now, loc);
+  const labels: DueDatePickerLabels = { ...DEFAULT_LABELS, ...labelOverrides };
+  const presets = buildPresets(now, loc, labels);
 
   const handleNative = (e: ChangeEvent<HTMLInputElement>): void => {
     onChange(e.target.value === '' ? null : e.target.value);
@@ -66,7 +99,7 @@ export function DueDatePicker({ value, onChange, today, locale }: DueDatePickerP
 
   return (
     <div className="emt-due-date-picker">
-      <div className="emt-due-date-picker__presets" role="group" aria-label="Quick due dates">
+      <div className="emt-due-date-picker__presets" role="group" aria-label={labels.quickGroup}>
         {presets.map((preset) => {
           const selected = preset.value === value;
           return (
@@ -85,7 +118,7 @@ export function DueDatePicker({ value, onChange, today, locale }: DueDatePickerP
       <input
         type="date"
         className="emt-due-date-picker__native"
-        aria-label="Pick a date"
+        aria-label={labels.pickDate}
         value={value ?? ''}
         onChange={handleNative}
       />

@@ -89,15 +89,19 @@ export function SnackbarProvider({ children }: SnackbarProviderProps): ReactNode
 
   const dismiss = useCallback(() => finish('cancel'), [finish]);
 
-  // Cleanup any pending timer on provider unmount. We do *not* fire
-  // onCommit here — provider unmount is closer to "the host page is
-  // tearing down" than to "the user accepted the action".
-  useEffect(
-    () => () => {
+  // Tab close / bfcache / PWA kill: commit pending undo actions so
+  // deferred deletes (and similar) still hit the adapter. React tree
+  // unmount alone still cancels without commit (tests / remount).
+  useEffect(() => {
+    const onPageHide = (): void => {
+      if (optsRef.current) finish('commit');
+    };
+    window.addEventListener('pagehide', onPageHide);
+    return () => {
+      window.removeEventListener('pagehide', onPageHide);
       if (timerRef.current != null) clearTimeout(timerRef.current);
-    },
-    [],
-  );
+    };
+  }, [finish]);
 
   const value = useMemo<SnackbarContextValue>(() => ({ show, dismiss }), [show, dismiss]);
 

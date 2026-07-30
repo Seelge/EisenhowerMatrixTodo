@@ -57,6 +57,7 @@ import {
   committedTagsFromInput,
   incompleteTagQuery,
   mergeTags,
+  normalizeTag,
   parseTagInput,
 } from '../tags/tag-helpers.js';
 import { TagSuggestInput } from '../tags/TagSuggestInput.js';
@@ -271,7 +272,19 @@ export function QuickComposer({
           <div id={moreId} className="emt-quick-composer__more" data-expanded="true">
             <div className="emt-quick-composer__field">
               <span className="emt-quick-composer__label">{t('app.composer.dueLabel')}</span>
-              <DueDatePicker value={dueDate} onChange={setDueDate} />
+              <DueDatePicker
+                value={dueDate}
+                onChange={setDueDate}
+                labels={{
+                  today: t('app.due.today'),
+                  tomorrow: t('app.due.tomorrow'),
+                  weekend: t('app.due.weekend'),
+                  nextWeek: t('app.due.nextWeek'),
+                  none: t('app.due.none'),
+                  quickGroup: t('app.due.quickGroup'),
+                  pickDate: t('app.due.pickDate'),
+                }}
+              />
             </div>
             <div className="emt-quick-composer__field">
               <label htmlFor={dueTimeId} className="emt-quick-composer__label">
@@ -329,7 +342,9 @@ export function QuickComposer({
                 data-field="composer-tags"
                 onChange={setTagsInput}
                 onCommitFreeText={() => {
-                  /* Enter without a pick leaves the comma string for submit. */
+                  const token = incompleteTagQuery(tagsInput);
+                  const next = normalizeComposerTagToken(tagsInput, token);
+                  if (next !== null) setTagsInput(next);
                 }}
                 onPick={(tag) => setTagsInput(applySuggestedTag(tagsInput, tag))}
               />
@@ -347,6 +362,13 @@ export function QuickComposer({
       </form>
     </ResponsiveSurface>
   );
+}
+
+/** Commit the trailing free-text token into the comma-separated tags field. */
+function normalizeComposerTagToken(raw: string, token: string): string | null {
+  const next = normalizeTag(token);
+  if (next === '') return null;
+  return applySuggestedTag(raw, next);
 }
 
 /**
