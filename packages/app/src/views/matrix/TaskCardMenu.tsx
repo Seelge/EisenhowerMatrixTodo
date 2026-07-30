@@ -89,10 +89,12 @@ export function TaskCardMenu({ task, snackbarDuration }: TaskCardMenuProps): Rea
   const actions = useMemo((): readonly MenuAction[] => {
     const statusAction: MenuAction =
       task.status === 'done' ? { kind: 'status', next: 'open' } : { kind: 'status', next: 'done' };
-    const moves: MenuAction[] = ALL_QUADRANTS.filter((q) => q !== task.quadrant).map((quadrant) => ({
-      kind: 'move',
-      quadrant,
-    }));
+    const moves: MenuAction[] = ALL_QUADRANTS.filter((q) => q !== task.quadrant).map(
+      (quadrant) => ({
+        kind: 'move',
+        quadrant,
+      }),
+    );
     return [statusAction, { kind: 'delete' }, ...moves];
   }, [task.status, task.quadrant]);
 
@@ -240,16 +242,7 @@ export function TaskCardMenu({ task, snackbarDuration }: TaskCardMenuProps): Rea
         },
       });
     },
-    [
-      updateTask,
-      deleteTask,
-      snackbar,
-      queryClient,
-      task,
-      t,
-      snackbarDuration,
-      close,
-    ],
+    [updateTask, deleteTask, snackbar, queryClient, task, t, snackbarDuration, close],
   );
 
   const onTriggerPointerDown = useCallback((e: PointerEvent<HTMLButtonElement>) => {
@@ -258,9 +251,7 @@ export function TaskCardMenu({ task, snackbarDuration }: TaskCardMenuProps): Rea
 
   const labelFor = (action: MenuAction): string => {
     if (action.kind === 'status') {
-      return action.next === 'done'
-        ? t('app.task.menu.complete')
-        : t('app.task.menu.reopen');
+      return action.next === 'done' ? t('app.task.menu.complete') : t('app.task.menu.reopen');
     }
     if (action.kind === 'delete') return t('app.task.menu.delete');
     return t(MOVE_TO_KEY[action.quadrant]);
@@ -268,7 +259,8 @@ export function TaskCardMenu({ task, snackbarDuration }: TaskCardMenuProps): Rea
 
   const dataAttrs = (action: MenuAction): Record<string, string> => {
     if (action.kind === 'move') return { 'data-quadrant': action.quadrant };
-    if (action.kind === 'status') return { 'data-action': action.next === 'done' ? 'complete' : 'reopen' };
+    if (action.kind === 'status')
+      return { 'data-action': action.next === 'done' ? 'complete' : 'reopen' };
     return { 'data-action': 'delete' };
   };
 

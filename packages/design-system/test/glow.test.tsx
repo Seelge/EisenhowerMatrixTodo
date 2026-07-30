@@ -1,13 +1,13 @@
 /**
  * Component tests for the Glow primitive.
  *
-  * Covers the four quadrant colors and the accent variant, asserting:
-  *   - the inline `border` references the matching CSS variable
-  *     (thin neon line; themes re-skin at runtime)
-  *   - `data-emt-glow` mirrors the color (selector hook for view1 cells)
-  *   - children render through
-  *   - consumer styles win over the defaults (override of border-radius)
-  */
+ * Covers the four quadrant colors and the accent variant, asserting:
+ *   - the inline `border` references the matching CSS variable
+ *     (thin neon line; themes re-skin at runtime)
+ *   - `data-emt-glow` mirrors the color (selector hook for view1 cells)
+ *   - children render through
+ *   - consumer styles win over the defaults (override of border-radius)
+ */
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { Glow, type GlowColor } from '../src/Glow.tsx';

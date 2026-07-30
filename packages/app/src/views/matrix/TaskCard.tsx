@@ -209,10 +209,7 @@ export function TaskCard({ task, snackbarDuration }: TaskCardProps): ReactNode {
           </span>
         )}
       </button>
-      <TaskCardMenu
-        task={task}
-        {...(snackbarDuration !== undefined ? { snackbarDuration } : {})}
-      />
+      <TaskCardMenu task={task} {...(snackbarDuration !== undefined ? { snackbarDuration } : {})} />
     </motion.div>
   );
 }
