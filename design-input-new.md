@@ -734,7 +734,9 @@ priority segmented control. Tag autocomplete landed in Phase 18 (TODO 5).
   same autocomplete (token-aware last segment).
 - Options → Tags — inventory; tap applies filter and navigates home.
 
-Still open later: global rename/delete of a tag across all tasks.
+**Phase 19:** Options → Tags supports Filter / Rename / Delete. Rename
+and delete plan bulk `tags` patches across matching tasks (case-insensitive
+merge on collision). Active matrix filter updates or clears with the edit.
 
 ## TODO 6 — Search ✅
 
@@ -838,4 +840,13 @@ keep finding palette regressions by deploying.
 - Pure `suggestTags` (+ comma-token helpers) over `collectTagCounts`.
 - Shared `TagSuggestInput` combobox on view3 TagsField + QuickComposer.
 - Escape closes listbox only; free-text path unchanged.
-- Options global rename/delete still deferred.
+- Options global rename/delete landed in Phase 19 (TODO 18).
+
+## TODO 18 — Global tag rename / delete ✅
+
+**Done (Phase 19).**
+
+- Pure `renameTagInList` / `planTagRename` / `planTagDelete`.
+- Options → Tags row actions: Filter, Rename (inline), Delete (confirm).
+- Active tag filter stays coherent after rename/delete.
+- Local adapter writes only; one invalidate of `['tasks']` after the batch.

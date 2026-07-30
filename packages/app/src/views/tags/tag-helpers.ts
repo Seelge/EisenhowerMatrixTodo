@@ -167,3 +167,84 @@ export function applySuggestedTag(raw: string, tag: string): string {
   const prior = committedTagsFromInput(raw);
   return `${mergeTags(prior, [tag]).join(', ')}, `;
 }
+
+/**
+ * Rename `from` → `to` inside one task's tag list (case-insensitive).
+ * - Casing-only rename rewrites the display form.
+ * - If the task already has `to`, `from` is dropped (merge).
+ * - Unchanged lists return the same array reference.
+ */
+export function renameTagInList(
+  tags: readonly string[],
+  from: string,
+  to: string,
+): readonly string[] {
+  const fromKey = tagKey(from);
+  const toNorm = normalizeTag(to);
+  const toKey = tagKey(toNorm);
+  if (fromKey === '' || toKey === '') return tags;
+
+  if (fromKey === toKey) {
+    let changed = false;
+    const next = tags.map((t) => {
+      if (tagKey(t) !== fromKey) return t;
+      if (t === toNorm) return t;
+      changed = true;
+      return toNorm;
+    });
+    return changed ? next : tags;
+  }
+
+  let hadFrom = false;
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const t of tags) {
+    const k = tagKey(t);
+    if (k === fromKey) {
+      hadFrom = true;
+      if (!seen.has(toKey)) {
+        out.push(toNorm);
+        seen.add(toKey);
+      }
+      continue;
+    }
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(t);
+  }
+  return hadFrom ? out : tags;
+}
+
+/** One task that needs a tags write after a global rename/delete. */
+export interface TagBulkPatch {
+  readonly id: Task['id'];
+  readonly backendId: Task['backendId'];
+  readonly tags: readonly string[];
+}
+
+/** Plan per-task tag patches for a global rename. Empty when nothing matches. */
+export function planTagRename(
+  tasks: readonly Task[],
+  from: string,
+  to: string,
+): readonly TagBulkPatch[] {
+  const patches: TagBulkPatch[] = [];
+  for (const task of tasks) {
+    const next = renameTagInList(task.tags, from, to);
+    if (next === task.tags) continue;
+    patches.push({ id: task.id, backendId: task.backendId, tags: next });
+  }
+  return patches;
+}
+
+/** Plan per-task tag patches for a global delete. */
+export function planTagDelete(tasks: readonly Task[], tag: string): readonly TagBulkPatch[] {
+  const key = tagKey(tag);
+  if (key === '') return [];
+  const patches: TagBulkPatch[] = [];
+  for (const task of tasks) {
+    if (!task.tags.some((t) => tagKey(t) === key)) continue;
+    patches.push({ id: task.id, backendId: task.backendId, tags: removeTag(task.tags, tag) });
+  }
+  return patches;
+}

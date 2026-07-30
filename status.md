@@ -4,45 +4,33 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 ## Current activity
 
-**Phase:** Phase 18 — Tag autocomplete from inventory — **done**.
+**Phase:** Phase 19 — Global tag rename/delete — **done**. Next: Phase 20.
 
-### What landed this session
+### What landed (Phase 19)
 
-**Phase 18:**
-1. `suggestTags` / comma-token helpers (`incompleteTagQuery`, `committedTagsFromInput`, `applySuggestedTag`).
-2. Shared `TagSuggestInput` combobox (listbox, arrows, Enter pick, Escape closes list only).
-3. Wired into view3 `TagsField` + QuickComposer more-options tags.
-4. Tests + a11y note; TODO 5/17 docs; rename/delete still open.
+1. `renameTagInList` / `planTagRename` / `planTagDelete` pure helpers.
+2. Options → Tags: Filter / Rename (inline) / Delete (confirm) per row.
+3. Active matrix filter updates on rename and clears on delete.
+4. Local adapter batch writes + `['tasks']` invalidate; unit tests.
 
 ### Privacy / API
 
-- Suggestions from local `useTasks()` / IndexedDB only. No network.
-- No telemetry, no external APIs.
+- Bulk tag edits are local IndexedDB adapter updates only.
+- No network, telemetry, or external APIs.
 - `rewrite-email.sh` remains untracked.
 
-### Done when
+### Next
 
-- [x] view3 + composer suggest existing tags
-- [x] Exclude already-applied / committed tags
-- [x] Escape does not dismiss sheet
-- [x] Unit tests + privacy audit → commit + push
+1. Phase 20 — About keyboard shortcuts + Playwright visual smoke (TODO 15).
+2. Phase 21 — Field-level conflict resolution (TODO 14).
+3. Phase 22 — Light mode (TODO 10).
+4. Document external: TODO 1 device smoke, TODO 11 recurrence.
 
 ## Earlier
 
+- Phase 18: tag autocomplete — `eab5e60`
 - Phase 17: due urgency + gap + `n` — `7a12062`
-- Phase 16: hide completed + card actions — `d2e3082`
-- Phase 15: neon borders — `e66b1f3`
-- Phase 14: tags MVP — `2a3f48c`
 
 ## Pending external actions (user)
 
-Step 11.6 / v0.1.0 still needs real-device PWA screenshots + signed tag.
-
-## Open TODOs
-
-`design-input-new.md`: TODO 1 (device smoke), 10 (light mode), 11 (recurrence), 14 (field-level conflict), 15 (visual regression). Tag **global rename/delete** (TODO 5 remainder).
-
-## How to resume
-
-1. Read this file + `design-input-new.md`.
-2. Next candidates: Options tag rename/delete, keyboard shortcuts in About, visual regression smoke, or ship 11.6.
+Step 11.6 / v0.1.0 screenshots + GPG tag. TODO 1 real-device pinch smoke.

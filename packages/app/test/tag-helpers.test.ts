@@ -13,7 +13,10 @@ import {
   mergeTags,
   normalizeTag,
   parseTagInput,
+  planTagDelete,
+  planTagRename,
   removeTag,
+  renameTagInList,
   suggestTags,
   taskHasTag,
 } from '../src/views/tags/tag-helpers.ts';
@@ -96,5 +99,31 @@ describe('tag-helpers', () => {
     expect(committedTagsFromInput('work')).toEqual([]);
     expect(applySuggestedTag('work, ho', 'home')).toBe('work, home, ');
     expect(applySuggestedTag('', 'work')).toBe('work, ');
+  });
+
+  it('renameTagInList renames, merges, and re-cases', () => {
+    expect(renameTagInList(['Work', 'home'], 'work', 'job')).toEqual(['job', 'home']);
+    expect(renameTagInList(['Work', 'job'], 'work', 'Job')).toEqual(['Job']);
+    const unchanged = ['work', 'home'] as const;
+    expect(renameTagInList(unchanged, 'work', 'work')).toBe(unchanged);
+    expect(renameTagInList(['Work'], 'work', 'WORK')).toEqual(['WORK']);
+    expect(renameTagInList(['home'], 'work', 'job')).toEqual(['home']);
+  });
+
+  it('planTagRename / planTagDelete only touch matching tasks', () => {
+    const tasks = [
+      task({ id: 'a' as TaskId, title: 'a', tags: ['work', 'home'] }),
+      task({ id: 'b' as TaskId, title: 'b', tags: ['Work'] }),
+      task({ id: 'c' as TaskId, title: 'c', tags: ['errand'] }),
+    ];
+    const renamed = planTagRename(tasks, 'work', 'job');
+    expect(renamed).toHaveLength(2);
+    expect(renamed.map((p) => p.id).sort()).toEqual(['a', 'b']);
+    expect(renamed.find((p) => p.id === 'a')?.tags).toEqual(['job', 'home']);
+
+    const deleted = planTagDelete(tasks, 'work');
+    expect(deleted).toHaveLength(2);
+    expect(deleted.find((p) => p.id === 'a')?.tags).toEqual(['home']);
+    expect(planTagDelete(tasks, 'missing')).toEqual([]);
   });
 });
