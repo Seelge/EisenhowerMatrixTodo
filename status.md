@@ -4,32 +4,23 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 ## Current activity
 
-**Phase:** Phase 19 — Global tag rename/delete — **done**. Next: Phase 20.
+**Phase:** Phase 20 — About shortcuts + visual smoke — **committing**. Next: Phase 21 field-level conflicts.
 
-### What landed (Phase 19)
+### What landed
 
-1. `renameTagInList` / `planTagRename` / `planTagDelete` pure helpers.
-2. Options → Tags: Filter / Rename (inline) / Delete (confirm) per row.
-3. Active matrix filter updates on rename and clears on delete.
-4. Local adapter batch writes + `['tasks']` invalidate; unit tests.
+**Phase 19** (`ad2f448`): global tag rename/delete.
+**Phase 20:** About keyboard cheat-sheet; Playwright matrix screenshot baseline (TODO 15 smoke).
 
 ### Privacy / API
 
-- Bulk tag edits are local IndexedDB adapter updates only.
-- No network, telemetry, or external APIs.
-- `rewrite-email.sh` remains untracked.
+- No network/telemetry. About still only links to the public GitHub source URL.
+- `rewrite-email.sh` untracked.
 
 ### Next
 
-1. Phase 20 — About keyboard shortcuts + Playwright visual smoke (TODO 15).
-2. Phase 21 — Field-level conflict resolution (TODO 14).
-3. Phase 22 — Light mode (TODO 10).
-4. Document external: TODO 1 device smoke, TODO 11 recurrence.
-
-## Earlier
-
-- Phase 18: tag autocomplete — `eab5e60`
-- Phase 17: due urgency + gap + `n` — `7a12062`
+1. Phase 21 — field-level conflict resolution (TODO 14).
+2. Phase 22 — light mode (TODO 10).
+3. Document external: TODO 1 device smoke, TODO 11 recurrence.
 
 ## Pending external actions (user)
 

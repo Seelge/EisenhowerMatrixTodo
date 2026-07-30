@@ -147,6 +147,16 @@ export const strings = {
   'app.options.about.commit': 'Commit',
   'app.options.about.builtAt': 'Built at',
   'app.options.about.source': 'Source on GitHub',
+  'app.options.about.shortcuts': 'Keyboard shortcuts',
+  'app.options.about.shortcuts.note':
+    'Ignored while typing in a field, or when search / a sheet is open.',
+  'app.options.about.shortcut.new': 'New task (quick composer)',
+  'app.options.about.shortcut.search': 'Search tasks',
+  'app.options.about.shortcut.zoomIn': 'Zoom into focused matrix cell',
+  'app.options.about.shortcut.zoomOut': 'Zoom out / close overlay',
+  'app.options.about.shortcut.zoomKeys': 'Zoom in / out',
+  'app.options.about.shortcut.arrows': 'Move focus between matrix cells',
+  'app.options.about.shortcut.drag': 'Grab / drop card (keyboard drag)',
   'app.conflict.heading': 'Sync conflict',
   'app.conflict.subheading':
     'Another client changed this task while you also changed it. Choose which copy to keep.',

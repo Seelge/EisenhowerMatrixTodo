@@ -814,15 +814,13 @@ field-level resolver — per-field "keep local / remote / both" — is the
 natural follow-up. Defer until we have one real-world conflict to point
 at, but earmark the conflict modal's component shape to be extensible.
 
-## TODO 15 — Tests: visual regression coverage
+## TODO 15 — Tests: visual regression coverage ✅ (smoke)
 
-The current test suite is strong on unit + integration + axe + a few
-e2e flows, but there is no **visual snapshot regression** (Storybook +
-Chromatic / Percy / Playwright `toHaveScreenshot`). Phase 12 surfaced
-several palette / overflow bugs that would have been caught by a single
-golden-image diff. Cost: one cron CI run per PR; one approval step per
-visual change. Decide before v0.2 starts; cheaper to add once than to
-keep finding palette regressions by deploying.
+**Done (Phase 20, smoke).** Playwright `toHaveScreenshot` on the seeded
+matrix at a fixed phone viewport (`e2e/visual-smoke.spec.ts`). Baseline
+committed under `e2e/visual-smoke.spec.ts-snapshots/`. Broader surface
+coverage (options, view3, light mode) can expand later; Chromatic/Percy
+still optional.
 
 ## TODO 16 — Matrix scannability (due urgency + shell) ✅
 
@@ -850,3 +848,7 @@ keep finding palette regressions by deploying.
 - Options → Tags row actions: Filter, Rename (inline), Delete (confirm).
 - Active tag filter stays coherent after rename/delete.
 - Local adapter writes only; one invalidate of `['tasks']` after the batch.
+
+## TODO 19 — Keyboard shortcuts in About ✅
+
+**Done (Phase 20).** About panel lists `n`, search, zoom, arrows, Space-drag.

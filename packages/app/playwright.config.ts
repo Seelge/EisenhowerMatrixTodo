@@ -10,6 +10,13 @@ export default defineConfig({
     baseURL: 'http://localhost:4173',
     trace: 'on-first-retry',
   },
+  expect: {
+    toHaveScreenshot: {
+      animations: 'disabled',
+      caret: 'hide',
+      maxDiffPixelRatio: 0.03,
+    },
+  },
   // Build (so the SW + manifest exist on disk) and serve via Vite
   // preview before the suite runs. Reuse a server already started
   // outside of CI so iterating locally doesn't pay the rebuild cost
@@ -19,7 +26,7 @@ export default defineConfig({
     // preview serves from the root and the e2e specs can use simple
     // relative URLs (`/`, `/manifest.webmanifest`).
     command:
-      'VITE_BASE_PATH=/ pnpm build && VITE_BASE_PATH=/ pnpm preview --host 127.0.0.1 --port 4173 --strictPort',
+      'VITE_BASE_PATH=/ ./node_modules/.bin/vite build && VITE_BASE_PATH=/ ./node_modules/.bin/vite preview --host 127.0.0.1 --port 4173 --strictPort',
     url: 'http://localhost:4173/',
     reuseExistingServer: !process.env['CI'],
     timeout: 120_000,

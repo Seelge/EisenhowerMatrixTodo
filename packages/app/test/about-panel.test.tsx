@@ -41,5 +41,10 @@ describe('AboutPanel — Step 9.7', () => {
     // Source link present and points at the repo.
     const source = container.querySelector<HTMLAnchorElement>('a[data-action="source"]')!;
     expect(source.href).toMatch(/github\.com\/Seelge\/EisenhowerMatrixTodo/);
+
+    const shortcuts = container.querySelector('[data-section="shortcuts"]')!;
+    expect(shortcuts.querySelectorAll('.emt-about-panel__shortcut-row').length).toBeGreaterThan(3);
+    expect(shortcuts.textContent).toMatch(/New task/i);
+    expect(shortcuts.textContent).toMatch(/Search/i);
   });
 });
