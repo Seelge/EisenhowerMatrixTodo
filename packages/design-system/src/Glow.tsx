@@ -1,16 +1,13 @@
 /**
- * Decorative glow border primitive.
+ * Neon border frame primitive (formerly a soft glow halo).
  *
- * Renders a div whose `box-shadow` is the per-quadrant glow token
- * (outer halo + inset shadow). Used by view1 quadrant cells, view2
- * single-quadrant frame, and the drag-target highlight in view2's
- * inter-quadrant move.
- *
- * Pulls from CSS variables so descendants of a future light-mode
- * `<ThemeProvider>` re-skin without prop changes.
+ * Renders a div with a 1px solid border in the per-quadrant neon
+ * colour. Used by view1 quadrant cells and view2's focused frame.
+ * Pulls from CSS variables (`--glow-*`, aliased to `--color-*`) so
+ * AppearancePanel overrides re-skin without prop changes.
  *
  * Forwards its `ref` so callers (e.g. dnd-kit's `useDroppable`) can
- * attach measurement / pointer hooks without having to wrap the element.
+ * attach measurement / pointer hooks without wrapping the element.
  */
 import { forwardRef, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
 
@@ -27,9 +24,14 @@ export const Glow = forwardRef<HTMLDivElement, GlowProps>(function Glow(
   { color, children, style, ...rest },
   ref,
 ) {
+  // Set border pieces separately — happy-dom (and some browsers) drop
+  // `var(...)` from the `border` shorthand when reading `style.border`.
   const composed: CSSProperties = {
-    boxShadow: `var(--glow-${color})`,
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    borderColor: `var(--glow-${color})`,
     borderRadius: 'var(--radius-md)',
+    boxShadow: 'none',
     ...style,
   };
   return (

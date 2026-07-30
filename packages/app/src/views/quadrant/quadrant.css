@@ -123,26 +123,24 @@
 }
 
 .emt-quadrant__edge[data-drop-active='true'] {
-  /* Drop indicator — the strip jumps to full brightness so the user
-     sees which neighbor will receive the drop. The per-edge color
-     comes from `data-emt-edge-color` below; the glow tokens already
-     match the same per-quadrant hue so we just brighten the band and
-     reuse the per-quadrant glow as a halo. */
+  /* Drop indicator — full brightness + a thin neon outline (no halo). */
   opacity: 1;
-  filter: brightness(1.2);
+  filter: brightness(1.15);
+  outline: 1px solid currentColor;
+  outline-offset: -1px;
 }
 
 .emt-quadrant__edge[data-drop-active='true'][data-emt-edge-color='q1'] {
-  box-shadow: var(--glow-q1);
+  color: var(--glow-q1);
 }
 .emt-quadrant__edge[data-drop-active='true'][data-emt-edge-color='q2'] {
-  box-shadow: var(--glow-q2);
+  color: var(--glow-q2);
 }
 .emt-quadrant__edge[data-drop-active='true'][data-emt-edge-color='q3'] {
-  box-shadow: var(--glow-q3);
+  color: var(--glow-q3);
 }
 .emt-quadrant__edge[data-drop-active='true'][data-emt-edge-color='q4'] {
-  box-shadow: var(--glow-q4);
+  color: var(--glow-q4);
 }
 
 .emt-quadrant__edge[data-emt-edge-color='q1'] {
@@ -279,7 +277,9 @@
 
 .emt-quadrant__corner[data-drop-active='true'] {
   opacity: 1;
-  filter: brightness(1.2);
+  filter: brightness(1.15);
+  outline: 1px solid currentColor;
+  outline-offset: -1px;
 }
 
 .emt-quadrant__corner[data-emt-edge-color='q1'] {
@@ -296,16 +296,16 @@
 }
 
 .emt-quadrant__corner[data-drop-active='true'][data-emt-edge-color='q1'] {
-  box-shadow: var(--glow-q1);
+  color: var(--glow-q1);
 }
 .emt-quadrant__corner[data-drop-active='true'][data-emt-edge-color='q2'] {
-  box-shadow: var(--glow-q2);
+  color: var(--glow-q2);
 }
 .emt-quadrant__corner[data-drop-active='true'][data-emt-edge-color='q3'] {
-  box-shadow: var(--glow-q3);
+  color: var(--glow-q3);
 }
 .emt-quadrant__corner[data-drop-active='true'][data-emt-edge-color='q4'] {
-  box-shadow: var(--glow-q4);
+  color: var(--glow-q4);
 }
 
 /*

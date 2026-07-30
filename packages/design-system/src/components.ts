@@ -121,10 +121,10 @@ export const COMPONENT_CSS = `/*
   min-width: 56px;
   min-height: 56px;
   border-radius: var(--radius-lg);
-  border: none;
+  border: 1px solid color-mix(in oklab, var(--color-accent) 70%, #fff);
   background: var(--color-accent);
   color: var(--color-bg);
-  box-shadow: var(--glow-accent);
+  box-shadow: none;
 }
 .emt-fab:hover:not(:disabled) {
   filter: brightness(1.08);
@@ -329,16 +329,20 @@ export const COMPONENT_CSS = `/*
 }
 
 .emt-quadrant-picker__cell--q1[aria-checked='true'] {
-  box-shadow: var(--glow-q1);
+  border-color: var(--glow-q1);
+  box-shadow: none;
 }
 .emt-quadrant-picker__cell--q2[aria-checked='true'] {
-  box-shadow: var(--glow-q2);
+  border-color: var(--glow-q2);
+  box-shadow: none;
 }
 .emt-quadrant-picker__cell--q3[aria-checked='true'] {
-  box-shadow: var(--glow-q3);
+  border-color: var(--glow-q3);
+  box-shadow: none;
 }
 .emt-quadrant-picker__cell--q4[aria-checked='true'] {
-  box-shadow: var(--glow-q4);
+  border-color: var(--glow-q4);
+  box-shadow: none;
 }
 
 @keyframes emt-fade-in {

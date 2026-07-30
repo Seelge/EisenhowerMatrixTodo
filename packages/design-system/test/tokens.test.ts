@@ -10,22 +10,12 @@ describe('design-system tokens', () => {
     expect(tokens.color.q4).toMatch(/^#[0-9a-fA-F]{6}$/);
   });
 
-  it('every quadrant has a matching glow', () => {
-    // Derive the expected `rgba(r, g, b` prefix from each colour token
-    // so a palette refresh (e.g. Step 12.10) only needs to update the
-    // tokens themselves, not the test pins.
-    const hexToRgbPrefix = (hex: string): string => {
-      const [r, g, b] = hex
-        .replace('#', '')
-        .match(/.{2}/g)!
-        .map((h) => Number.parseInt(h, 16));
-      return `rgba(${r}, ${g}, ${b}`;
-    };
-    expect(tokens.glow.q1).toContain(hexToRgbPrefix(tokens.color.q1));
-    expect(tokens.glow.q2).toContain(hexToRgbPrefix(tokens.color.q2));
-    expect(tokens.glow.q3).toContain(hexToRgbPrefix(tokens.color.q3));
-    expect(tokens.glow.q4).toContain(hexToRgbPrefix(tokens.color.q4));
-    expect(tokens.glow.accent).toContain(hexToRgbPrefix(tokens.color.accent));
+  it('every quadrant neon border colour matches its palette colour', () => {
+    expect(tokens.glow.q1.toLowerCase()).toBe(tokens.color.q1.toLowerCase());
+    expect(tokens.glow.q2.toLowerCase()).toBe(tokens.color.q2.toLowerCase());
+    expect(tokens.glow.q3.toLowerCase()).toBe(tokens.color.q3.toLowerCase());
+    expect(tokens.glow.q4.toLowerCase()).toBe(tokens.color.q4.toLowerCase());
+    expect(tokens.glow.accent.toLowerCase()).toBe(tokens.color.accent.toLowerCase());
   });
 
   it('space scale is monotonically increasing', () => {

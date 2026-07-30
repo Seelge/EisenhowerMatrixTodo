@@ -86,11 +86,13 @@ function buildThemeVariables(overrides: QuadrantColorOverrides | undefined): CSS
     '--motion-easing-decelerated': tokens.motion.easing.decelerated,
     '--motion-easing-accelerated': tokens.motion.easing.accelerated,
 
-    '--glow-q1': tokens.glow.q1,
-    '--glow-q2': tokens.glow.q2,
-    '--glow-q3': tokens.glow.q3,
-    '--glow-q4': tokens.glow.q4,
-    '--glow-accent': tokens.glow.accent,
+    // Neon borders track live colour tokens so Appearance overrides
+    // recolour frames without a second set of vars.
+    '--glow-q1': 'var(--color-q1)',
+    '--glow-q2': 'var(--color-q2)',
+    '--glow-q3': 'var(--color-q3)',
+    '--glow-q4': 'var(--color-q4)',
+    '--glow-accent': 'var(--color-accent)',
 
     '--layer-base': tokens.layer.base,
     '--layer-quadrant-edge': tokens.layer.quadrantEdge,

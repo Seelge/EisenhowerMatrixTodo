@@ -102,12 +102,8 @@
 }
 .emt-task-card__priority[data-priority='high'] {
   background: var(--color-q1);
-  /* Step 12.12 — drive the high-priority glow from the live --color-q1
-     token instead of a hardcoded #ff4d6d literal, so palette swaps
-     (Step 12.10) and per-quadrant AppearancePanel overrides flow
-     through here automatically. The `color-mix` preserves the original
-     60 % alpha via 40 % transparency. */
-  box-shadow: 0 0 6px color-mix(in oklab, var(--color-q1), transparent 40%);
+  /* Thin neon ring — matches the matrix frame treatment (no soft halo). */
+  box-shadow: 0 0 0 1px var(--color-q1);
 }
 
 .emt-task-card__title {
@@ -210,7 +206,8 @@
   min-width: 160px;
   background: var(--color-surface-elevated);
   border-radius: var(--radius-md);
-  box-shadow: var(--glow-accent);
+  border: 1px solid var(--glow-accent);
+  box-shadow: none;
   padding: var(--space-xs) 0;
 }
 

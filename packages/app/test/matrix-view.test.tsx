@@ -68,7 +68,9 @@ describe('MatrixView', () => {
 
       // Palette: glow color matches the canonical per-quadrant token.
       expect(cell!.dataset['emtGlow']).toBe(expected.glow);
-      expect(cell!.style.boxShadow).toBe(`var(--glow-${expected.glow})`);
+      expect(cell!.style.borderWidth).toBe('1px');
+      expect(cell!.style.borderStyle).toBe('solid');
+      expect(cell!.style.borderColor).toBe(`var(--glow-${expected.glow})`);
 
       // Label: cell carries the verb both as an aria-label and an h2.
       expect(cell!.getAttribute('aria-label')).toBe(expected.label);

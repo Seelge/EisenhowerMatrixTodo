@@ -88,13 +88,17 @@ export const tokens = {
       accelerated: 'cubic-bezier(0.3, 0, 1, 1)',
     },
   },
-  /** Per-quadrant glow box-shadows. Outer halo + soft inner shadow. */
+  /**
+   * Neon border colours for the Glow frame / selected chrome.
+   * Match the quadrant palette 1:1; CSS aliases these to
+   * `var(--color-q*)` so Appearance overrides stay coherent.
+   */
   glow: {
-    q1: '0 0 20px rgba(255, 51, 112, 0.6), inset 0 0 8px rgba(255, 51, 112, 0.25)',
-    q2: '0 0 20px rgba(61, 241, 255, 0.6), inset 0 0 8px rgba(61, 241, 255, 0.25)',
-    q3: '0 0 20px rgba(255, 184, 0, 0.6), inset 0 0 8px rgba(255, 184, 0, 0.25)',
-    q4: '0 0 20px rgba(167, 180, 196, 0.6), inset 0 0 8px rgba(167, 180, 196, 0.25)',
-    accent: '0 0 16px rgba(61, 241, 255, 0.5), inset 0 0 6px rgba(61, 241, 255, 0.2)',
+    q1: '#FF3370',
+    q2: '#3DF1FF',
+    q3: '#FFB800',
+    q4: '#A7B4C4',
+    accent: '#3DF1FF',
   },
   /** Z-index layers. */
   layer: {

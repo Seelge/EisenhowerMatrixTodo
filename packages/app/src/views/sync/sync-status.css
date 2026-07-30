@@ -57,7 +57,7 @@
 .emt-sync-chip--conflict .emt-sync-chip__dot {
   background: var(--color-q1);
   opacity: 1;
-  box-shadow: 0 0 6px color-mix(in oklab, var(--color-q1) 60%, transparent);
+  box-shadow: 0 0 0 1px var(--color-q1);
 }
 
 .emt-matrix__sync,

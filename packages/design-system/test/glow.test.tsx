@@ -1,13 +1,13 @@
 /**
  * Component tests for the Glow primitive.
  *
- * Covers the four quadrant colors and the accent variant, asserting:
- *   - the inline `box-shadow` references the matching CSS variable
- *     (so themes can be re-skinned at runtime)
- *   - `data-emt-glow` mirrors the color (selector hook for view1 cells)
- *   - children render through
- *   - consumer styles win over the defaults (override of border-radius)
- */
+  * Covers the four quadrant colors and the accent variant, asserting:
+  *   - the inline `border` references the matching CSS variable
+  *     (thin neon line; themes re-skin at runtime)
+  *   - `data-emt-glow` mirrors the color (selector hook for view1 cells)
+  *   - children render through
+  *   - consumer styles win over the defaults (override of border-radius)
+  */
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { Glow, type GlowColor } from '../src/Glow.tsx';
@@ -25,7 +25,7 @@ describe('Glow', () => {
   });
 
   for (const color of COLORS) {
-    it(`renders the ${color} glow as a CSS-var box-shadow`, async () => {
+    it(`renders the ${color} frame as a 1px neon CSS-var border`, async () => {
       const { container, unmount } = await renderToContainer(
         <Glow color={color}>
           <span data-testid="probe">probe</span>
@@ -35,7 +35,10 @@ describe('Glow', () => {
 
       const node = container.querySelector<HTMLElement>(`[data-emt-glow="${color}"]`);
       expect(node).not.toBeNull();
-      expect(node!.style.boxShadow).toBe(`var(--glow-${color})`);
+      expect(node!.style.borderWidth).toBe('1px');
+      expect(node!.style.borderStyle).toBe('solid');
+      expect(node!.style.borderColor).toBe(`var(--glow-${color})`);
+      expect(node!.style.boxShadow).toBe('none');
       expect(node!.style.borderRadius).toBe('var(--radius-md)');
       expect(node!.querySelector('[data-testid="probe"]')?.textContent).toBe('probe');
     });
@@ -48,7 +51,7 @@ describe('Glow', () => {
     teardown = unmount;
 
     const node = container.querySelector<HTMLElement>('[data-emt-glow="q1"]')!;
-    expect(node.style.boxShadow).toBe('var(--glow-q1)');
+    expect(node.style.borderColor).toBe('var(--glow-q1)');
     expect(node.style.borderRadius).toBe('0px');
     expect(node.style.padding).toBe('12px');
   });

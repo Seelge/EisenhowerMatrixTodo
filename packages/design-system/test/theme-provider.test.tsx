@@ -39,9 +39,8 @@ describe('ThemeProvider', () => {
     expect(wrapper!.style.getPropertyValue('--color-q2')).toBe(tokens.color.q2);
     expect(wrapper!.style.getPropertyValue('--color-q3')).toBe(tokens.color.q3);
     expect(wrapper!.style.getPropertyValue('--color-q4')).toBe(tokens.color.q4);
-    // Glow shorthand survives commas inside rgba() — guards against naive
-    // parsing of multi-segment box-shadow values.
-    expect(wrapper!.style.getPropertyValue('--glow-q2')).toBe(tokens.glow.q2);
+    // Neon border vars alias the live colour tokens.
+    expect(wrapper!.style.getPropertyValue('--glow-q2')).toBe('var(--color-q2)');
   });
 
   it('mounts a single reset <style> tag globally and removes it on unmount', async () => {
