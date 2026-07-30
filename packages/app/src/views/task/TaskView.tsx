@@ -44,6 +44,7 @@ import { NotesField } from './NotesField.js';
 import { PriorityField } from './PriorityField.js';
 import { QuadrantField } from './QuadrantField.js';
 import { StatusToggle } from './StatusToggle.js';
+import { TagsField } from './TagsField.js';
 import { TaskActions } from './TaskActions.js';
 import { TitleField } from './TitleField.js';
 import './task-view.css';
@@ -105,6 +106,7 @@ function TaskViewBody({ query }: { query: UseQueryResult<Task | undefined, Error
     <div className="emt-task-view__body" key={task.id}>
       <TitleField task={task} />
       <NotesField task={task} />
+      <TagsField task={task} />
       <DueField task={task} />
       <PriorityField task={task} />
       <QuadrantField task={task} />

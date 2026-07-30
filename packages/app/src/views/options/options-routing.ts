@@ -12,6 +12,7 @@ export const OPTIONS_GROUPS = [
   'account',
   'appearance',
   'defaults',
+  'tags',
   'data',
   'about',
 ] as const;

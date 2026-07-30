@@ -35,8 +35,11 @@ import { useClearTaskRanks, useTaskOrder } from '../../queries/task-order.js';
 import { useTasks } from '../../queries/tasks.js';
 import { useSortBy } from '../../state/defaults.js';
 import { taskOrderKey, type TaskOrderMap } from '../../state/task-order.js';
+import { useActiveTagFilter } from '../tags/tag-filter-store.js';
+import { filterTasksByTag } from '../tags/tag-helpers.js';
 import { usePinchHighlight } from '../zoom/highlight.js';
 import { quadrantLayoutId } from '../zoom/ZoomController.js';
+
 
 import type { DroppableCellData } from './dnd.js';
 import { ReorderHint } from './ReorderHint.js';
@@ -83,10 +86,12 @@ export function MatrixCell({ quadrant }: MatrixCellProps): ReactNode {
 
   const ranks = orderQuery.data ?? EMPTY_RANKS;
   const sortBy = useSortBy();
-  const tasks = useMemo(
-    () => (query.data ? sortTasks(query.data, ranks, sortBy) : undefined),
-    [query.data, ranks, sortBy],
-  );
+  const activeTag = useActiveTagFilter();
+  const tasks = useMemo(() => {
+    if (!query.data) return undefined;
+    const filtered = filterTasksByTag(query.data, activeTag);
+    return sortTasks(filtered, ranks, sortBy);
+  }, [query.data, ranks, sortBy, activeTag]);
 
   // Skeleton count tracks the last known task count so a refetch of a
   // populated cell doesn't collapse from N cards → 2 placeholders → N

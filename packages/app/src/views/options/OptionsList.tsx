@@ -21,6 +21,7 @@ const TITLE_KEY: Record<OptionsGroup, StringKey> = {
   account: 'app.options.group.account',
   appearance: 'app.options.group.appearance',
   defaults: 'app.options.group.defaults',
+  tags: 'app.options.group.tags',
   data: 'app.options.group.data',
   about: 'app.options.group.about',
 };
@@ -30,6 +31,7 @@ const SUMMARY_KEY: Record<OptionsGroup, StringKey> = {
   account: 'app.options.group.account.summary',
   appearance: 'app.options.group.appearance.summary',
   defaults: 'app.options.group.defaults.summary',
+  tags: 'app.options.group.tags.summary',
   data: 'app.options.group.data.summary',
   about: 'app.options.group.about.summary',
 };

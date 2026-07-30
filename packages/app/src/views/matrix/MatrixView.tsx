@@ -26,13 +26,14 @@ import { useCallback, useMemo, useState, type ReactNode } from 'react';
 
 import { useT } from '../../i18n/provider.js';
 import { useSetTaskRank } from '../../queries/task-order.js';
-import { useUpdateTask } from '../../queries/tasks.js';
+import { useTasks, useUpdateTask } from '../../queries/tasks.js';
 import { useBusyStore } from '../../state/busy.js';
 import { useNewTaskQuadrant } from '../../state/defaults.js';
 import { useViewStateStore } from '../../state/view-state.js';
 import { SettingsButton } from '../options/SettingsButton.js';
 import { SearchButton } from '../search/SearchButton.js';
 import { SyncStatusChip } from '../sync/SyncStatusChip.js';
+import { TagFilterBar } from '../tags/TagFilterBar.js';
 import { quadrantAtPoint } from '../zoom/pinch.js';
 import { usePinchGesture } from '../zoom/usePinchGesture.js';
 
@@ -82,6 +83,9 @@ export function MatrixView(): ReactNode {
   const openComposer = useCallback(() => setComposerOpen(true), []);
   const closeComposer = useCallback(() => setComposerOpen(false), []);
   const newTaskQuadrant = useNewTaskQuadrant();
+  // All tasks feed the filter bar so chips reflect the whole matrix,
+  // not just one cell. Filtering itself still happens per-cell.
+  const allTasks = useTasks();
 
   // Step 7.2 — pinch-in zooms into the quadrant under the midpoint.
   // The midpoint is captured at gesture start (when the second finger
@@ -111,6 +115,7 @@ export function MatrixView(): ReactNode {
         onPointerUp={pinch.onPointerUp}
         onPointerCancel={pinch.onPointerCancel}
       >
+        <TagFilterBar tasks={allTasks.data} className="emt-matrix__tag-filter" />
         <div className="emt-matrix__grid">
           <MatrixCell quadrant="Q2" />
           <MatrixCell quadrant="Q1" />

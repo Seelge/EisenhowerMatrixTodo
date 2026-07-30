@@ -36,6 +36,7 @@ import type { StringKey } from '../../i18n/strings.en.js';
 import { useCreateTask } from '../../queries/tasks.js';
 import { getBackends } from '../../state/backends.js';
 import { useBusyStore } from '../../state/busy.js';
+import { mergeTags, parseTagInput } from '../tags/tag-helpers.js';
 
 import './quick-composer.css';
 
@@ -81,6 +82,7 @@ export function QuickComposer({
   const [expanded, setExpanded] = useState(false);
   const [dueDate, setDueDate] = useState<string | null>(null);
   const [priority, setPriority] = useState<Priority>('normal');
+  const [tagsInput, setTagsInput] = useState('');
 
   // Step 10.3 — mark the user as composing while the surface is open
   // so an incoming sync conflict queues silently instead of opening
@@ -101,6 +103,7 @@ export function QuickComposer({
     setExpanded(false);
     setDueDate(null);
     setPriority('normal');
+    setTagsInput('');
   }, [defaultQuadrant]);
 
   const close = useCallback(() => {
@@ -125,13 +128,14 @@ export function QuickComposer({
       // navigations through other quadrants.
       const targetQuadrant = showQuadrantPicker ? quadrant : defaultQuadrant;
 
+      const tags = mergeTags([], parseTagInput(tagsInput));
       const draft: TaskDraft = {
         title: trimmed,
         notes: '',
         priority,
         quadrant: targetQuadrant,
         status: 'open',
-        tags: [],
+        tags: [...tags],
       };
       if (dueDate !== null) draft.dueDate = dueDate;
       const rollback = applyOptimisticCreate(queryClient, draft, backendId);
@@ -152,6 +156,7 @@ export function QuickComposer({
       showQuadrantPicker,
       priority,
       dueDate,
+      tagsInput,
       queryClient,
       createTask,
       close,
@@ -248,6 +253,21 @@ export function QuickComposer({
                   );
                 })}
               </div>
+            </div>
+            <div className="emt-quick-composer__field">
+              <label htmlFor={`${moreId}-tags`} className="emt-quick-composer__label">
+                {t('app.composer.tagsLabel')}
+              </label>
+              <input
+                id={`${moreId}-tags`}
+                className="emt-quick-composer__input"
+                type="text"
+                value={tagsInput}
+                onChange={(e) => setTagsInput(e.currentTarget.value)}
+                placeholder={t('app.composer.tagsPlaceholder')}
+                autoComplete="off"
+                data-field="composer-tags"
+              />
             </div>
           </div>
         )}

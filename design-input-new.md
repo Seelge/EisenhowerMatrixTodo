@@ -719,18 +719,18 @@ adapters; the chip's `data-sync-status` discriminator is ready for them.
 **Done (Phase 13):** "More options…" disclosure reveals DueDatePicker +
 priority segmented control. Tag autocomplete still open (see TODO 5).
 
-## TODO 5 — Tags have no first-class surface
+## TODO 5 — Tags have no first-class surface ✅ (MVP)
 
-Tags are stored on the canonical model and rendered on cards as chips, but
-there is no way to:
+**Done (Phase 14).**
 
-- **filter** the matrix or a quadrant by tag,
-- **list all tags** the user has accumulated,
-- **edit / rename / delete** a tag globally.
+- view3 `TagsField` — add/remove chips; Enter/comma commit; backspace on
+  empty input removes last chip.
+- Matrix + quadrant `TagFilterBar` — chips with counts; toggle filter
+  client-side (`useTagFilterStore`).
+- QuickComposer more-options — comma-separated tags on create.
+- Options → Tags — inventory; tap applies filter and navigates home.
 
-Two minimum-viable moves: a tag chip in view2's header (`#tag` to filter
-the focused quadrant), and a Tags subgroup under Options. Larger redesign
-later if tags become load-bearing.
+Still open later: global rename/delete of a tag across all tasks.
 
 ## TODO 6 — Search ✅
 

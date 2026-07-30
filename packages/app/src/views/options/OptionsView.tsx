@@ -30,6 +30,7 @@ import {
   type OptionsGroup,
 } from './options-routing.js';
 import { OptionsList } from './OptionsList.js';
+import { TagsPanel } from './TagsPanel.js';
 import './options-view.css';
 
 const GROUP_TITLE_KEY: Record<OptionsGroup, StringKey> = {
@@ -37,6 +38,7 @@ const GROUP_TITLE_KEY: Record<OptionsGroup, StringKey> = {
   account: 'app.options.group.account',
   appearance: 'app.options.group.appearance',
   defaults: 'app.options.group.defaults',
+  tags: 'app.options.group.tags',
   data: 'app.options.group.data',
   about: 'app.options.group.about',
 };
@@ -94,6 +96,9 @@ function GroupPanel({ group }: { group: OptionsGroup }): ReactNode {
   }
   if (group === 'defaults') {
     return <DefaultsPanel />;
+  }
+  if (group === 'tags') {
+    return <TagsPanel />;
   }
   if (group === 'data') {
     return <DataPanel />;

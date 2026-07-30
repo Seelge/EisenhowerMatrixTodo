@@ -42,7 +42,7 @@ describe('OptionsView — Step 9.1', () => {
     );
     teardown = unmount;
     expect(container.querySelector('[data-options-list]')).not.toBeNull();
-    expect(container.querySelectorAll('.emt-options__list-button')).toHaveLength(6);
+    expect(container.querySelectorAll('.emt-options__list-button')).toHaveLength(7);
   });
 
   it('clicking a group entry navigates to /options/:group', async () => {

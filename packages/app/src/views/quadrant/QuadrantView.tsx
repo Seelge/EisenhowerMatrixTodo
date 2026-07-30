@@ -57,6 +57,9 @@ import { TaskCard } from '../matrix/TaskCard.js';
 import { SettingsButton } from '../options/SettingsButton.js';
 import { SearchButton } from '../search/SearchButton.js';
 import { SyncStatusChip } from '../sync/SyncStatusChip.js';
+import { useActiveTagFilter } from '../tags/tag-filter-store.js';
+import { filterTasksByTag } from '../tags/tag-helpers.js';
+import { TagFilterBar } from '../tags/TagFilterBar.js';
 import { usePinchHighlightStore } from '../zoom/highlight.js';
 import { usePinchGesture } from '../zoom/usePinchGesture.js';
 import { quadrantLayoutId } from '../zoom/ZoomController.js';
@@ -132,10 +135,14 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
   const orderQuery = useTaskOrder();
   const ranks = orderQuery.data ?? EMPTY_RANKS;
   const sortBy = useSortBy();
-  const tasks = useMemo(
-    () => (query.data ? sortTasks(query.data, ranks, sortBy) : undefined),
-    [query.data, ranks, sortBy],
-  );
+  const activeTag = useActiveTagFilter();
+  const tasks = useMemo(() => {
+    if (!query.data) return undefined;
+    return sortTasks(filterTasksByTag(query.data, activeTag), ranks, sortBy);
+  }, [query.data, ranks, sortBy, activeTag]);
+  // Unfiltered list feeds the filter bar so chips stay visible while a
+  // filter is active (otherwise the bar would collapse to empty).
+  const filterSource = query.data;
 
   // Skeleton count tracks the last known task count so a refetch of a
   // populated quadrant doesn't collapse from N cards → 3 placeholders
@@ -344,6 +351,7 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
             <header className="emt-quadrant__header">
               <h1 className="emt-quadrant__title">{label}</h1>
             </header>
+            <TagFilterBar tasks={filterSource} className="emt-quadrant__tag-filter" />
             <div className="emt-quadrant__list" data-task-count={tasks?.length ?? 0}>
               {query.isPending &&
                 Array.from({ length: skeletonCount }, (_, i) => (
