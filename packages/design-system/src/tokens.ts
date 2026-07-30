@@ -6,33 +6,63 @@
  * from the other once the surface stabilizes.
  *
  * Values follow `design-input.md` § UI Design (palette, M3 behaviors).
- * The first release is dark-mode only; light mode lands later.
+ * Dark is the default; light palette (Phase 22) uses deeper hues so
+ * quadrant borders stay AA on pale surfaces.
  */
+
+export type ColorScheme = 'dark' | 'light';
+
+/** Shared surface/text/accent/quadrant colours for one scheme. */
+export interface ColorPalette {
+  readonly bg: string;
+  readonly surface: string;
+  readonly surfaceElevated: string;
+  readonly textPrimary: string;
+  readonly textSecondary: string;
+  readonly accent: string;
+  readonly q1: string;
+  readonly q2: string;
+  readonly q3: string;
+  readonly q4: string;
+  readonly error: string;
+}
+
+export const darkColors: ColorPalette = {
+  bg: '#0A0E14',
+  surface: '#121821',
+  surfaceElevated: '#1A2230',
+  textPrimary: '#E6EDF3',
+  textSecondary: '#8B96A5',
+  accent: '#3DF1FF',
+  q1: '#FF3370',
+  q2: '#3DF1FF',
+  q3: '#FFB800',
+  q4: '#A7B4C4',
+  error: '#FF3370',
+};
+
+/** Light surfaces; quadrant hues darkened for AA contrast on white. */
+export const lightColors: ColorPalette = {
+  bg: '#F4F6F8',
+  surface: '#FFFFFF',
+  surfaceElevated: '#E8ECF1',
+  textPrimary: '#0F1419',
+  textSecondary: '#5C6B7A',
+  accent: '#007A8A',
+  q1: '#C01048',
+  q2: '#007A8A',
+  q3: '#9A6B00',
+  q4: '#5C6B7A',
+  error: '#C01048',
+};
+
+export function colorsForScheme(scheme: ColorScheme): ColorPalette {
+  return scheme === 'light' ? lightColors : darkColors;
+}
 
 export const tokens = {
   color: {
-    /** App background (near-black with a slight blue cast). */
-    bg: '#0A0E14',
-    /** Cards, sheets, panels. */
-    surface: '#121821',
-    /** Elevated surfaces (modal, focused panel). */
-    surfaceElevated: '#1A2230',
-    /** Primary text. */
-    textPrimary: '#E6EDF3',
-    /** Secondary text, muted captions. */
-    textSecondary: '#8B96A5',
-    /** Focus rings, active states, primary accent. */
-    accent: '#3DF1FF',
-    /** Q1 — Important + Urgent (Do). */
-    q1: '#FF3370',
-    /** Q2 — Important, not Urgent (Schedule). */
-    q2: '#3DF1FF',
-    /** Q3 — Urgent, not Important (Delegate). */
-    q3: '#FFB800',
-    /** Q4 — Neither (Delete). */
-    q4: '#A7B4C4',
-    /** Error / destructive — shares Q1 hue. */
-    error: '#FF3370',
+    ...darkColors,
   },
   space: {
     xs: '4px',

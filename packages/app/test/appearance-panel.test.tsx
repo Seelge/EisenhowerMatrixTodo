@@ -12,7 +12,7 @@
  * store; re-mount asserts the saved value is rehydrated.
  */
 import 'fake-indexeddb/auto';
-import { tokens, ThemeProvider } from '@emt/design-system';
+import { lightColors, tokens, ThemeProvider } from '@emt/design-system';
 import { IDBFactory } from 'fake-indexeddb';
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -39,8 +39,9 @@ function ThemeReader(): React.ReactNode {
   // Subscribes to the store so the wrapper re-renders when overrides
   // change — mirrors what App.tsx does at the top of the tree.
   const overrides = useAppearanceOverrides();
+  const scheme = useAppearanceStore((s) => s.scheme);
   return (
-    <ThemeProvider colorOverrides={overrides}>
+    <ThemeProvider colorScheme={scheme} colorOverrides={overrides}>
       <AppearancePanel />
     </ThemeProvider>
   );
@@ -54,14 +55,14 @@ describe('AppearancePanel — Step 9.4', () => {
     __resetBackendsCacheForTesting();
     // Reset the Zustand store too — Vite/test isolation does not
     // re-create the module-scope `useAppearanceStore` between tests.
-    useAppearanceStore.setState({ loaded: false, overrides: {} });
+    useAppearanceStore.setState({ loaded: false, overrides: {}, scheme: 'dark' });
   });
 
   afterEach(() => {
     teardown?.();
     teardown = undefined;
     __resetBackendsCacheForTesting();
-    useAppearanceStore.setState({ loaded: false, overrides: {} });
+    useAppearanceStore.setState({ loaded: false, overrides: {}, scheme: 'dark' });
   });
 
   it('seeds the color input from the design-system default', async () => {
@@ -150,11 +151,34 @@ describe('AppearancePanel — Step 9.4', () => {
     teardown = undefined;
 
     // Reset the in-memory store and load fresh — meta IDB still has it.
-    useAppearanceStore.setState({ loaded: false, overrides: {} });
+    useAppearanceStore.setState({ loaded: false, overrides: {}, scheme: 'dark' });
     await act(async () => {
       await useAppearanceStore.getState().load();
     });
 
     expect(useAppearanceStore.getState().overrides.q2).toBe('#123456');
+  });
+
+  it('switches to light scheme and applies light palette tokens', async () => {
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <ThemeReader />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+
+    await act(async () => {
+      container.querySelector<HTMLInputElement>('[data-field="theme-light"]')!.click();
+    });
+    await waitForAsync(() => useAppearanceStore.getState().scheme === 'light');
+
+    const themeDiv = container.querySelector<HTMLElement>('[data-emt-theme="light"]')!;
+    expect(themeDiv).not.toBeNull();
+    expect(themeDiv.style.getPropertyValue('--color-bg').toLowerCase()).toBe(
+      lightColors.bg.toLowerCase(),
+    );
+    expect(themeDiv.style.getPropertyValue('--color-q1').toLowerCase()).toBe(
+      lightColors.q1.toLowerCase(),
+    );
   });
 });

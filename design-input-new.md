@@ -47,7 +47,7 @@ Microsoft To-Do later.
 - Subtasks, attachments, comments.
 - Multi-user / sharing.
 - Telemetry / analytics.
-- Light mode.
+- ~~Light mode.~~ (Phase 22 — optional via Appearance.)
 - Multi-locale i18n (strings wrapped from day one, but only English ships).
 
 ---
@@ -152,7 +152,7 @@ the entire viewport.
 
 ## 4. Visual language
 
-### 4.1 Colour palette (dark mode, locked for first release)
+### 4.1 Colour palette (dark default; light optional)
 
 | Token              | Hex       | Role                                              | Contrast vs `--color-bg` |
 | ------------------ | --------- | ------------------------------------------------- | ------------------------ |
@@ -687,18 +687,12 @@ The sections below are unresolved items spotted while writing this rewrite
 (or surfaced by Phase 12 feedback but not yet acted on). They are not part
 of the first-release plan but should be discussed before v0.2 work starts.
 
-## TODO 1 — Pinch-zoom on Android: real-device confirmation owed
+## TODO 1 — Pinch-zoom on Android: real-device confirmation owed ⏳ external
 
-Step 12.8 fixed the snap reliability in code (`touch-action: pan-y` plus
-resolving the pinch on `pointermove` rather than `pointerup`). The unit
-test asserts the snap fires from `pointermove` alone, but the plan
-explicitly asks for a *real Android device smoke test* and that has not
-been recorded as done. Next session should either:
-
-- capture a short device recording into `docs/release-screenshots/` and
-  reference it in `RELEASE.md`, **or**
-- defer the smoke to the Phase-12 manual-verification pass and document
-  the gap in `RELEASE.md`.
+Step 12.8 fixed the snap reliability in code. Unit tests cover
+`pointermove` snap. **Still needs a human on a real Android device**
+(recording into `docs/release-screenshots/` + `RELEASE.md`). Cannot be
+closed from CI alone.
 
 ## TODO 2 — Settings button visibility on busy cells ✅
 
@@ -762,35 +756,29 @@ Covered by unit tests that mock `scrollHeight` / `clientHeight`.
 so fields scroll under the keyboard-aware sheet max-height. Field
 re-order (toggles to bottom) still open if real-device smoke shows pain.
 
-## TODO 10 — Light mode
+## TODO 10 — Light mode ✅
 
-The first release locks Appearance → Theme to Dark and renders the radio
-disabled. Plan calls for light mode "later". Decisions to make before
-implementing:
+**Done (Phase 22).**
 
-- whether to follow `prefers-color-scheme` by default or always-dark by
-  default with explicit opt-in.
-- whether the four quadrant hues stay the same in light mode (they're
-  optimised for dark; Q3 amber at 11.2:1 on dark would land at maybe
-  2.5:1 on a `#fff` surface and fail AA).
-- light surface tokens (`#fcfcfc` / `#f4f5f7`?) and the equivalent of the
-  glow primitive — glow on a light surface reads as a smudge unless the
-  hue is heavily desaturated.
+- Explicit opt-in via Appearance → Theme (Dark default; no
+  `prefers-color-scheme` auto-switch).
+- Separate light palette: pale surfaces + **deeper** quadrant/accent
+  hues for AA on white (`lightColors` in design-system tokens).
+- Persisted as `appearance:scheme` in meta IDB; ThemeProvider sets
+  `data-emt-theme` + CSS vars. Per-quadrant overrides still apply on top.
 
-This is non-trivial design work; not a sprinkle.
+## TODO 11 — Recurrence model ⏳ deferred (design)
 
-## TODO 11 — Recurrence model
+Still open product decisions before UI work:
 
-`design-input.md` reserves the slot ("follow-up tasks materialised at
-completion time"). Two questions to settle before designing the UI:
+- Completing one occurrence when the next was already edited → prefer
+  user edits; new occurrence inherits only untouched fields.
+- Google Tasks has no native recurrence → store RRULE in `notes` as
+  `<!--emt:rrule:…-->` (same pattern as priority encoding).
+- Adapter `capabilities.recurrence` already exists; Task model has no
+  first-class field yet.
 
-- what does completing one occurrence do to the next when the user has
-  already edited that next occurrence's title or notes? (probably: the
-  user's edits win; the new occurrence inherits only fields the user
-  hasn't touched.)
-- what does Google Tasks' lack of native recurrence mean for the field
-  encoding? (probably: store an RRULE in `notes` between markers
-  `<!--emt:rrule:…-->`; same pattern as priority is already encoded.)
+Not shipping in this pass — needs a dedicated design spike.
 
 ## TODO 12 — Per-cell loading skeleton count ✅
 

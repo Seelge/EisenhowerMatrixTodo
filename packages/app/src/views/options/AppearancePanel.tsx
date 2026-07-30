@@ -1,20 +1,14 @@
 /**
- * AppearancePanel — view4 / Appearance group (Step 9.4).
+ * AppearancePanel — view4 / Appearance group (Step 9.4 / Phase 22).
  *
- * Theme is locked to Dark in the v1 release — rendered as a disabled
- * radio so users see the intent. The bulk of the panel is the
- * per-quadrant color override grid: a native `<input type="color">`
- * for each of Q1–Q4, mirroring the design-system tokens; a "Reset"
- * button next to each clears the override and falls back to the
- * design-system default.
+ * Theme: Dark (default) or Light. Light uses AA-tuned surfaces and
+ * deeper quadrant hues. Per-quadrant color overrides still apply on
+ * top of the active scheme defaults.
  *
- * Writes go through `useAppearanceStore`, which mirrors the value
- * into React state and asynchronously persists to the shared meta
- * store. App.tsx subscribes via `useAppearanceOverrides` and forwards
- * the merged map to `<ThemeProvider colorOverrides={...}>`, so the
- * matrix glow updates immediately without a reload.
+ * Writes go through `useAppearanceStore`. App.tsx forwards scheme +
+ * overrides to `<ThemeProvider>`.
  */
-import { tokens } from '@emt/design-system';
+import { colorsForScheme, type ColorScheme } from '@emt/design-system';
 import type { ReactNode, ChangeEvent } from 'react';
 
 import { useT } from '../../i18n/provider.js';
@@ -30,18 +24,14 @@ const LABEL_KEY: Record<QuadrantKey, StringKey> = {
   q4: 'app.matrix.cell.q4.label',
 };
 
-const DEFAULT_COLOR: Record<QuadrantKey, string> = {
-  q1: tokens.color.q1,
-  q2: tokens.color.q2,
-  q3: tokens.color.q3,
-  q4: tokens.color.q4,
-};
-
 export function AppearancePanel(): ReactNode {
   const t = useT();
+  const scheme = useAppearanceStore((s) => s.scheme);
   const overrides = useAppearanceStore((s) => s.overrides);
+  const setScheme = useAppearanceStore((s) => s.setScheme);
   const setColor = useAppearanceStore((s) => s.setColor);
   const clearColor = useAppearanceStore((s) => s.clearColor);
+  const defaults = colorsForScheme(scheme);
 
   const onColorChange = (key: QuadrantKey) => (e: ChangeEvent<HTMLInputElement>) => {
     void setColor(key, e.currentTarget.value);
@@ -49,6 +39,10 @@ export function AppearancePanel(): ReactNode {
 
   const onReset = (key: QuadrantKey) => (): void => {
     void clearColor(key);
+  };
+
+  const onThemeChange = (next: ColorScheme) => (): void => {
+    void setScheme(next);
   };
 
   return (
@@ -62,10 +56,28 @@ export function AppearancePanel(): ReactNode {
           {t('app.options.appearance.theme')}
         </legend>
         <label className="emt-appearance-panel__theme-option">
-          <input type="radio" name="theme" value="dark" checked readOnly disabled />
+          <input
+            type="radio"
+            name="theme"
+            value="dark"
+            data-field="theme-dark"
+            checked={scheme === 'dark'}
+            onChange={onThemeChange('dark')}
+          />
           <span>{t('app.options.appearance.theme.dark')}</span>
         </label>
-        <p className="emt-appearance-panel__note">{t('app.options.appearance.theme.locked')}</p>
+        <label className="emt-appearance-panel__theme-option">
+          <input
+            type="radio"
+            name="theme"
+            value="light"
+            data-field="theme-light"
+            checked={scheme === 'light'}
+            onChange={onThemeChange('light')}
+          />
+          <span>{t('app.options.appearance.theme.light')}</span>
+        </label>
+        <p className="emt-appearance-panel__note">{t('app.options.appearance.theme.hint')}</p>
       </fieldset>
       <fieldset className="emt-appearance-panel__quadrants" data-section="quadrants">
         <legend className="emt-appearance-panel__legend">
@@ -74,7 +86,7 @@ export function AppearancePanel(): ReactNode {
         <ul className="emt-appearance-panel__list">
           {QUADRANT_KEYS.map((key) => {
             const override = overrides[key];
-            const value = override ?? DEFAULT_COLOR[key];
+            const value = override ?? defaults[key];
             return (
               <li key={key} className="emt-appearance-panel__row" data-quadrant={key}>
                 <span className="emt-appearance-panel__name">{t(LABEL_KEY[key])}</span>

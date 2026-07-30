@@ -25,7 +25,7 @@ import { I18nProvider } from './i18n/provider.js';
 import { FirstRun } from './onboarding/FirstRun.js';
 import { Router } from './routes/Router.js';
 import { Routes } from './routes/Routes.js';
-import { useAppearanceOverrides, useAppearanceStore } from './state/appearance.js';
+import { useAppearanceOverrides, useAppearanceStore, useColorScheme } from './state/appearance.js';
 import { useDefaultsStore } from './state/defaults.js';
 import { ConflictResolverHost } from './views/conflict/ConflictResolverHost.js';
 
@@ -39,12 +39,13 @@ export function App(): ReactNode {
       }),
   );
   const overrides = useAppearanceOverrides();
+  const colorScheme = useColorScheme();
   useEffect(() => {
     void useAppearanceStore.getState().load();
     void useDefaultsStore.getState().load();
   }, []);
   return (
-    <ThemeProvider colorOverrides={overrides}>
+    <ThemeProvider colorScheme={colorScheme} colorOverrides={overrides}>
       <QueryClientProvider client={queryClient}>
         <SnackbarProvider>
           <FirstRun />

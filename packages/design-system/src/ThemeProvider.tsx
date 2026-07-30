@@ -2,7 +2,7 @@ import { useEffect, useMemo, type CSSProperties, type ReactNode } from 'react';
 
 import { COMPONENT_CSS } from './components.js';
 import { RESET_CSS } from './reset.js';
-import { tokens } from './tokens.js';
+import { colorsForScheme, tokens, type ColorScheme } from './tokens.js';
 
 const STYLE_ELEMENT_ID = 'emt-theme-reset';
 let mountCount = 0;
@@ -35,20 +35,24 @@ export interface QuadrantColorOverrides {
   q4?: string;
 }
 
-function buildThemeVariables(overrides: QuadrantColorOverrides | undefined): CSSProperties {
+function buildThemeVariables(
+  scheme: ColorScheme,
+  overrides: QuadrantColorOverrides | undefined,
+): CSSProperties {
+  const palette = colorsForScheme(scheme);
   const vars: Record<string, string | number> = {
-    colorScheme: 'dark',
-    '--color-bg': tokens.color.bg,
-    '--color-surface': tokens.color.surface,
-    '--color-surface-elevated': tokens.color.surfaceElevated,
-    '--color-text-primary': tokens.color.textPrimary,
-    '--color-text-secondary': tokens.color.textSecondary,
-    '--color-accent': tokens.color.accent,
-    '--color-q1': overrides?.q1 ?? tokens.color.q1,
-    '--color-q2': overrides?.q2 ?? tokens.color.q2,
-    '--color-q3': overrides?.q3 ?? tokens.color.q3,
-    '--color-q4': overrides?.q4 ?? tokens.color.q4,
-    '--color-error': tokens.color.error,
+    colorScheme: scheme,
+    '--color-bg': palette.bg,
+    '--color-surface': palette.surface,
+    '--color-surface-elevated': palette.surfaceElevated,
+    '--color-text-primary': palette.textPrimary,
+    '--color-text-secondary': palette.textSecondary,
+    '--color-accent': palette.accent,
+    '--color-q1': overrides?.q1 ?? palette.q1,
+    '--color-q2': overrides?.q2 ?? palette.q2,
+    '--color-q3': overrides?.q3 ?? palette.q3,
+    '--color-q4': overrides?.q4 ?? palette.q4,
+    '--color-error': palette.error,
 
     '--space-xs': tokens.space.xs,
     '--space-sm': tokens.space.sm,
@@ -108,22 +112,34 @@ function buildThemeVariables(overrides: QuadrantColorOverrides | undefined): CSS
 export interface ThemeProviderProps {
   children: ReactNode;
   /**
+   * Color scheme. Defaults to dark (command-deck). Light uses a
+   * separate AA-tuned palette for surfaces and quadrant hues.
+   */
+  colorScheme?: ColorScheme;
+  /**
    * Optional per-quadrant color overrides. Undefined keys fall back
-   * to the design-system tokens — assigning a value swaps the
+   * to the active scheme's palette — assigning a value swaps the
    * matching CSS custom property (`--color-q1` etc.) and the matrix /
    * quadrant surfaces pick it up immediately (no reload).
    */
   colorOverrides?: QuadrantColorOverrides;
 }
 
-export function ThemeProvider({ children, colorOverrides }: ThemeProviderProps): ReactNode {
-  const style = useMemo(() => buildThemeVariables(colorOverrides), [colorOverrides]);
+export function ThemeProvider({
+  children,
+  colorScheme = 'dark',
+  colorOverrides,
+}: ThemeProviderProps): ReactNode {
+  const style = useMemo(
+    () => buildThemeVariables(colorScheme, colorOverrides),
+    [colorScheme, colorOverrides],
+  );
   useEffect(() => {
     attachReset();
     return detachReset;
   }, []);
   return (
-    <div data-emt-theme="dark" style={style}>
+    <div data-emt-theme={colorScheme} style={style}>
       {children}
     </div>
   );

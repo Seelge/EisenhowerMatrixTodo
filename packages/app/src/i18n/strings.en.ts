@@ -129,7 +129,9 @@ export const strings = {
   'app.options.account.signOut': 'Sign out',
   'app.options.appearance.theme': 'Theme',
   'app.options.appearance.theme.dark': 'Dark',
-  'app.options.appearance.theme.locked': 'Light theme will return in a later release.',
+  'app.options.appearance.theme.light': 'Light',
+  'app.options.appearance.theme.hint':
+    'Dark is the default command-deck look. Light uses deeper neon hues for contrast on pale surfaces.',
   'app.options.appearance.quadrants': 'Quadrant colors',
   'app.options.appearance.reset': 'Reset',
   'app.options.defaults.newTaskQuadrant': 'Default quadrant for new tasks',

@@ -6,7 +6,7 @@
 :root {
   color-scheme: dark;
 
-  /* Color */
+  /* Color (dark default — ThemeProvider overrides per scheme) */
   --color-bg: #0a0e14;
   --color-surface: #121821;
   --color-surface-elevated: #1a2230;
