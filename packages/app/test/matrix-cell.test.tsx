@@ -23,6 +23,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { I18nProvider } from '../src/i18n/provider.tsx';
 import { useCreateTask } from '../src/queries/tasks.ts';
 import { __resetBackendsCacheForTesting, getBackends } from '../src/state/backends.ts';
+import { useDefaultsStore } from '../src/state/defaults.ts';
 import { MatrixCell } from '../src/views/matrix/MatrixCell.tsx';
 
 import { renderWithQueryClient } from './query-render.tsx';
@@ -56,12 +57,24 @@ describe('MatrixCell — Step 5.3 per-cell task list', () => {
   beforeEach(() => {
     globalThis.indexedDB = new IDBFactory();
     __resetBackendsCacheForTesting();
+    useDefaultsStore.setState({
+      loaded: true,
+      newTaskQuadrant: 'Q1',
+      sortBy: 'dueDate',
+      hideCompleted: true,
+    });
   });
 
   afterEach(() => {
     teardown?.();
     teardown = undefined;
     __resetBackendsCacheForTesting();
+    useDefaultsStore.setState({
+      loaded: false,
+      newTaskQuadrant: 'Q1',
+      sortBy: 'dueDate',
+      hideCompleted: true,
+    });
   });
 
   it('renders only its own quadrant tasks, sorted by createdAt asc', async () => {
@@ -193,5 +206,52 @@ describe('MatrixCell — Step 5.3 per-cell task list', () => {
     } finally {
       (adapter as unknown as { list: typeof adapter.list }).list = original;
     }
+  });
+
+  it('hides completed tasks by default and shows them when hideCompleted is off', async () => {
+    const { registry } = await getBackends();
+    const adapter = registry.list()[0]!;
+    await adapter.create({ ...DRAFT, title: 'open-one', quadrant: 'Q2', status: 'open' });
+    const done = await adapter.create({
+      ...DRAFT,
+      title: 'done-one',
+      quadrant: 'Q2',
+      status: 'done',
+    });
+    void done;
+
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <MatrixCell quadrant="Q2" />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+
+    await waitFor(() => container.querySelectorAll('.emt-task-card').length === 1);
+    expect(cardTitles(container)).toEqual(['open-one']);
+
+    useDefaultsStore.setState({ hideCompleted: false });
+    await waitFor(() => container.querySelectorAll('.emt-task-card').length === 2);
+    expect(cardTitles(container)).toContain('done-one');
+  });
+
+  it('shows empty note when every task is hidden as completed', async () => {
+    const { registry } = await getBackends();
+    const adapter = registry.list()[0]!;
+    await adapter.create({ ...DRAFT, title: 'done-only', quadrant: 'Q2', status: 'done' });
+
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <MatrixCell quadrant="Q2" />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+
+    await waitFor(
+      () =>
+        container.querySelector<HTMLElement>('[data-task-count="0"]') !== null &&
+        container.querySelector('.emt-matrix__cell-empty') !== null,
+    );
+    expect(container.querySelectorAll('.emt-task-card').length).toBe(0);
   });
 });

@@ -12,6 +12,7 @@
  * refetches the cell's list.
  */
 import 'fake-indexeddb/auto';
+import { SnackbarProvider } from '@emt/design-system';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { IDBFactory } from 'fake-indexeddb';
 import { act } from 'react';
@@ -161,10 +162,12 @@ describe('QuickComposer — Step 5.8', () => {
       });
       const { container, unmount } = await renderToContainer(
         <QueryClientProvider client={client}>
-          <I18nProvider>
-            <MatrixCell quadrant="Q1" />
-            <QuickComposer open={true} onClose={() => {}} defaultQuadrant="Q1" />
-          </I18nProvider>
+          <SnackbarProvider>
+            <I18nProvider>
+              <MatrixCell quadrant="Q1" />
+              <QuickComposer open={true} onClose={() => {}} defaultQuadrant="Q1" />
+            </I18nProvider>
+          </SnackbarProvider>
         </QueryClientProvider>,
       );
       teardown = () => {

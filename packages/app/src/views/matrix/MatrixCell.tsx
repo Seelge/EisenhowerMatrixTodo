@@ -25,7 +25,7 @@
  */
 import { useDroppable } from '@dnd-kit/core';
 import type { Quadrant } from '@emt/backend-core';
-import { ErrorBanner, Glow, Skeleton, type GlowColor } from '@emt/design-system';
+import { EmptyNote, ErrorBanner, Glow, Skeleton, type GlowColor } from '@emt/design-system';
 import { motion } from 'framer-motion';
 import { useCallback, useEffect, useMemo, type ReactNode } from 'react';
 
@@ -33,17 +33,16 @@ import { useT } from '../../i18n/provider.js';
 import type { StringKey } from '../../i18n/strings.en.js';
 import { useClearTaskRanks, useTaskOrder } from '../../queries/task-order.js';
 import { useTasks } from '../../queries/tasks.js';
-import { useSortBy } from '../../state/defaults.js';
+import { useHideCompleted, useSortBy } from '../../state/defaults.js';
 import { taskOrderKey, type TaskOrderMap } from '../../state/task-order.js';
 import { useActiveTagFilter } from '../tags/tag-filter-store.js';
 import { filterTasksByTag } from '../tags/tag-helpers.js';
 import { usePinchHighlight } from '../zoom/highlight.js';
 import { quadrantLayoutId } from '../zoom/ZoomController.js';
 
-
 import type { DroppableCellData } from './dnd.js';
 import { ReorderHint } from './ReorderHint.js';
-import { refsForReset, sortTasks } from './sort.js';
+import { filterCompletedTasks, refsForReset, sortTasks } from './sort.js';
 import { TaskCard } from './TaskCard.js';
 
 const EMPTY_RANKS: TaskOrderMap = new Map();
@@ -86,12 +85,14 @@ export function MatrixCell({ quadrant }: MatrixCellProps): ReactNode {
 
   const ranks = orderQuery.data ?? EMPTY_RANKS;
   const sortBy = useSortBy();
+  const hideCompleted = useHideCompleted();
   const activeTag = useActiveTagFilter();
   const tasks = useMemo(() => {
     if (!query.data) return undefined;
-    const filtered = filterTasksByTag(query.data, activeTag);
-    return sortTasks(filtered, ranks, sortBy);
-  }, [query.data, ranks, sortBy, activeTag]);
+    const tagged = filterTasksByTag(query.data, activeTag);
+    const visible = filterCompletedTasks(tagged, hideCompleted);
+    return sortTasks(visible, ranks, sortBy);
+  }, [query.data, ranks, sortBy, activeTag, hideCompleted]);
 
   // Skeleton count tracks the last known task count so a refetch of a
   // populated cell doesn't collapse from N cards → 2 placeholders → N
@@ -166,6 +167,9 @@ export function MatrixCell({ quadrant }: MatrixCellProps): ReactNode {
           {tasks?.map((task) => (
             <TaskCard key={task.id} task={task} />
           ))}
+          {!query.isPending && !query.isError && tasks !== undefined && tasks.length === 0 && (
+            <EmptyNote className="emt-matrix__cell-empty">{t('app.quadrant.empty')}</EmptyNote>
+          )}
         </div>
       </Glow>
     </motion.div>

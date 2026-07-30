@@ -46,13 +46,13 @@ import { useSetTaskRank, useTaskOrder } from '../../queries/task-order.js';
 import { useTasks, useUpdateTask } from '../../queries/tasks.js';
 import type { ViewState } from '../../routes/contract.js';
 import { useBusyStore } from '../../state/busy.js';
-import { useSortBy } from '../../state/defaults.js';
+import { useHideCompleted, useSortBy } from '../../state/defaults.js';
 import { taskOrderKey, type TaskOrderMap } from '../../state/task-order.js';
 import { useViewStateStore } from '../../state/view-state.js';
 import { createDragEndHandler } from '../matrix/dnd.js';
 import { QuickComposer } from '../matrix/QuickComposer.js';
 import { ReorderHint } from '../matrix/ReorderHint.js';
-import { sortTasks } from '../matrix/sort.js';
+import { filterCompletedTasks, sortTasks } from '../matrix/sort.js';
 import { TaskCard } from '../matrix/TaskCard.js';
 import { SettingsButton } from '../options/SettingsButton.js';
 import { SearchButton } from '../search/SearchButton.js';
@@ -135,11 +135,13 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
   const orderQuery = useTaskOrder();
   const ranks = orderQuery.data ?? EMPTY_RANKS;
   const sortBy = useSortBy();
+  const hideCompleted = useHideCompleted();
   const activeTag = useActiveTagFilter();
   const tasks = useMemo(() => {
     if (!query.data) return undefined;
-    return sortTasks(filterTasksByTag(query.data, activeTag), ranks, sortBy);
-  }, [query.data, ranks, sortBy, activeTag]);
+    const tagged = filterTasksByTag(query.data, activeTag);
+    return sortTasks(filterCompletedTasks(tagged, hideCompleted), ranks, sortBy);
+  }, [query.data, ranks, sortBy, activeTag, hideCompleted]);
   // Unfiltered list feeds the filter bar so chips stay visible while a
   // filter is active (otherwise the bar would collapse to empty).
   const filterSource = query.data;

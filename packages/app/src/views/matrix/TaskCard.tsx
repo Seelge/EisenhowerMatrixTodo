@@ -42,6 +42,12 @@ import { TaskCardMenu } from './TaskCardMenu.js';
 
 import './task-card.css';
 
+export interface TaskCardProps {
+  task: Task;
+  /** Forwarded to TaskCardMenu for delete-undo tests. */
+  snackbarDuration?: number;
+}
+
 const dateFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
 const timeFormatter = new Intl.DateTimeFormat(undefined, { timeStyle: 'short' });
 
@@ -84,11 +90,7 @@ function formatTimePart(dueDate: string, dueTime: string): string | undefined {
   return timeFormatter.format(d);
 }
 
-export interface TaskCardProps {
-  task: Task;
-}
-
-export function TaskCard({ task }: TaskCardProps): ReactNode {
+export function TaskCard({ task, snackbarDuration }: TaskCardProps): ReactNode {
   const t = useT();
   // Highlight while search is open and this card matches (TODO 6).
   // Selector keeps the re-render surface to open/match changes only.
@@ -207,7 +209,10 @@ export function TaskCard({ task }: TaskCardProps): ReactNode {
           </span>
         )}
       </button>
-      <TaskCardMenu task={task} />
+      <TaskCardMenu
+        task={task}
+        {...(snackbarDuration !== undefined ? { snackbarDuration } : {})}
+      />
     </motion.div>
   );
 }

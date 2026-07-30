@@ -230,6 +230,10 @@
   outline: 0;
 }
 
+.emt-task-card__menu-item--danger {
+  color: var(--color-error);
+}
+
 /*
  * Step 12.5 — narrow-viewport readability. The view1 cells are barely
  * a third of a 360 px screen wide; the default open-button padding and

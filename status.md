@@ -4,41 +4,40 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 ## Current activity
 
-**Phase:** Phase 16 — Completed-task hygiene & card actions.
+**Phase:** Phase 16 — Completed-task hygiene & card actions — **done**.
 
-**Previous (this session):** Phase 15 — Thin neon borders (glow halos → 1px neon lines). Landed as its own commit before Phase 16.
+### What landed this session
 
-### Phase 16 goal
+**Phase 15** (`e66b1f3`): thin neon borders (soft glow → 1px neon lines).
 
-Done tasks stay in matrix cells forever (strikethrough only), so real use fills the board with noise. Card kebab is Move-only — Complete/Delete require opening view3.
-
-Ship:
-
-1. **`hideCompleted` default** (default **on**) in `useDefaultsStore` / meta IDB; Options → Defaults toggle.
-2. **Matrix + view2** filter out `status === 'done'` when hide is on (after tag filter). Search still finds done tasks.
-3. **Empty copy** in matrix cells when zero *visible* tasks (reuse muted empty note).
-4. **Card menu:** Mark complete / Reopen, Delete (5s undo snackbar + optimistic cache, same as view3), existing Move to Q*.
-5. Unit tests for filter helper, defaults persistence, menu actions.
+**Phase 16:**
+1. `hideCompleted` default **on** in `useDefaultsStore` / meta IDB `defaults:hideCompleted`.
+2. Options → Defaults checkbox + hint.
+3. Matrix + view2 filter via `filterCompletedTasks` (after tag filter). Search unchanged (still finds done tasks).
+4. Matrix cell empty note when zero visible tasks.
+5. Card kebab: Mark complete / Reopen, Delete (optimistic + 5s undo snackbar), Move to Q*.
+6. Tests: sort filter, defaults persistence, menu complete/delete, matrix-cell hide.
 
 ### Privacy / API
 
-- No new network. Pref lives in local meta IDB only.
-- Delete/complete reuse existing adapter mutations.
-- No telemetry.
+- No new network. Pref is local meta IDB only.
+- Complete/delete reuse existing adapter mutations.
+- No telemetry, no external APIs.
+- `rewrite-email.sh` remains untracked.
 
 ### Done when
 
-- [ ] Hide completed default + Defaults panel
-- [ ] Matrix/view2 filter + empty state
-- [ ] Card menu Complete/Reopen/Delete
-- [ ] Unit tests green
-- [ ] Privacy audit clean → commit + push
+- [x] Hide completed default + Defaults panel
+- [x] Matrix/view2 filter + empty state
+- [x] Card menu Complete/Reopen/Delete
+- [x] Unit tests green (515)
+- [x] Privacy audit clean → commit + push
 
 ## Earlier
 
-- Phase 15: thin neon borders (tokens, Glow, FAB/picker/edges/priority).
-- Phase 14: tags surface — `2a3f48c`.
-- Phase 13: search, sync chip, composer, swipe — `8379f06`.
+- Phase 15: neon borders — `e66b1f3`
+- Phase 14: tags — `2a3f48c`
+- Phase 13: search/sync/composer/swipe — `8379f06`
 
 ## Pending external actions (user)
 
@@ -46,9 +45,9 @@ Step 11.6 / v0.1.0 still needs real-device PWA screenshots + signed tag.
 
 ## Open TODOs
 
-`design-input-new.md`: TODO 1 (device smoke), 10 (light mode), 11 (recurrence), 14 (field-level conflict), 15 (visual regression). Tag autocomplete / global rename-delete deferred. Neon design-input §4.2 wording may still mention soft halos — update when convenient.
+`design-input-new.md`: TODO 1 (device smoke), 10 (light mode), 11 (recurrence), 14 (field-level conflict), 15 (visual regression). Tag autocomplete / global rename-delete. design-input §4.2 still mentions soft halos (docs drift).
 
 ## How to resume
 
 1. Read this file + `design-input-new.md`.
-2. Finish Phase 16 checklist above if incomplete; else light mode design or 11.6.
+2. Next: light mode design, tag intelligence, visual regression smoke, or ship 11.6.

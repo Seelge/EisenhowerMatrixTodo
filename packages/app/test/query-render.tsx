@@ -5,6 +5,7 @@
  * cache entries from prior tests. Retries are disabled so a failing
  * mutation surfaces synchronously.
  */
+import { SnackbarProvider } from '@emt/design-system';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
@@ -25,8 +26,12 @@ export function createTestQueryClient(): QueryClient {
 
 export async function renderWithQueryClient(node: ReactNode): Promise<QueryRenderHandle> {
   const client = createTestQueryClient();
+  // SnackbarProvider is always present in App; TaskCardMenu (Phase 16)
+  // needs it for delete+undo, so tests share the same shell.
   const { container, unmount } = await renderToContainer(
-    <QueryClientProvider client={client}>{node}</QueryClientProvider>,
+    <QueryClientProvider client={client}>
+      <SnackbarProvider>{node}</SnackbarProvider>
+    </QueryClientProvider>,
   );
   return {
     container,

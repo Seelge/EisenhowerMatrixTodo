@@ -1,7 +1,7 @@
 /**
- * DefaultsPanel — view4 / Defaults group (Step 9.5).
+ * DefaultsPanel — view4 / Defaults group (Step 9.5 + Phase 16).
  *
- * Two settings:
+ * Settings:
  *  - **Default quadrant for new tasks**: where view1's FAB lands a
  *    new card when the user doesn't manually pick a cell. Reads the
  *    same `useDefaultsStore` that `MatrixView` feeds into
@@ -10,6 +10,8 @@
  *    task has no manual rank — `dueDate` (the historical default),
  *    `createdAt`, or `title`. Both matrix cells and view2 read this
  *    via `useSortBy()`.
+ *  - **Hide completed**: when on (default), matrix / view2 omit done
+ *    tasks. Search still finds them.
  *
  * Values persist to the shared meta IDB store; reload picks them up
  * via `useDefaultsStore.load()` from `App.tsx`.
@@ -42,8 +44,10 @@ export function DefaultsPanel(): ReactNode {
   const t = useT();
   const newTaskQuadrant = useDefaultsStore((s) => s.newTaskQuadrant);
   const sortBy = useDefaultsStore((s) => s.sortBy);
+  const hideCompleted = useDefaultsStore((s) => s.hideCompleted);
   const setNewTaskQuadrant = useDefaultsStore((s) => s.setNewTaskQuadrant);
   const setSortBy = useDefaultsStore((s) => s.setSortBy);
+  const setHideCompleted = useDefaultsStore((s) => s.setHideCompleted);
 
   const onQuadrantChange = (e: ChangeEvent<HTMLInputElement>): void => {
     void setNewTaskQuadrant(e.currentTarget.value as Quadrant);
@@ -51,6 +55,10 @@ export function DefaultsPanel(): ReactNode {
 
   const onSortChange = (e: ChangeEvent<HTMLInputElement>): void => {
     void setSortBy(e.currentTarget.value as SortKey);
+  };
+
+  const onHideCompletedChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    void setHideCompleted(e.currentTarget.checked);
   };
 
   return (
@@ -88,6 +96,20 @@ export function DefaultsPanel(): ReactNode {
             <span>{t(SORT_LABEL[s])}</span>
           </label>
         ))}
+      </fieldset>
+      <fieldset className="emt-defaults-panel__section" data-section="hide-completed">
+        <legend className="emt-defaults-panel__legend">
+          {t('app.options.defaults.hideCompleted')}
+        </legend>
+        <label className="emt-defaults-panel__option" data-field-wrap="hide-completed">
+          <input
+            type="checkbox"
+            checked={hideCompleted}
+            onChange={onHideCompletedChange}
+            data-field="hide-completed"
+          />
+          <span>{t('app.options.defaults.hideCompleted.hint')}</span>
+        </label>
       </fieldset>
     </div>
   );

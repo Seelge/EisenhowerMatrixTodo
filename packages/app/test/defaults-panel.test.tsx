@@ -40,14 +40,24 @@ describe('DefaultsPanel — Step 9.5', () => {
   beforeEach(() => {
     globalThis.indexedDB = new IDBFactory();
     __resetBackendsCacheForTesting();
-    useDefaultsStore.setState({ loaded: false, newTaskQuadrant: 'Q1', sortBy: 'dueDate' });
+    useDefaultsStore.setState({
+      loaded: false,
+      newTaskQuadrant: 'Q1',
+      sortBy: 'dueDate',
+      hideCompleted: true,
+    });
   });
 
   afterEach(() => {
     teardown?.();
     teardown = undefined;
     __resetBackendsCacheForTesting();
-    useDefaultsStore.setState({ loaded: false, newTaskQuadrant: 'Q1', sortBy: 'dueDate' });
+    useDefaultsStore.setState({
+      loaded: false,
+      newTaskQuadrant: 'Q1',
+      sortBy: 'dueDate',
+      hideCompleted: true,
+    });
   });
 
   it('selects Q3 and the FAB pre-selection follows', async () => {
@@ -88,10 +98,42 @@ describe('DefaultsPanel — Step 9.5', () => {
 
     // Reset the in-memory store, reload from the (still-populated)
     // meta IDB — value rehydrates.
-    useDefaultsStore.setState({ loaded: false, newTaskQuadrant: 'Q1', sortBy: 'dueDate' });
+    useDefaultsStore.setState({
+      loaded: false,
+      newTaskQuadrant: 'Q1',
+      sortBy: 'dueDate',
+      hideCompleted: true,
+    });
     await act(async () => {
       await useDefaultsStore.getState().load();
     });
     expect(useDefaultsStore.getState().sortBy).toBe('title');
+  });
+
+  it('toggles hide completed off and persists across reloads', async () => {
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <DefaultsPanel />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+    const checkbox = container.querySelector<HTMLInputElement>('[data-field="hide-completed"]')!;
+    expect(checkbox.checked).toBe(true);
+
+    await act(async () => {
+      checkbox.click();
+    });
+    await waitForAsync(() => useDefaultsStore.getState().hideCompleted === false);
+
+    useDefaultsStore.setState({
+      loaded: false,
+      newTaskQuadrant: 'Q1',
+      sortBy: 'dueDate',
+      hideCompleted: true,
+    });
+    await act(async () => {
+      await useDefaultsStore.getState().load();
+    });
+    expect(useDefaultsStore.getState().hideCompleted).toBe(false);
   });
 });

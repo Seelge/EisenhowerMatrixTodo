@@ -119,6 +119,12 @@
   border-radius: var(--radius-md);
 }
 
+.emt-matrix__cell-empty {
+  margin-block: var(--space-sm);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
 /* TODO 13 — one-shot reorder discoverability nudge. */
 .emt-reorder-hint {
   display: flex;

@@ -13,7 +13,12 @@ import type { BackendId, Task, TaskId } from '@emt/backend-core';
 import { describe, expect, it } from 'vitest';
 
 import { taskOrderKey, type TaskOrderMap } from '../src/state/task-order.ts';
-import { compareTasks, refsForReset, sortTasks } from '../src/views/matrix/sort.ts';
+import {
+  compareTasks,
+  filterCompletedTasks,
+  refsForReset,
+  sortTasks,
+} from '../src/views/matrix/sort.ts';
 
 const BACKEND_ID = 'local' as BackendId;
 
@@ -109,5 +114,12 @@ describe('matrix sort — Step 5.7', () => {
       { backendId: BACKEND_ID, taskId: 'a' as TaskId },
       { backendId: BACKEND_ID, taskId: 'b' as TaskId },
     ]);
+  });
+
+  it('filterCompletedTasks drops done tasks only when hide is on', () => {
+    const open = task('open', { status: 'open' });
+    const done = task('done', { status: 'done' });
+    expect(filterCompletedTasks([open, done], true).map((t) => t.id)).toEqual(['open']);
+    expect(filterCompletedTasks([open, done], false).map((t) => t.id)).toEqual(['open', 'done']);
   });
 });

@@ -133,11 +133,11 @@ describe('TaskCardMenu (Step 5.6)', () => {
     const card = container.querySelector<HTMLElement>('.emt-task-card')!;
     expect(card.contains(menu)).toBe(false);
     expect(menu.parentElement).toBe(document.body);
-    // It still carries the full item list.
-    expect(menu.querySelectorAll('[role="menuitem"]')).toHaveLength(3);
+    // Complete + Delete + 3 Move targets.
+    expect(menu.querySelectorAll('[role="menuitem"]')).toHaveLength(5);
   });
 
-  it('opens via click and lists every quadrant except the current one', async () => {
+  it('opens via click with Complete, Delete, and every other quadrant', async () => {
     const { container, unmount } = await renderWithQueryClient(
       <I18nProvider>
         <DndContext>
@@ -156,10 +156,15 @@ describe('TaskCardMenu (Step 5.6)', () => {
     const menu = document.querySelector<HTMLElement>('[role="menu"]')!;
     expect(menu).not.toBeNull();
     const items = menu.querySelectorAll<HTMLButtonElement>('[role="menuitem"]');
-    const quadrants = Array.from(items).map((el) => el.dataset['quadrant']);
+    expect(items).toHaveLength(5);
+    expect(items[0]!.dataset['action']).toBe('complete');
+    expect(items[0]!.textContent).toBe(strings['app.task.menu.complete']);
+    expect(items[1]!.dataset['action']).toBe('delete');
+    const quadrants = Array.from(items)
+      .map((el) => el.dataset['quadrant'])
+      .filter((q): q is string => q !== undefined);
     // Q2 is the task's current quadrant — the menu omits it.
     expect(quadrants).toEqual(['Q1', 'Q3', 'Q4']);
-    expect(items[0]!.textContent).toBe(strings['app.task.menu.moveTo.q1']);
   });
 
   it('opens via the keyboard menu-button pattern (Enter / ArrowDown)', async () => {
@@ -179,10 +184,9 @@ describe('TaskCardMenu (Step 5.6)', () => {
     });
 
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
-    // Focus has moved to the first menu item — verify via the focus
-    // ring contract: menu open + activeElement is a menuitem button.
+    // Focus has moved to the first menu item (Complete).
     await waitForAsync(() => document.activeElement?.getAttribute('role') === 'menuitem');
-    expect((document.activeElement as HTMLButtonElement).dataset['quadrant']).toBe('Q1');
+    expect((document.activeElement as HTMLButtonElement).dataset['action']).toBe('complete');
   });
 
   it('arrow keys wrap focus and Esc restores focus to the trigger', async () => {
@@ -201,12 +205,17 @@ describe('TaskCardMenu (Step 5.6)', () => {
     await waitForAsync(() => document.activeElement?.getAttribute('role') === 'menuitem');
 
     const focused = (): HTMLButtonElement => document.activeElement as HTMLButtonElement;
-    expect(focused().dataset['quadrant']).toBe('Q1');
+    expect(focused().dataset['action']).toBe('complete');
 
     await act(async () => {
       pressKey(focused(), 'ArrowDown');
     });
-    expect(focused().dataset['quadrant']).toBe('Q3');
+    expect(focused().dataset['action']).toBe('delete');
+
+    await act(async () => {
+      pressKey(focused(), 'ArrowDown');
+    });
+    expect(focused().dataset['quadrant']).toBe('Q1');
 
     await act(async () => {
       pressKey(focused(), 'End');
@@ -217,7 +226,7 @@ describe('TaskCardMenu (Step 5.6)', () => {
     await act(async () => {
       pressKey(focused(), 'ArrowDown');
     });
-    expect(focused().dataset['quadrant']).toBe('Q1');
+    expect(focused().dataset['action']).toBe('complete');
 
     await act(async () => {
       pressKey(focused(), 'ArrowUp');
@@ -232,7 +241,78 @@ describe('TaskCardMenu (Step 5.6)', () => {
     await waitForAsync(() => document.activeElement === trigger);
   });
 
-  it('activating a menu item moves the task through the adapter', async () => {
+  it('Mark complete patches status through the adapter', async () => {
+    const { registry } = await getBackends();
+    const adapter = registry.list()[0]!;
+    const created = await adapter.create({ ...DRAFT, quadrant: 'Q2', status: 'open' });
+
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <DndContext>
+          <TaskCard task={created} />
+        </DndContext>
+      </I18nProvider>,
+    );
+    teardown = unmount;
+
+    const trigger = container.querySelector<HTMLButtonElement>('.emt-task-card__menu-button')!;
+    await act(async () => {
+      trigger.click();
+    });
+    const item = document.querySelector<HTMLButtonElement>('[data-action="complete"]')!;
+    await act(async () => {
+      item.click();
+    });
+
+    await waitForAsync(async () => {
+      const fresh = await adapter.get(created.id);
+      return fresh?.status === 'done';
+    });
+    expect(document.querySelector('[role="menu"]')).toBeNull();
+  });
+
+  it('Delete shows undo snackbar; Undo keeps the task', async () => {
+    const { registry } = await getBackends();
+    const adapter = registry.list()[0]!;
+    const created = await adapter.create({ ...DRAFT, quadrant: 'Q2' });
+    const deleteSpy = vi.spyOn(adapter, 'delete');
+
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <DndContext>
+          <TaskCard task={created} snackbarDuration={10_000} />
+        </DndContext>
+      </I18nProvider>,
+    );
+    teardown = unmount;
+
+    const trigger = container.querySelector<HTMLButtonElement>('.emt-task-card__menu-button')!;
+    await act(async () => {
+      trigger.click();
+    });
+    const del = document.querySelector<HTMLButtonElement>('[data-action="delete"]')!;
+    await act(async () => {
+      del.click();
+    });
+
+    expect(document.querySelector('[role="menu"]')).toBeNull();
+    await waitForAsync(
+      () => document.body.textContent?.includes(strings['app.task.delete.snackbar']) === true,
+    );
+    expect(deleteSpy).not.toHaveBeenCalled();
+
+    const undo = Array.from(document.querySelectorAll('button')).find(
+      (b) => b.textContent === strings['app.task.delete.undo'],
+    );
+    expect(undo).toBeDefined();
+    await act(async () => {
+      undo!.click();
+    });
+    expect(deleteSpy).not.toHaveBeenCalled();
+    expect(await adapter.get(created.id)).not.toBeNull();
+  });
+
+  it('activating a Move item moves the task through the adapter', async () => {
     const { registry } = await getBackends();
     const adapter = registry.list()[0]!;
     const created = await adapter.create({ ...DRAFT, quadrant: 'Q2' });

@@ -117,3 +117,16 @@ export function refsForReset(
 ): readonly { readonly backendId: BackendId; readonly taskId: TaskId }[] {
   return tasks.map((task) => ({ backendId: task.backendId, taskId: task.id }));
 }
+
+/**
+ * Phase 16 — drop completed tasks from matrix / view2 lists when the
+ * Defaults "Hide completed" pref is on. Pure so cells and tests share
+ * one path. Search and tag inventory deliberately skip this filter.
+ */
+export function filterCompletedTasks<T extends { readonly status: Task['status'] }>(
+  tasks: readonly T[],
+  hideCompleted: boolean,
+): readonly T[] {
+  if (!hideCompleted) return tasks;
+  return tasks.filter((task) => task.status !== 'done');
+}
