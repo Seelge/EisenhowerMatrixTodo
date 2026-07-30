@@ -65,7 +65,15 @@ export function TaskActions({ task, snackbarDuration }: TaskActionsProps): React
       undoLabel: t('app.task.delete.undo'),
       ...(snackbarDuration !== undefined ? { duration: snackbarDuration } : {}),
       onCommit: () => {
-        deleteTask.mutate({ id: taskId, backendId });
+        deleteTask.mutate(
+          { id: taskId, backendId },
+          {
+            onError: () => {
+              rollbackDelete();
+              snackbar.show({ message: t('app.task.delete.failed') });
+            },
+          },
+        );
       },
       onUndo: () => {
         // Restore the card and re-open view3 over the still-extant task.
@@ -84,9 +92,23 @@ export function TaskActions({ task, snackbarDuration }: TaskActionsProps): React
         data-field="delete"
         onClick={onDelete}
       >
-        {/* Trash glyph — keep inline so the surface stays SVG-free for now. */}
-        <span aria-hidden="true">🗑</span>
+        <TrashIcon />
       </IconButton>
     </div>
+  );
+}
+
+function TrashIcon(): ReactNode {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+    </svg>
   );
 }

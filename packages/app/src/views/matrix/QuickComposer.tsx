@@ -26,7 +26,13 @@
  * "panel does not fully obscure the matrix" rule from `design-input.md`.
  */
 import type { BackendId, Priority, Quadrant, Task, TaskDraft, TaskId } from '@emt/backend-core';
-import { Button, DueDatePicker, QuadrantPicker, ResponsiveSurface } from '@emt/design-system';
+import {
+  Button,
+  DueDatePicker,
+  QuadrantPicker,
+  ResponsiveSurface,
+  useSnackbar,
+} from '@emt/design-system';
 import type { Quadrant as DsQuadrant } from '@emt/design-system';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import {
@@ -93,6 +99,7 @@ export function QuickComposer({
   const t = useT();
   const queryClient = useQueryClient();
   const createTask = useCreateTask();
+  const snackbar = useSnackbar();
   const defaultPriority = useDefaultPriority();
 
   const [title, setTitle] = useState('');
@@ -174,7 +181,15 @@ export function QuickComposer({
       // mounted and its useState hooks would otherwise hold the prior
       // input.
       resetForm();
-      createTask.mutate({ draft }, { onError: rollback });
+      createTask.mutate(
+        { draft },
+        {
+          onError: () => {
+            rollback();
+            snackbar.show({ message: t('app.composer.create.failed') });
+          },
+        },
+      );
     },
     [
       title,
@@ -187,6 +202,8 @@ export function QuickComposer({
       tagsInput,
       queryClient,
       createTask,
+      snackbar,
+      t,
       close,
       resetForm,
     ],

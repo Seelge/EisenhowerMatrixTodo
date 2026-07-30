@@ -48,11 +48,18 @@ import { createPortal } from 'react-dom';
 
 import { useT } from '../../i18n/provider.js';
 import type { StringKey } from '../../i18n/strings.en.js';
-import { useDeleteTask, useUpdateTask } from '../../queries/tasks.js';
+import { useSetTaskRank, useTaskOrder } from '../../queries/task-order.js';
+import { useDeleteTask, useTasks, useUpdateTask } from '../../queries/tasks.js';
+import { useHideCompleted, useSortBy } from '../../state/defaults.js';
+import { type TaskOrderMap } from '../../state/task-order.js';
+import { useActiveTagFilter } from '../tags/tag-filter-store.js';
+import { filterTasksByTag } from '../tags/tag-helpers.js';
 
 import { applyOptimisticDelete } from './dnd.js';
+import { computeKeyboardReorderRank, filterCompletedTasks, sortTasks } from './sort.js';
 
 const ALL_QUADRANTS: readonly Quadrant[] = ['Q1', 'Q2', 'Q3', 'Q4'];
+const EMPTY_RANKS: TaskOrderMap = new Map();
 
 const MOVE_TO_KEY: Record<Quadrant, StringKey> = {
   Q1: 'app.task.menu.moveTo.q1',
@@ -64,6 +71,7 @@ const MOVE_TO_KEY: Record<Quadrant, StringKey> = {
 type MenuAction =
   | { readonly kind: 'status'; readonly next: TaskStatus }
   | { readonly kind: 'delete' }
+  | { readonly kind: 'reorder'; readonly direction: 'up' | 'down' }
   | { readonly kind: 'move'; readonly quadrant: Quadrant };
 
 export interface TaskCardMenuProps {
@@ -79,24 +87,47 @@ export function TaskCardMenu({ task, snackbarDuration }: TaskCardMenuProps): Rea
   const t = useT();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
+  const setRank = useSetTaskRank();
   const snackbar = useSnackbar();
   const queryClient = useQueryClient();
+  const quadrantTasks = useTasks(task.quadrant);
+  const orderQuery = useTaskOrder();
+  const ranks = orderQuery.data ?? EMPTY_RANKS;
+  const sortBy = useSortBy();
+  const hideCompleted = useHideCompleted();
+  const activeTag = useActiveTagFilter();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [open, setOpen] = useState(false);
 
+  const ordered = useMemo(() => {
+    if (!quadrantTasks.data) return [];
+    const tagged = filterTasksByTag(quadrantTasks.data, activeTag);
+    const visible = filterCompletedTasks(tagged, hideCompleted);
+    return sortTasks(visible, ranks, sortBy);
+  }, [quadrantTasks.data, activeTag, hideCompleted, ranks, sortBy]);
+
+  const canMoveUp = ordered.findIndex((t) => t.id === task.id) > 0;
+  const canMoveDown = (() => {
+    const idx = ordered.findIndex((t) => t.id === task.id);
+    return idx >= 0 && idx < ordered.length - 1;
+  })();
+
   const actions = useMemo((): readonly MenuAction[] => {
     const statusAction: MenuAction =
       task.status === 'done' ? { kind: 'status', next: 'open' } : { kind: 'status', next: 'done' };
+    const reorder: MenuAction[] = [];
+    if (canMoveUp) reorder.push({ kind: 'reorder', direction: 'up' });
+    if (canMoveDown) reorder.push({ kind: 'reorder', direction: 'down' });
     const moves: MenuAction[] = ALL_QUADRANTS.filter((q) => q !== task.quadrant).map(
       (quadrant) => ({
         kind: 'move',
         quadrant,
       }),
     );
-    return [statusAction, { kind: 'delete' }, ...moves];
-  }, [task.status, task.quadrant]);
+    return [statusAction, ...reorder, { kind: 'delete' }, ...moves];
+  }, [task.status, task.quadrant, canMoveUp, canMoveDown]);
 
   const close = useCallback((restoreFocus: boolean) => {
     setOpen(false);
@@ -216,11 +247,19 @@ export function TaskCardMenu({ task, snackbarDuration }: TaskCardMenuProps): Rea
         close(true);
         return;
       }
-      if (action.kind === 'status') {
-        const patch: TaskPatch = { status: action.next };
-        if (action.next === 'done') {
-          patch.completedAt = new Date().toISOString();
+      if (action.kind === 'reorder') {
+        const rank = computeKeyboardReorderRank(ordered, task, action.direction, ranks);
+        if (rank !== null) {
+          setRank.mutate({ backendId: task.backendId, taskId: task.id, rank });
         }
+        close(true);
+        return;
+      }
+      if (action.kind === 'status') {
+        const patch: TaskPatch =
+          action.next === 'done'
+            ? { status: action.next, completedAt: new Date().toISOString() }
+            : { status: action.next, completedAt: null };
         updateTask.mutate({ backendId: task.backendId, id: task.id, patch });
         close(true);
         return;
@@ -235,14 +274,34 @@ export function TaskCardMenu({ task, snackbarDuration }: TaskCardMenuProps): Rea
         undoLabel: t('app.task.delete.undo'),
         ...(snackbarDuration !== undefined ? { duration: snackbarDuration } : {}),
         onCommit: () => {
-          deleteTask.mutate({ id: taskId, backendId });
+          deleteTask.mutate(
+            { id: taskId, backendId },
+            {
+              onError: () => {
+                rollbackDelete();
+                snackbar.show({ message: t('app.task.delete.failed') });
+              },
+            },
+          );
         },
         onUndo: () => {
           rollbackDelete();
         },
       });
     },
-    [updateTask, deleteTask, snackbar, queryClient, task, t, snackbarDuration, close],
+    [
+      updateTask,
+      deleteTask,
+      setRank,
+      snackbar,
+      queryClient,
+      task,
+      t,
+      snackbarDuration,
+      close,
+      ordered,
+      ranks,
+    ],
   );
 
   const onTriggerPointerDown = useCallback((e: PointerEvent<HTMLButtonElement>) => {
@@ -253,6 +312,9 @@ export function TaskCardMenu({ task, snackbarDuration }: TaskCardMenuProps): Rea
     if (action.kind === 'status') {
       return action.next === 'done' ? t('app.task.menu.complete') : t('app.task.menu.reopen');
     }
+    if (action.kind === 'reorder') {
+      return action.direction === 'up' ? t('app.task.menu.moveUp') : t('app.task.menu.moveDown');
+    }
     if (action.kind === 'delete') return t('app.task.menu.delete');
     return t(MOVE_TO_KEY[action.quadrant]);
   };
@@ -261,6 +323,8 @@ export function TaskCardMenu({ task, snackbarDuration }: TaskCardMenuProps): Rea
     if (action.kind === 'move') return { 'data-quadrant': action.quadrant };
     if (action.kind === 'status')
       return { 'data-action': action.next === 'done' ? 'complete' : 'reopen' };
+    if (action.kind === 'reorder')
+      return { 'data-action': action.direction === 'up' ? 'move-up' : 'move-down' };
     return { 'data-action': 'delete' };
   };
 
@@ -295,7 +359,9 @@ export function TaskCardMenu({ task, snackbarDuration }: TaskCardMenuProps): Rea
                     ? `move-${action.quadrant}`
                     : action.kind === 'status'
                       ? `status-${action.next}`
-                      : 'delete'
+                      : action.kind === 'reorder'
+                        ? `reorder-${action.direction}`
+                        : 'delete'
                 }
                 ref={(el) => {
                   itemRefs.current[index] = el;

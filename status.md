@@ -4,28 +4,34 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 ## Current activity
 
-**Phase:** Phases 27–29 — **done** (committing).
+**Phase:** Phase 30 — **done** (committing). Reliability / a11y / data polish after full-project analysis.
 
-### Session summary
+### Shipped (TODOs 26–33)
 
-| Phase | Notes |
-|-------|--------|
-| 27 | `applyTaskPatch` + `null` clear on optional fields |
-| 28 | Notes Edit/Preview Markdown (safe subset, no deps) |
-| 29 | Light-theme axe e2e on matrix |
+| TODO | Notes |
+|------|--------|
+| 26 | Create/delete failure snackbars; delete-commit rolls cache back |
+| 27 | Search `useDialogBehavior`; delete undo-window copy for SR |
+| 28 | `parseExportFile` + Import (add) / Replace local |
+| 29 | `encodeEmbeddedFields` / `decodeEmbeddedFields` in backend-core |
+| 30 | Single `useTasks` list query + quadrant `select` |
+| 31 | View3 field order + clear `completedAt` on reopen |
+| 32 | Card menu Move up / Move down |
+| 33 | README honest “usable local” status |
 
 ### Privacy / API
 
-- No network/telemetry. MD preview is client-only HTML escape + subset.
+- Local-only; no network/telemetry.
+- Notes encoding is pure string helpers (no I/O).
 - `rewrite-email.sh` untracked.
 
-### Remaining open (not implementable here)
+### Remaining open (external / design)
 
-- **TODO 1** — real Android pinch smoke (human + device).
-- **TODO 11** — recurrence (design spike first).
-- **Step 11.6** — PWA screenshots + GPG release tag (user).
+- **TODO 1** — Android pinch smoke (human + device)
+- **TODO 11** — recurrence design spike
+- **Step 11.6** — PWA screenshots + GPG release tag
 
 ## How to resume
 
-1. Read this file + `design-input-new.md`.
-2. Next: recurrence design, or ship 11.6.
+1. Only external/design items remain for product TODOs.
+2. Optional next: SegmentedControl DS primitive, hide-completed chip on matrix, taskOrder in export v2.

@@ -1,21 +1,8 @@
 /**
- * DataPanel — view4 / Data group (Step 9.6).
+ * DataPanel — view4 / Data group (Step 9.6 / Phase 30).
  *
- * Three actions:
- *  - Export: downloads a JSON file matching the format documented
- *    in `packages/backend-core/src/export-format.md`. Triggers a
- *    blob URL → anchor click → cleanup.
- *  - Import: file picker → parse → `importTasks` (recreates each
- *    task on the matching backend, falling back to the default
- *    when the source backend isn't registered).
- *  - Clear local cache: deletes every task held by the `local`
- *    backend; remote backend caches stay untouched.
- *
- * The actions invalidate the React Query `['tasks']` subtree after
- * a successful mutation so the matrix / quadrant views refetch.
- *
- * Error paths surface inline via `ErrorBanner` — bad JSON, missing
- * backend, version-mismatch, etc.
+ * Actions: export JSON, import (add), replace-local-from-file, clear local.
+ * Import validates via `parseExportFile` before any writes.
  */
 import { ErrorBanner } from '@emt/design-system';
 import { useQueryClient } from '@tanstack/react-query';
@@ -29,13 +16,15 @@ import {
   clearLocalBackend,
   formatImportSummary,
   importTasks,
-  type ExportFile,
+  parseExportFile,
 } from './data-export.js';
 
 interface SummaryMessage {
   readonly kind: 'info' | 'error';
   readonly text: string;
 }
+
+type ImportMode = 'add' | 'replace';
 
 function triggerDownload(filename: string, contents: string): void {
   if (typeof window === 'undefined') return;
@@ -57,6 +46,8 @@ export function DataPanel(): ReactNode {
   const [message, setMessage] = useState<SummaryMessage | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [confirmReplace, setConfirmReplace] = useState(false);
+  const [importMode, setImportMode] = useState<ImportMode>('add');
 
   const onExport = async (): Promise<void> => {
     setBusy(true);
@@ -81,17 +72,20 @@ export function DataPanel(): ReactNode {
     if (file === undefined) return;
     setBusy(true);
     setMessage(null);
+    setConfirmReplace(false);
     try {
       const text = await file.text();
-      const parsed = JSON.parse(text) as ExportFile;
+      const parsed = parseExportFile(JSON.parse(text) as unknown);
       const { registry } = await getBackends();
       const fallback = registry.getDefault();
       if (fallback === undefined) {
         throw new Error('No default backend registered');
       }
+      const local = registry.list().find((a) => a.describe().id === 'local');
       const result = await importTasks(parsed, {
         getAdapter: (id) => registry.get(id),
         fallback,
+        ...(importMode === 'replace' && local !== undefined ? { clearBefore: local } : {}),
       });
       await queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setMessage({
@@ -105,8 +99,21 @@ export function DataPanel(): ReactNode {
       setMessage({ kind: 'error', text: (err as Error).message });
     } finally {
       setBusy(false);
+      setImportMode('add');
       if (fileInputRef.current !== null) fileInputRef.current.value = '';
     }
+  };
+
+  const pickImport = (mode: ImportMode): void => {
+    setImportMode(mode);
+    setMessage(null);
+    if (mode === 'replace') {
+      setConfirmReplace(true);
+      setConfirmClear(false);
+      return;
+    }
+    setConfirmReplace(false);
+    fileInputRef.current?.click();
   };
 
   const onClearLocal = async (): Promise<void> => {
@@ -149,11 +156,51 @@ export function DataPanel(): ReactNode {
         type="button"
         className="emt-data-panel__action"
         data-action="import"
-        onClick={() => fileInputRef.current?.click()}
+        onClick={() => pickImport('add')}
         disabled={busy}
       >
         {t('app.options.data.import')}
       </button>
+      {!confirmReplace ? (
+        <button
+          type="button"
+          className="emt-data-panel__action"
+          data-action="import-replace"
+          onClick={() => pickImport('replace')}
+          disabled={busy}
+        >
+          {t('app.options.data.importReplace')}
+        </button>
+      ) : (
+        <div className="emt-data-panel__confirm" data-confirm="import-replace" role="group">
+          <p className="emt-data-panel__confirm-text">
+            {t('app.options.data.importReplace.confirm')}
+          </p>
+          <div className="emt-data-panel__confirm-actions">
+            <button
+              type="button"
+              className="emt-data-panel__action emt-data-panel__action--danger"
+              data-action="import-replace-confirm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={busy}
+            >
+              {t('app.options.data.importReplace.confirmYes')}
+            </button>
+            <button
+              type="button"
+              className="emt-data-panel__action"
+              data-action="import-replace-cancel"
+              onClick={() => {
+                setConfirmReplace(false);
+                setImportMode('add');
+              }}
+              disabled={busy}
+            >
+              {t('app.options.data.importReplace.confirmNo')}
+            </button>
+          </div>
+        </div>
+      )}
       <input
         ref={fileInputRef}
         type="file"
@@ -171,6 +218,7 @@ export function DataPanel(): ReactNode {
           data-action="clear-local"
           onClick={() => {
             setConfirmClear(true);
+            setConfirmReplace(false);
             setMessage(null);
           }}
           disabled={busy}

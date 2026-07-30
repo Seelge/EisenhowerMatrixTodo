@@ -1,4 +1,6 @@
 export { applyTaskPatch } from './adapter.js';
+export { decodeEmbeddedFields, encodeEmbeddedFields } from './notes-encoding.js';
+export type { EmbeddedFields } from './notes-encoding.ts';
 export type {
   BackendAdapter,
   BackendCapabilities,

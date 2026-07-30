@@ -22,6 +22,7 @@ import {
   clearLocalBackend,
   formatImportSummary,
   importTasks,
+  parseExportFile,
 } from '../src/views/options/data-export.ts';
 
 const DRAFT_A: TaskDraft = {
@@ -120,6 +121,39 @@ describe('Data panel pipeline — Step 9.6', () => {
         { getAdapter: (id) => registry.get(id), fallback: local },
       ),
     ).rejects.toThrow(/version/i);
+  });
+
+  it('parseExportFile rejects bad shape before any write', () => {
+    expect(() => parseExportFile(null)).toThrow(/object/i);
+    expect(() => parseExportFile({ version: 1, exportedAt: 'x', backends: 'nope' })).toThrow(
+      /backends/i,
+    );
+    expect(() =>
+      parseExportFile({
+        version: 1,
+        exportedAt: 'x',
+        backends: [{ backendId: 'local', displayName: 'L', tasks: [{ title: 'only' }] }],
+      }),
+    ).toThrow(/quadrant|Invalid/i);
+  });
+
+  it('import replace mode clears local first', async () => {
+    const { registry } = await getBackends();
+    const local = registry.list()[0]!;
+    await local.create(DRAFT_A);
+    await local.create(DRAFT_B);
+    const file = await buildExportFile([local]);
+    await local.create({ ...DRAFT_A, title: 'extra' });
+    expect(await local.list()).toHaveLength(3);
+
+    const result = await importTasks(file, {
+      getAdapter: (id) => registry.get(id),
+      fallback: local,
+      clearBefore: local,
+    });
+    expect(result.imported).toBe(2);
+    const titles = (await local.list()).map((t) => t.title).sort();
+    expect(titles).toEqual(['A', 'B']);
   });
 
   it('formatImportSummary mentions fallback backends when present', () => {

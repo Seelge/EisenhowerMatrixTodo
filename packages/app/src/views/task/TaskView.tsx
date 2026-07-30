@@ -106,12 +106,14 @@ function TaskViewBody({ query }: { query: UseQueryResult<Task | undefined, Error
     <div className="emt-task-view__body" key={task.id}>
       <TitleField task={task} />
       <NotesField task={task} />
-      <TagsField task={task} />
       <DueField task={task} />
       <PriorityField task={task} />
+      <TagsField task={task} />
       <QuadrantField task={task} />
-      <BackendField task={task} />
-      <StatusToggle task={task} />
+      <div className="emt-task-view__footer" data-field-group="footer">
+        <StatusToggle task={task} />
+        <BackendField task={task} />
+      </div>
     </div>
   );
 }

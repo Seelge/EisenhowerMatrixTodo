@@ -15,6 +15,7 @@ import { describe, expect, it } from 'vitest';
 import { taskOrderKey, type TaskOrderMap } from '../src/state/task-order.ts';
 import {
   compareTasks,
+  computeKeyboardReorderRank,
   filterCompletedTasks,
   refsForReset,
   sortTasks,
@@ -121,5 +122,23 @@ describe('matrix sort — Step 5.7', () => {
     const done = task('done', { status: 'done' });
     expect(filterCompletedTasks([open, done], true).map((t) => t.id)).toEqual(['open']);
     expect(filterCompletedTasks([open, done], false).map((t) => t.id)).toEqual(['open', 'done']);
+  });
+
+  it('computeKeyboardReorderRank moves between neighbors', () => {
+    const a = task('a');
+    const b = task('b');
+    const c = task('c');
+    const ordered = [a, b, c];
+    const map = ranks({ a: 10, b: 20, c: 30 });
+    expect(computeKeyboardReorderRank(ordered, a, 'up', map)).toBeNull();
+    expect(computeKeyboardReorderRank(ordered, c, 'down', map)).toBeNull();
+    // Move up = sit above `a` (rank 10) → below nothing → rank < 10.
+    const up = computeKeyboardReorderRank(ordered, b, 'up', map)!;
+    expect(up).toBeLessThan(10);
+    // Move down = sit below `c` (rank 30) → above nothing → rank > 30? No:
+    // below c means after c → rank > 30. Between b and c would be wrong.
+    // Moving down one slot places just below next neighbor `c`.
+    const down = computeKeyboardReorderRank(ordered, b, 'down', map)!;
+    expect(down).toBeGreaterThan(30);
   });
 });

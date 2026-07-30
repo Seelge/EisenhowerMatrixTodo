@@ -34,6 +34,7 @@ export {
   relativeDateKey,
   type RelativeDateKey,
 } from './due-date-helpers.js';
+export { useDialogBehavior, type DialogBehaviorOptions } from './dialog-behavior.js';
 export { useReducedMotion } from './useReducedMotion.js';
 export {
   keyboardAwareLayout,

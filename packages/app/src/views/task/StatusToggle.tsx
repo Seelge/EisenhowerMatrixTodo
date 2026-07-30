@@ -4,10 +4,8 @@
  * A discrete toggle, not a typed-into field: the user either marks
  * complete or reopens, so writes go through `useUpdateTask` immediately
  * (no debounce). When transitioning open → done, `completedAt` is
- * stamped with the current ISO timestamp so the record reflects when
- * the user finished the task; reopening leaves the previous
- * `completedAt` in place deliberately — the design treats it as a
- * "last completed at" trail rather than a derived field.
+ * stamped with the current ISO timestamp; reopening clears it via
+ * `completedAt: null` so export/import do not show a stale complete time.
  */
 import type { Task, TaskPatch, TaskStatus } from '@emt/backend-core';
 import { useId, type ChangeEvent, type ReactNode } from 'react';
@@ -28,10 +26,10 @@ export function StatusToggle({ task }: StatusToggleProps): ReactNode {
 
   const onChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const nextStatus: TaskStatus = e.currentTarget.checked ? 'done' : 'open';
-    const patch: TaskPatch = { status: nextStatus };
-    if (nextStatus === 'done') {
-      patch.completedAt = new Date().toISOString();
-    }
+    const patch: TaskPatch =
+      nextStatus === 'done'
+        ? { status: nextStatus, completedAt: new Date().toISOString() }
+        : { status: nextStatus, completedAt: null };
     updateTask.mutate({ backendId: task.backendId, id: task.id, patch });
   };
 

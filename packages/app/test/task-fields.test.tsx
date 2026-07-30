@@ -232,7 +232,7 @@ describe('view3 field editors — Step 8.2', () => {
     expect(fresh?.status).toBe('done');
   });
 
-  it('StatusToggle reopens a completed task without modifying completedAt', async () => {
+  it('StatusToggle reopens a completed task and clears completedAt', async () => {
     const completedAt = '2026-05-01T12:00:00.000Z';
     const task = await seedTask({ status: 'done', completedAt });
     const { registry } = await getBackends();
@@ -253,14 +253,12 @@ describe('view3 field editors — Step 8.2', () => {
     });
 
     await waitForAsync(() => updateSpy.mock.calls.length > 0);
-    const patch = updateSpy.mock.calls[0]?.[1] as { status?: string; completedAt?: string };
+    const patch = updateSpy.mock.calls[0]?.[1] as { status?: string; completedAt?: string | null };
     expect(patch.status).toBe('open');
-    // Reopen leaves the previous completedAt untouched — the trail is
-    // intentional. The patch carries only `status`.
-    expect(patch.completedAt).toBeUndefined();
+    expect(patch.completedAt).toBeNull();
 
     const fresh = await adapter.get(task.id);
     expect(fresh?.status).toBe('open');
-    expect(fresh?.completedAt).toBe(completedAt);
+    expect(fresh?.completedAt).toBeUndefined();
   });
 });

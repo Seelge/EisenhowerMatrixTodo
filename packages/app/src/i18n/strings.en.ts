@@ -74,8 +74,13 @@ export const strings = {
   'app.task.fields.unsupported.priority':
     'Priority is stored in the notes on this backend; native priority is not supported.',
   'app.task.delete.label': 'Delete task',
-  'app.task.delete.snackbar': 'Task deleted.',
+  'app.task.delete.snackbar': 'Task deleted. Undo available for 5 seconds.',
   'app.task.delete.undo': 'Undo',
+  'app.task.delete.failed': 'Could not delete task. It was restored.',
+  'app.task.save.failed': 'Could not save changes.',
+  'app.composer.create.failed': 'Could not add task.',
+  'app.task.menu.moveUp': 'Move up',
+  'app.task.menu.moveDown': 'Move down',
   'app.options.heading': 'Options',
   'app.options.open': 'Settings',
   'app.search.open': 'Search tasks',
@@ -145,7 +150,12 @@ export const strings = {
   'app.options.defaults.sort.title': 'Title',
   'app.options.data.export': 'Export to JSON',
   'app.options.data.export.ok': 'Export downloaded.',
-  'app.options.data.import': 'Import from JSON',
+  'app.options.data.import': 'Import (add)',
+  'app.options.data.importReplace': 'Replace local from file…',
+  'app.options.data.importReplace.confirm':
+    'Delete all local tasks, then import from this file? This cannot be undone.',
+  'app.options.data.importReplace.confirmYes': 'Replace and import',
+  'app.options.data.importReplace.confirmNo': 'Cancel',
   'app.options.data.import.ok': 'Imported {count} task(s).',
   'app.options.data.import.fallback':
     '{count} task(s) landed on the default backend (missing: {backends}).',

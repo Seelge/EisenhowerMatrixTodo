@@ -876,3 +876,47 @@ Markdown renderer (no new deps).
 
 **Done (Phase 29).** e2e switches Appearance → Light and runs axe on
 view1.
+
+## TODO 26 — Mutation failure UX ✅
+
+**Done (Phase 30).** Create/update/delete failures show a snackbar;
+delete-commit failure rolls optimistic removal back.
+
+## TODO 27 — Search dialog a11y + snackbar undo window ✅
+
+**Done (Phase 30).** Search uses `useDialogBehavior` (focus trap +
+restore). Delete snackbar message includes undo-window hint for SR.
+
+## TODO 28 — Import validate + replace mode ✅
+
+**Done (Phase 30).** `parseExportFile` validates shape/enums before
+writes. Data panel: Import (add) vs Replace local (clear then import).
+
+## TODO 29 — Notes field encoding helpers ✅
+
+**Done (Phase 30).** `encodeEmbeddedFields` / `decodeEmbeddedFields` in
+backend-core (`<!--emt:v1 …-->`) for priority/dueTime/tags (future
+remote adapters).
+
+## TODO 30 — Single tasks list query ✅
+
+**Done (Phase 30).** `useTasks` always loads `['tasks','list','all']`;
+optional quadrant via `select`. Fewer IDB list round-trips on matrix.
+
+## TODO 31 — View3 field order + completedAt clear ✅
+
+**Done (Phase 30).** Body order: Title → Notes → Due → Priority → Tags
+→ Quadrant → Status/Backend footer. Reopen clears `completedAt`.
+
+## TODO 32 — Keyboard reorder (move up/down) ✅
+
+**Done (Phase 30).** Task card menu: Move up / Move down via rank writes.
+
+## TODO 33 — README honest status ✅
+
+**Done (Phase 30).** README reflects usable local-IDB v0.1; remote
+adapters / recurrence still deferred.
+
+## TODO 1 / 11 / 11.6 — external (unchanged)
+
+Device pinch smoke, recurrence design, PWA release tag remain human.

@@ -109,6 +109,9 @@ Phase 6.
 
 - ~~Skip to content~~ — Phase 26: `SkipLink` → `#emt-main` on matrix,
   quadrant, and options.
-- Light theme axe: Appearance → Light exists (Phase 22); optional
-  e2e pass under light scheme still open.
-- Snackbar `aria-live` for delete-undo countdown still open.
+- ~~Light theme axe~~ — Phase 29: e2e Appearance → Light + axe on view1.
+- ~~Snackbar undo window~~ — Phase 30: delete message includes
+  “Undo available for 5 seconds” (polite live region).
+- ~~Search dialog behavior~~ — Phase 30: `useDialogBehavior` focus trap
+  + restore on the search overlay.
+- Manual NVDA / VoiceOver smoke still open before a store cut.

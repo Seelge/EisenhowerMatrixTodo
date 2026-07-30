@@ -42,22 +42,28 @@ function invalidateAll(qc: ReturnType<typeof useQueryClient>): Promise<void> {
 }
 
 /**
- * List tasks across all registered backends, optionally filtered to a
- * single quadrant. Returns canonical {@link Task} records — caller
- * sorts.
+ * List tasks across all registered backends. Always loads the full list
+ * under `['tasks','list','all']` (one IDB pass per invalidate). Optional
+ * `quadrant` filters via React Query `select` so matrix cells share one
+ * fetch.
  */
 export function useTasks(quadrant?: Quadrant): UseQueryResult<readonly Task[], Error> {
   return useQuery<readonly Task[], Error>({
-    queryKey: [...TASKS_KEY, 'list', quadrant ?? 'all'],
+    queryKey: [...TASKS_KEY, 'list', 'all'],
     queryFn: async () => {
       const { registry } = await getBackends();
       const all: Task[] = [];
       for (const adapter of registry.list()) {
-        const part = await adapter.list(quadrant);
+        const part = await adapter.list();
         all.push(...part);
       }
       return all;
     },
+    ...(quadrant !== undefined
+      ? {
+          select: (data: readonly Task[]) => data.filter((task) => task.quadrant === quadrant),
+        }
+      : {}),
   });
 }
 

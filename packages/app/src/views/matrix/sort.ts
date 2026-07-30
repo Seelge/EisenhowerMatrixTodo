@@ -130,3 +130,67 @@ export function filterCompletedTasks<T extends { readonly status: Task['status']
   if (!hideCompleted) return tasks;
   return tasks.filter((task) => task.status !== 'done');
 }
+
+/**
+ * Rank that moves `task` one slot up or down in an already-sorted list
+ * (card menu keyboard reorder). Returns `null` when the move is impossible.
+ */
+export function computeKeyboardReorderRank(
+  ordered: readonly Task[],
+  task: Task,
+  direction: 'up' | 'down',
+  ranks: TaskOrderMap,
+  now: () => number = Date.now,
+): number | null {
+  const idx = ordered.findIndex((t) => t.id === task.id);
+  if (idx < 0) return null;
+
+  if (direction === 'up') {
+    if (idx === 0) return null;
+    const target = ordered[idx - 1]!;
+    return rankJustAbove(ordered, task, target, ranks, now);
+  }
+
+  if (idx >= ordered.length - 1) return null;
+  const target = ordered[idx + 1]!;
+  return rankJustBelow(ordered, task, target, ranks, now);
+}
+
+function rankJustAbove(
+  ordered: readonly Task[],
+  dragged: Task,
+  target: Task,
+  ranks: TaskOrderMap,
+  now: () => number,
+): number {
+  const targetRank = ranks.get(taskOrderKey(target.backendId, target.id));
+  if (targetRank === undefined) return now() - 1;
+  const ranked = ordered
+    .filter((t) => t.id !== dragged.id)
+    .map((t) => ({ id: t.id, rank: ranks.get(taskOrderKey(t.backendId, t.id)) }))
+    .filter((e): e is { id: TaskId; rank: number } => e.rank !== undefined)
+    .sort((a, b) => a.rank - b.rank);
+  const targetIdx = ranked.findIndex((e) => e.id === target.id);
+  const predRank = targetIdx > 0 ? ranked[targetIdx - 1]!.rank : undefined;
+  return predRank !== undefined ? (predRank + targetRank) / 2 : targetRank - 1;
+}
+
+function rankJustBelow(
+  ordered: readonly Task[],
+  dragged: Task,
+  target: Task,
+  ranks: TaskOrderMap,
+  now: () => number,
+): number {
+  const targetRank = ranks.get(taskOrderKey(target.backendId, target.id));
+  if (targetRank === undefined) return now() + 1;
+  const ranked = ordered
+    .filter((t) => t.id !== dragged.id)
+    .map((t) => ({ id: t.id, rank: ranks.get(taskOrderKey(t.backendId, t.id)) }))
+    .filter((e): e is { id: TaskId; rank: number } => e.rank !== undefined)
+    .sort((a, b) => a.rank - b.rank);
+  const targetIdx = ranked.findIndex((e) => e.id === target.id);
+  const succRank =
+    targetIdx >= 0 && targetIdx < ranked.length - 1 ? ranked[targetIdx + 1]!.rank : undefined;
+  return succRank !== undefined ? (targetRank + succRank) / 2 : targetRank + 1;
+}

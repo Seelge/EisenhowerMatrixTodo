@@ -12,7 +12,7 @@
  *   - ArrowUp/Down move the highlighted result; Enter opens it
  */
 import type { Task, TaskId } from '@emt/backend-core';
-import { EmptyNote, IconButton } from '@emt/design-system';
+import { EmptyNote, IconButton, useDialogBehavior } from '@emt/design-system';
 import {
   useCallback,
   useEffect,
@@ -48,11 +48,14 @@ export function SearchOverlay(): ReactNode {
   const setMatchIds = useSearchStore((s) => s.setMatchIds);
   const closeSearch = useSearchStore((s) => s.closeSearch);
   const allTasks = useTasks();
+  const dialogRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const listRef = useRef<HTMLUListElement | null>(null);
   const titleId = useId();
   const inputId = useId();
   const [activeIndex, setActiveIndex] = useState(0);
+
+  useDialogBehavior(open, closeSearch, dialogRef);
 
   const results = useMemo(
     () => (allTasks.data ? filterTasks(allTasks.data, query) : []),
@@ -70,27 +73,6 @@ export function SearchOverlay(): ReactNode {
 
   // Clamp rather than reset-in-effect when the result set shrinks.
   const safeActiveIndex = results.length === 0 ? 0 : Math.min(activeIndex, results.length - 1);
-
-  // Focus the input on open.
-  useEffect(() => {
-    if (!open) return;
-    const id = window.setTimeout(() => inputRef.current?.focus(), 0);
-    return () => window.clearTimeout(id);
-  }, [open]);
-
-  // Escape closes; also trap focus roughly by keeping Tab inside.
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: globalThis.KeyboardEvent): void => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        e.stopPropagation();
-        closeSearch();
-      }
-    };
-    document.addEventListener('keydown', onKey, true);
-    return () => document.removeEventListener('keydown', onKey, true);
-  }, [open, closeSearch]);
 
   const openTask = useCallback(
     (id: TaskId) => {
@@ -136,11 +118,13 @@ export function SearchOverlay(): ReactNode {
 
   return (
     <div
+      ref={dialogRef}
       className="emt-search"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
       data-view="search"
+      tabIndex={-1}
     >
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div className="emt-search__scrim" data-emt-scrim onClick={closeSearch} />
@@ -174,8 +158,6 @@ export function SearchOverlay(): ReactNode {
           onKeyDown={onInputKeyDown}
           placeholder={t('app.search.placeholder')}
           autoComplete="off"
-          // eslint-disable-next-line jsx-a11y/no-autofocus
-          autoFocus
         />
         <ul
           ref={listRef}

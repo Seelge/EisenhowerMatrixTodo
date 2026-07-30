@@ -1,14 +1,24 @@
 # Eisenhower Matrix Todo
 
-> ⚠️ **Early development — not usable yet.** This project is in early development, very much a work in progress and not ready for use. Features are incomplete, APIs may change without notice, and there is no stable release. Track progress in [`status.md`](./status.md) and details in [`plan.md`](./plan.md).
-
-A PWA to-do app organized by the Eisenhower matrix (Important × Urgent). Pluggable backends, offline-first. Targets Chrome on Android and Windows. Minimal futuristic dark UI with glowing borders.
+A PWA to-do app organized by the Eisenhower matrix (Important × Urgent).
+Pluggable backends, offline-first. Targets Chrome on Android and Windows.
+Minimal futuristic UI with neon quadrant borders (dark default, optional light).
 
 ## Status
 
-Early development. See [`plan.md`](./plan.md) for the phase / step roadmap and [`status.md`](./status.md) for live cross-session state.
+**Usable offline with the Local (IndexedDB) backend** — matrix, quadrant
+zoom, task editor, search, tags, export/import, light theme, and PWA
+install are implemented. Live demo:
+[seelge.github.io/EisenhowerMatrixTodo](https://seelge.github.io/EisenhowerMatrixTodo/).
 
-The first release ships only the local (IndexedDB) backend. Google Tasks and Microsoft To-Do adapters slot in later behind the same `BackendAdapter` interface.
+Not yet in this release:
+
+- Google Tasks / Microsoft To-Do adapters (packages are stubs)
+- Recurrence model (design open — see `design-input-new.md` TODO 11)
+- App-store packaging / signed release cut (Step 11.6)
+
+Track handoff in [`status.md`](./status.md) and the phase plan in
+[`plan.md`](./plan.md).
 
 ## Stack
 
@@ -55,6 +65,7 @@ pnpm --filter @emt/app preview  # serve the production build (http://localhost:4
 
 ## Documents
 
-- [`design-input.md`](./design-input.md) — design input that fed the implementation plan
-- [`plan.md`](./plan.md) — phased step-by-step implementation plan
+- [`design-input-new.md`](./design-input-new.md) — design + open TODOs
+- [`plan.md`](./plan.md) — phased implementation plan
 - [`status.md`](./status.md) — live cross-session handoff
+- [`docs/a11y-audit.md`](./docs/a11y-audit.md) — accessibility notes
