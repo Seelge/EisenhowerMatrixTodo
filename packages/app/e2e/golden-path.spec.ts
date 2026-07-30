@@ -4,18 +4,18 @@
  * One end-to-end flow exercising the load-bearing user journey for
  * the first release:
  *   1. Open the app → the first-run seed inserts the three sample
- *      tasks; assert they're rendered in their expected quadrants.
+ *      tasks; open ones render in Q1/Q2. Phase 16 hides completed by
+ *      default, so the done Q4 seed is *not* on the matrix.
  *   2. Open the quick composer, create a new "Refactor module" task
  *      in Q3.
  *   3. Drag that task from Q3 → Q1.
  *   4. Click it to focus → view3 opens.
  *   5. Pick the "Tomorrow" preset on the due-date picker.
  *   6. Toggle Mark complete.
- *   7. Close view3 → the task now renders with `data-status="done"`
- *      under Q1 (after the move and the completion).
- *   8. Re-open it and delete it → the card leaves the matrix
- *      immediately (Step 12.1's optimistic-delete fix), with the undo
- *      snackbar still offered.
+ *   7. Close view3 → hide-completed removes the card from Q1.
+ *   8. Turn hide-completed off (Defaults), re-open the done card,
+ *      delete it → leaves the matrix immediately (Step 12.1), with
+ *      the undo snackbar still offered.
  *
  * Drag is simulated with raw pointer events (dnd-kit uses pointer,
  * not HTML5 drag-and-drop): pointerdown on the card, move past the
@@ -46,7 +46,8 @@ test('golden path: seed → create → drag → focus → due tomorrow → compl
   await page.goto('/');
   await expect(page.locator('[data-view="matrix"]')).toBeVisible();
 
-  // (1) First-run seed. The three sample tasks live in Q1, Q2, Q4.
+  // (1) First-run seed. Open samples in Q1/Q2; the done Q4 sample is
+  // hidden by the default hideCompleted pref (Phase 16).
   await expect(
     page
       .locator('[data-quadrant="Q1"] .emt-task-card__title')
@@ -61,7 +62,8 @@ test('golden path: seed → create → drag → focus → due tomorrow → compl
     page
       .locator('[data-quadrant="Q4"] .emt-task-card__title')
       .filter({ hasText: 'Old to-do (already done)' }),
-  ).toBeVisible();
+  ).toHaveCount(0);
+  await expect(page.locator('[data-quadrant="Q4"] .emt-matrix__cell-empty')).toBeVisible();
 
   // (2) Create a new "Refactor module" task in Q3 via the FAB.
   await page.locator('.emt-matrix__fab').click();
@@ -104,17 +106,37 @@ test('golden path: seed → create → drag → focus → due tomorrow → compl
   await page.locator('input[data-field="status"]').click();
   await expect(page.locator('input[data-field="status"]')).toBeChecked({ timeout: 3000 });
 
-  // (7) Close view3 (Escape) and verify the task is shown as done in Q1.
+  // (7) Close view3 — hideCompleted (default on) drops the done card.
   await page.keyboard.press('Escape');
   await expect(page.locator('[data-view="task"]')).toBeHidden();
+  await expect(
+    page
+      .locator('[data-quadrant="Q1"] .emt-task-card__title')
+      .filter({ hasText: 'Refactor module' }),
+  ).toHaveCount(0);
+
+  // (8) Show completed tasks, re-open the done card, delete it.
+  // Card must leave the matrix immediately (Step 12.1 optimistic delete).
+  await page.goto('/options/defaults');
+  await expect(page.locator('[data-options-panel="defaults"]')).toBeVisible();
+  const hideToggle = page.locator('[data-field="hide-completed"]');
+  await expect(hideToggle).toBeChecked();
+  await hideToggle.click();
+  await expect(hideToggle).not.toBeChecked();
+
+  await page.goto('/');
+  await expect(page.locator('[data-view="matrix"]')).toBeVisible();
   const doneCard = page
     .locator('[data-quadrant="Q1"] .emt-task-card[data-status="done"]')
     .filter({ has: page.locator('.emt-task-card__title', { hasText: 'Refactor module' }) });
   await expect(doneCard).toBeVisible();
+  // Seed done task is visible again once hide is off.
+  await expect(
+    page
+      .locator('[data-quadrant="Q4"] .emt-task-card__title')
+      .filter({ hasText: 'Old to-do (already done)' }),
+  ).toBeVisible();
 
-  // (8) Re-open it and delete it. The card must leave the matrix
-  // immediately — Step 12.1 removes it optimistically rather than
-  // waiting out the undo-snackbar window.
   await doneCard.locator('.emt-task-card__open').click();
   await expect(page.locator('[data-view="task"]')).toBeVisible();
   await page.locator('[data-field="delete"]').click();
@@ -123,6 +145,5 @@ test('golden path: seed → create → drag → focus → due tomorrow → compl
       .locator('[data-quadrant="Q1"] .emt-task-card__title')
       .filter({ hasText: 'Refactor module' }),
   ).toHaveCount(0, { timeout: 1000 });
-  // The undo affordance is still offered while the delete is pending.
   await expect(page.getByRole('button', { name: /undo/i })).toBeVisible();
 });
