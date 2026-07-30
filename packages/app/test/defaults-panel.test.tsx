@@ -45,6 +45,7 @@ describe('DefaultsPanel — Step 9.5', () => {
       newTaskQuadrant: 'Q1',
       sortBy: 'dueDate',
       hideCompleted: true,
+      defaultPriority: 'normal',
     });
   });
 
@@ -57,6 +58,7 @@ describe('DefaultsPanel — Step 9.5', () => {
       newTaskQuadrant: 'Q1',
       sortBy: 'dueDate',
       hideCompleted: true,
+      defaultPriority: 'normal',
     });
   });
 
@@ -103,6 +105,7 @@ describe('DefaultsPanel — Step 9.5', () => {
       newTaskQuadrant: 'Q1',
       sortBy: 'dueDate',
       hideCompleted: true,
+      defaultPriority: 'normal',
     });
     await act(async () => {
       await useDefaultsStore.getState().load();
@@ -130,10 +133,39 @@ describe('DefaultsPanel — Step 9.5', () => {
       newTaskQuadrant: 'Q1',
       sortBy: 'dueDate',
       hideCompleted: true,
+      defaultPriority: 'normal',
     });
     await act(async () => {
       await useDefaultsStore.getState().load();
     });
     expect(useDefaultsStore.getState().hideCompleted).toBe(false);
+  });
+
+  it('sets default priority to high and persists', async () => {
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <DefaultsPanel />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+    const high = container.querySelector<HTMLInputElement>(
+      '[data-field="default-priority"][value="high"]',
+    )!;
+    await act(async () => {
+      high.click();
+    });
+    await waitForAsync(() => useDefaultsStore.getState().defaultPriority === 'high');
+
+    useDefaultsStore.setState({
+      loaded: false,
+      newTaskQuadrant: 'Q1',
+      sortBy: 'dueDate',
+      hideCompleted: true,
+      defaultPriority: 'normal',
+    });
+    await act(async () => {
+      await useDefaultsStore.getState().load();
+    });
+    expect(useDefaultsStore.getState().defaultPriority).toBe('high');
   });
 });

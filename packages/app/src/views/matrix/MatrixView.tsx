@@ -108,9 +108,11 @@ export function MatrixView(): ReactNode {
       onDragCancel={handleDragCancel}
     >
       <main
+        id="emt-main"
         data-view="matrix"
         className="emt-matrix"
         aria-label={t('app.matrix.heading')}
+        tabIndex={-1}
         onPointerDown={pinch.onPointerDown}
         onPointerMove={pinch.onPointerMove}
         onPointerUp={pinch.onPointerUp}

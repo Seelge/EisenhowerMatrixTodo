@@ -172,6 +172,68 @@ export function applyOptimisticMove(
  * that window is the same pre-existing risk the delete flow always
  * carried and is out of scope for 12.1.)
  */
+/**
+ * Optimistically apply a {@link TaskPatch} across every cached tasks
+ * query. Used by `useUpdateTask` so status / priority / quadrant /
+ * title edits feel immediate (especially "Mark complete" with hide-
+ * completed on — the card vanishes on the next paint).
+ *
+ * Quadrant changes reuse the same list-bucket shuffle as
+ * {@link applyOptimisticMove}. Other fields map the patched record in
+ * place. Returns a rollback closure for `onError`.
+ */
+export function applyOptimisticPatch(
+  queryClient: QueryClient,
+  task: Task,
+  patch: TaskPatch,
+): () => void {
+  const patched: Task = { ...task, ...patch };
+  const fromQuadrant = task.quadrant;
+  const toQuadrant = patched.quadrant;
+  const snapshots = queryClient.getQueriesData<unknown>({ queryKey: ['tasks'] });
+
+  for (const [key] of snapshots) {
+    const [, sub, filter] = key as readonly [string, string, string | undefined];
+    if (sub === 'list') {
+      if (fromQuadrant !== toQuadrant) {
+        queryClient.setQueryData<readonly Task[] | undefined>(key, (prev) =>
+          prev === undefined
+            ? prev
+            : transformList(prev, task.id, patched, fromQuadrant, toQuadrant, filter),
+        );
+      } else {
+        queryClient.setQueryData<readonly Task[] | undefined>(key, (prev) =>
+          prev === undefined ? prev : prev.map((t) => (t.id === task.id ? patched : t)),
+        );
+      }
+    } else if (sub === 'one') {
+      queryClient.setQueryData<Task | undefined>(key, (prev) =>
+        prev !== undefined && prev.id === task.id ? patched : prev,
+      );
+    }
+  }
+
+  return () => {
+    for (const [key, value] of snapshots) {
+      queryClient.setQueryData(key, value);
+    }
+  };
+}
+
+/** Locate a task already held in any `['tasks', ...]` cache entry. */
+export function findCachedTask(queryClient: QueryClient, id: TaskId): Task | undefined {
+  const one = queryClient.getQueryData<Task | undefined>(['tasks', 'one', id]);
+  if (one !== undefined && one.id === id) return one;
+  const lists = queryClient.getQueriesData<readonly Task[] | undefined>({
+    queryKey: ['tasks', 'list'],
+  });
+  for (const [, data] of lists) {
+    const found = data?.find((t) => t.id === id);
+    if (found !== undefined) return found;
+  }
+  return undefined;
+}
+
 export function applyOptimisticDelete(queryClient: QueryClient, task: Task): () => void {
   const snapshots = queryClient.getQueriesData<unknown>({ queryKey: ['tasks'] });
 

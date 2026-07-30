@@ -24,7 +24,13 @@ import { useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 import { useT } from '../../i18n/provider.js';
 import { getBackends } from '../../state/backends.js';
 
-import { buildExportFile, clearLocalBackend, importTasks, type ExportFile } from './data-export.js';
+import {
+  buildExportFile,
+  clearLocalBackend,
+  formatImportSummary,
+  importTasks,
+  type ExportFile,
+} from './data-export.js';
 
 interface SummaryMessage {
   readonly kind: 'info' | 'error';
@@ -50,6 +56,7 @@ export function DataPanel(): ReactNode {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<SummaryMessage | null>(null);
   const [busy, setBusy] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
 
   const onExport = async (): Promise<void> => {
     setBusy(true);
@@ -89,7 +96,10 @@ export function DataPanel(): ReactNode {
       await queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setMessage({
         kind: 'info',
-        text: t('app.options.data.import.ok').replace('{count}', String(result.imported)),
+        text: formatImportSummary(result, {
+          ok: t('app.options.data.import.ok'),
+          fallback: t('app.options.data.import.fallback'),
+        }),
       });
     } catch (err) {
       setMessage({ kind: 'error', text: (err as Error).message });
@@ -102,6 +112,7 @@ export function DataPanel(): ReactNode {
   const onClearLocal = async (): Promise<void> => {
     setBusy(true);
     setMessage(null);
+    setConfirmClear(false);
     try {
       const { registry } = await getBackends();
       const local = registry.list().find((a) => a.describe().id === 'local');
@@ -153,17 +164,46 @@ export function DataPanel(): ReactNode {
           void onImportFile(e);
         }}
       />
-      <button
-        type="button"
-        className="emt-data-panel__action emt-data-panel__action--danger"
-        data-action="clear-local"
-        onClick={() => {
-          void onClearLocal();
-        }}
-        disabled={busy}
-      >
-        {t('app.options.data.clear')}
-      </button>
+      {!confirmClear ? (
+        <button
+          type="button"
+          className="emt-data-panel__action emt-data-panel__action--danger"
+          data-action="clear-local"
+          onClick={() => {
+            setConfirmClear(true);
+            setMessage(null);
+          }}
+          disabled={busy}
+        >
+          {t('app.options.data.clear')}
+        </button>
+      ) : (
+        <div className="emt-data-panel__confirm" data-confirm="clear-local" role="group">
+          <p className="emt-data-panel__confirm-text">{t('app.options.data.clear.confirm')}</p>
+          <div className="emt-data-panel__confirm-actions">
+            <button
+              type="button"
+              className="emt-data-panel__action emt-data-panel__action--danger"
+              data-action="clear-local-confirm"
+              onClick={() => {
+                void onClearLocal();
+              }}
+              disabled={busy}
+            >
+              {t('app.options.data.clear.confirmYes')}
+            </button>
+            <button
+              type="button"
+              className="emt-data-panel__action"
+              data-action="clear-local-cancel"
+              onClick={() => setConfirmClear(false)}
+              disabled={busy}
+            >
+              {t('app.options.data.clear.confirmNo')}
+            </button>
+          </div>
+        </div>
+      )}
       {message?.kind === 'info' && (
         <p className="emt-data-panel__message" data-status="info">
           {message.text}

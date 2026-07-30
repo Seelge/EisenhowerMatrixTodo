@@ -35,6 +35,10 @@ async function runAxe(page: Page, label: string): Promise<void> {
 test('view1 (matrix) — axe: no critical violations', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('[data-view="matrix"]')).toBeVisible();
+  await expect(page.locator('[data-action="skip-to-content"]')).toHaveAttribute(
+    'href',
+    '#emt-main',
+  );
   await runAxe(page, 'view1');
 });
 

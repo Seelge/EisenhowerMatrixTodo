@@ -16,7 +16,7 @@
  * Values persist to the shared meta IDB store; reload picks them up
  * via `useDefaultsStore.load()` from `App.tsx`.
  */
-import type { Quadrant } from '@emt/backend-core';
+import type { Priority, Quadrant } from '@emt/backend-core';
 import { type ChangeEvent, type ReactNode } from 'react';
 
 import { useT } from '../../i18n/provider.js';
@@ -40,14 +40,18 @@ const SORT_LABEL: Record<SortKey, StringKey> = {
   title: 'app.options.defaults.sort.title',
 };
 
+const PRIORITIES: readonly Priority[] = ['none', 'low', 'normal', 'high'];
+
 export function DefaultsPanel(): ReactNode {
   const t = useT();
   const newTaskQuadrant = useDefaultsStore((s) => s.newTaskQuadrant);
   const sortBy = useDefaultsStore((s) => s.sortBy);
   const hideCompleted = useDefaultsStore((s) => s.hideCompleted);
+  const defaultPriority = useDefaultsStore((s) => s.defaultPriority);
   const setNewTaskQuadrant = useDefaultsStore((s) => s.setNewTaskQuadrant);
   const setSortBy = useDefaultsStore((s) => s.setSortBy);
   const setHideCompleted = useDefaultsStore((s) => s.setHideCompleted);
+  const setDefaultPriority = useDefaultsStore((s) => s.setDefaultPriority);
 
   const onQuadrantChange = (e: ChangeEvent<HTMLInputElement>): void => {
     void setNewTaskQuadrant(e.currentTarget.value as Quadrant);
@@ -59,6 +63,10 @@ export function DefaultsPanel(): ReactNode {
 
   const onHideCompletedChange = (e: ChangeEvent<HTMLInputElement>): void => {
     void setHideCompleted(e.currentTarget.checked);
+  };
+
+  const onPriorityChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    void setDefaultPriority(e.currentTarget.value as Priority);
   };
 
   return (
@@ -78,6 +86,24 @@ export function DefaultsPanel(): ReactNode {
               data-field="default-quadrant"
             />
             <span>{t(QUADRANT_LABEL[q])}</span>
+          </label>
+        ))}
+      </fieldset>
+      <fieldset className="emt-defaults-panel__section" data-section="default-priority">
+        <legend className="emt-defaults-panel__legend">
+          {t('app.options.defaults.defaultPriority')}
+        </legend>
+        {PRIORITIES.map((p) => (
+          <label key={p} className="emt-defaults-panel__option" data-priority={p}>
+            <input
+              type="radio"
+              name="default-priority"
+              value={p}
+              checked={defaultPriority === p}
+              onChange={onPriorityChange}
+              data-field="default-priority"
+            />
+            <span>{t(`app.task.fields.priority.${p}`)}</span>
           </label>
         ))}
       </fieldset>

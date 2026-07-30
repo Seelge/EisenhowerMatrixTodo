@@ -11,6 +11,7 @@
  */
 import type { ReactNode } from 'react';
 
+import { SkipLink } from '../a11y/SkipLink.js';
 import { DebugPage } from '../debug/DebugPage.js';
 import { ConnectBanner } from '../onboarding/ConnectBanner.js';
 import { useInternalPath, useViewState } from '../state/view-state.js';
@@ -44,11 +45,17 @@ export function Routes(): ReactNode {
   }
 
   if (isOptionsPath(internalPath)) {
-    return <OptionsView />;
+    return (
+      <>
+        <SkipLink />
+        <OptionsView />
+      </>
+    );
   }
 
   return (
     <>
+      <SkipLink />
       <ConnectBanner />
       <ZoomController state={state}>
         {state.zoom === 'matrix' && <MatrixView />}

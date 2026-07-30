@@ -57,6 +57,25 @@ export interface ImportResult {
   readonly missingBackends: readonly BackendId[];
 }
 
+/** Build a user-facing import summary from {@link ImportResult}. */
+export function formatImportSummary(
+  result: ImportResult,
+  templates: {
+    readonly ok: string;
+    readonly fallback: string;
+  },
+): string {
+  let text = templates.ok.replace('{count}', String(result.imported));
+  if (result.fellBack > 0) {
+    text +=
+      ' ' +
+      templates.fallback
+        .replace('{count}', String(result.fellBack))
+        .replace('{backends}', result.missingBackends.join(', '));
+  }
+  return text;
+}
+
 export async function importTasks(
   file: ExportFile,
   options: {

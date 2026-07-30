@@ -53,7 +53,7 @@ export function OptionsView(): ReactNode {
   };
 
   return (
-    <section className="emt-options" data-view="options">
+    <section id="emt-main" className="emt-options" data-view="options" tabIndex={-1}>
       <header className="emt-options__header">
         {group === undefined ? (
           <h1 className="emt-options__heading">{t('app.options.heading')}</h1>

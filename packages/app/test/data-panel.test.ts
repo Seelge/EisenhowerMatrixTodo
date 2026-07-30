@@ -20,6 +20,7 @@ import { __resetBackendsCacheForTesting, getBackends } from '../src/state/backen
 import {
   buildExportFile,
   clearLocalBackend,
+  formatImportSummary,
   importTasks,
 } from '../src/views/options/data-export.ts';
 
@@ -119,5 +120,26 @@ describe('Data panel pipeline — Step 9.6', () => {
         { getAdapter: (id) => registry.get(id), fallback: local },
       ),
     ).rejects.toThrow(/version/i);
+  });
+
+  it('formatImportSummary mentions fallback backends when present', () => {
+    const plain = formatImportSummary(
+      { imported: 3, fellBack: 0, missingBackends: [] },
+      {
+        ok: 'Imported {count} task(s).',
+        fallback: '{count} task(s) landed on the default backend (missing: {backends}).',
+      },
+    );
+    expect(plain).toBe('Imported 3 task(s).');
+
+    const withFallback = formatImportSummary(
+      { imported: 2, fellBack: 1, missingBackends: ['google' as never] },
+      {
+        ok: 'Imported {count} task(s).',
+        fallback: '{count} task(s) landed on the default backend (missing: {backends}).',
+      },
+    );
+    expect(withFallback).toContain('Imported 2 task(s).');
+    expect(withFallback).toContain('google');
   });
 });

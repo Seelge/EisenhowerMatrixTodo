@@ -8,11 +8,11 @@
  * own `backendId` for update / delete; explicit source/target for
  * migrate).
  *
- * Cache strategy: every successful mutation invalidates the entire
- * `['tasks']` subtree. That's blunt but correct for phase 4 — there
- * are no expensive remote queries yet, and optimistic updates can be
- * layered in once view1/view2 surface real perceived latency. The
- * current shape doesn't preclude that change later.
+ * Cache strategy: `useUpdateTask` applies an optimistic patch to every
+ * `['tasks']` entry (via `applyOptimisticPatch`) so status / move /
+ * priority feel instant; on settle, invalidation replaces optimism with
+ * the adapter result. Create / delete keep their own optimistic paths
+ * (QuickComposer / snackbar undo).
  */
 import {
   migrateTask,
@@ -33,6 +33,7 @@ import {
 } from '@tanstack/react-query';
 
 import { getBackends } from '../state/backends.js';
+import { applyOptimisticPatch, findCachedTask } from '../views/matrix/dnd.js';
 
 const TASKS_KEY = ['tasks'] as const;
 
@@ -108,9 +109,18 @@ export interface UpdateTaskInput {
   readonly patch: TaskPatch;
 }
 
-export function useUpdateTask(): UseMutationResult<Task, Error, UpdateTaskInput> {
+interface UpdateTaskContext {
+  readonly rollback?: () => void;
+}
+
+export function useUpdateTask(): UseMutationResult<
+  Task,
+  Error,
+  UpdateTaskInput,
+  UpdateTaskContext
+> {
   const qc = useQueryClient();
-  return useMutation<Task, Error, UpdateTaskInput>({
+  return useMutation<Task, Error, UpdateTaskInput, UpdateTaskContext>({
     mutationFn: async ({ backendId, id, patch }) => {
       const { registry } = await getBackends();
       const adapter = registry.get(backendId);
@@ -119,7 +129,16 @@ export function useUpdateTask(): UseMutationResult<Task, Error, UpdateTaskInput>
       }
       return adapter.update(id, patch);
     },
-    onSuccess: () => invalidateAll(qc),
+    onMutate: async ({ id, patch }) => {
+      await qc.cancelQueries({ queryKey: TASKS_KEY });
+      const cached = findCachedTask(qc, id);
+      if (cached === undefined) return {};
+      return { rollback: applyOptimisticPatch(qc, cached, patch) };
+    },
+    onError: (_err, _input, ctx) => {
+      ctx?.rollback?.();
+    },
+    onSettled: () => invalidateAll(qc),
   });
 }
 

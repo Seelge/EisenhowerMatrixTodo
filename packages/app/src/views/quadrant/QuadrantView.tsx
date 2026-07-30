@@ -331,10 +331,12 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
       onDragCancel={handleDragCancel}
     >
       <main
+        id="emt-main"
         data-view="quadrant"
         data-quadrant={quadrant}
         className="emt-quadrant"
         aria-label={label}
+        tabIndex={-1}
         onPointerDown={onPointerDown}
         onPointerMove={pinch.onPointerMove}
         onPointerUp={onPointerUp}

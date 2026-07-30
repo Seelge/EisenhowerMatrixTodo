@@ -62,6 +62,7 @@ describe('MatrixCell — Step 5.3 per-cell task list', () => {
       newTaskQuadrant: 'Q1',
       sortBy: 'dueDate',
       hideCompleted: true,
+      defaultPriority: 'normal',
     });
   });
 
@@ -74,6 +75,7 @@ describe('MatrixCell — Step 5.3 per-cell task list', () => {
       newTaskQuadrant: 'Q1',
       sortBy: 'dueDate',
       hideCompleted: true,
+      defaultPriority: 'normal',
     });
   });
 

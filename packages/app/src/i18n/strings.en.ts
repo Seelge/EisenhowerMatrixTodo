@@ -143,8 +143,17 @@ export const strings = {
   'app.options.data.export.ok': 'Export downloaded.',
   'app.options.data.import': 'Import from JSON',
   'app.options.data.import.ok': 'Imported {count} task(s).',
+  'app.options.data.import.fallback':
+    '{count} task(s) landed on the default backend (missing: {backends}).',
   'app.options.data.clear': 'Clear local cache',
   'app.options.data.clear.ok': 'Cleared {count} local task(s).',
+  'app.options.data.clear.confirm': 'Delete every task on this device? This cannot be undone.',
+  'app.options.data.clear.confirmYes': 'Delete all local tasks',
+  'app.options.data.clear.confirmNo': 'Cancel',
+  'app.options.defaults.defaultPriority': 'Default priority for new tasks',
+  'app.composer.dueTimeLabel': 'Due time',
+  'app.connect.banner.connect': 'Open Backends',
+  'app.a11y.skipToContent': 'Skip to content',
   'app.options.about.version': 'Version',
   'app.options.about.commit': 'Commit',
   'app.options.about.builtAt': 'Built at',
@@ -194,7 +203,7 @@ export const strings = {
   'app.error.fallback.retry': 'Reload',
   'app.connect.banner.label': 'Connect a sync backend',
   'app.connect.banner.message':
-    'Connect Google Tasks or Microsoft To-Do to sync your tasks across devices.',
+    'Remote sync backends are listed under Options → Backends (coming later for Google / Microsoft).',
   'app.connect.banner.dismiss': 'Dismiss',
 } as const satisfies Record<string, string>;
 

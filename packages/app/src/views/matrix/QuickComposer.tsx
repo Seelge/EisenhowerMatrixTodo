@@ -44,6 +44,7 @@ import type { StringKey } from '../../i18n/strings.en.js';
 import { useCreateTask, useTasks } from '../../queries/tasks.js';
 import { getBackends } from '../../state/backends.js';
 import { useBusyStore } from '../../state/busy.js';
+import { useDefaultPriority } from '../../state/defaults.js';
 import {
   applySuggestedTag,
   collectTagCounts,
@@ -92,12 +93,16 @@ export function QuickComposer({
   const t = useT();
   const queryClient = useQueryClient();
   const createTask = useCreateTask();
+  const defaultPriority = useDefaultPriority();
 
   const [title, setTitle] = useState('');
   const [quadrant, setQuadrant] = useState<Quadrant>(defaultQuadrant);
   const [expanded, setExpanded] = useState(false);
   const [dueDate, setDueDate] = useState<string | null>(null);
-  const [priority, setPriority] = useState<Priority>('normal');
+  const [dueTime, setDueTime] = useState('');
+  /** `null` = follow Options default; set once the user picks a radio. */
+  const [priorityOverride, setPriorityOverride] = useState<Priority | null>(null);
+  const priority = priorityOverride ?? defaultPriority;
   const [tagsInput, setTagsInput] = useState('');
   const allTasks = useTasks();
   const tagInventory = useMemo(() => collectTagCounts(allTasks.data ?? []), [allTasks.data]);
@@ -120,7 +125,8 @@ export function QuickComposer({
     setQuadrant(defaultQuadrant);
     setExpanded(false);
     setDueDate(null);
-    setPriority('normal');
+    setDueTime('');
+    setPriorityOverride(null);
     setTagsInput('');
   }, [defaultQuadrant]);
 
@@ -155,7 +161,10 @@ export function QuickComposer({
         status: 'open',
         tags: [...tags],
       };
-      if (dueDate !== null) draft.dueDate = dueDate;
+      if (dueDate !== null) {
+        draft.dueDate = dueDate;
+        if (dueTime !== '') draft.dueTime = dueTime;
+      }
       const rollback = applyOptimisticCreate(queryClient, draft, backendId);
       // Close before the adapter resolves so the surface feels snappy;
       // the optimistic insert keeps the new card visible in the cell.
@@ -174,6 +183,7 @@ export function QuickComposer({
       showQuadrantPicker,
       priority,
       dueDate,
+      dueTime,
       tagsInput,
       queryClient,
       createTask,
@@ -184,6 +194,7 @@ export function QuickComposer({
 
   const titleId = useId();
   const moreId = useId();
+  const dueTimeId = useId();
   const trimmed = title.trim();
   const submitDisabled = trimmed === '';
 
@@ -245,6 +256,20 @@ export function QuickComposer({
               <span className="emt-quick-composer__label">{t('app.composer.dueLabel')}</span>
               <DueDatePicker value={dueDate} onChange={setDueDate} />
             </div>
+            <div className="emt-quick-composer__field">
+              <label htmlFor={dueTimeId} className="emt-quick-composer__label">
+                {t('app.composer.dueTimeLabel')}
+              </label>
+              <input
+                id={dueTimeId}
+                type="time"
+                className="emt-quick-composer__input"
+                data-field="composer-due-time"
+                value={dueTime}
+                disabled={dueDate === null}
+                onChange={(e) => setDueTime(e.currentTarget.value)}
+              />
+            </div>
             <div
               className="emt-quick-composer__field"
               role="radiogroup"
@@ -264,7 +289,7 @@ export function QuickComposer({
                       aria-checked={checked}
                       data-priority={p}
                       className="emt-quick-composer__priority-option"
-                      onClick={() => setPriority(p)}
+                      onClick={() => setPriorityOverride(p)}
                     >
                       {t(`app.task.fields.priority.${p}`)}
                     </button>

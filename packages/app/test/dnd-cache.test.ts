@@ -15,7 +15,12 @@ import type { BackendId, Task, TaskId } from '@emt/backend-core';
 import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
 
-import { applyOptimisticDelete, applyOptimisticMove } from '../src/views/matrix/dnd.ts';
+import {
+  applyOptimisticDelete,
+  applyOptimisticMove,
+  applyOptimisticPatch,
+  findCachedTask,
+} from '../src/views/matrix/dnd.ts';
 
 function makeTask(id: string, overrides: Partial<Task> = {}): Task {
   return {
@@ -115,6 +120,44 @@ describe('applyOptimisticMove', () => {
 
     expect(qc.getQueryData<readonly Task[]>(['tasks', 'list', 'all'])![0]!.quadrant).toBe('Q2');
     expect(qc.getQueryData<readonly Task[]>(['tasks', 'list', 'Q2'])).toHaveLength(1);
+  });
+});
+
+describe('applyOptimisticPatch (Phase 23)', () => {
+  it('patches status in place across list and one caches', () => {
+    const t = makeTask('t1', { status: 'open' });
+    const qc = makeClient();
+    qc.setQueryData(['tasks', 'list', 'all'], [t]);
+    qc.setQueryData(['tasks', 'list', 'Q2'], [t]);
+    qc.setQueryData(['tasks', 'one', t.id], t);
+
+    applyOptimisticPatch(qc, t, { status: 'done', completedAt: '2026-07-31T00:00:00.000Z' });
+
+    expect(qc.getQueryData<readonly Task[]>(['tasks', 'list', 'all'])![0]!.status).toBe('done');
+    expect(qc.getQueryData<Task>(['tasks', 'one', t.id])?.completedAt).toBe(
+      '2026-07-31T00:00:00.000Z',
+    );
+  });
+
+  it('moves between quadrant buckets when patch changes quadrant', () => {
+    const t = makeTask('t1', { quadrant: 'Q2' });
+    const qc = makeClient();
+    qc.setQueryData(['tasks', 'list', 'all'], [t]);
+    qc.setQueryData(['tasks', 'list', 'Q2'], [t]);
+    qc.setQueryData(['tasks', 'list', 'Q1'], [] as readonly Task[]);
+
+    applyOptimisticPatch(qc, t, { quadrant: 'Q1' });
+
+    expect(qc.getQueryData<readonly Task[]>(['tasks', 'list', 'Q2'])).toEqual([]);
+    expect(qc.getQueryData<readonly Task[]>(['tasks', 'list', 'Q1'])![0]!.id).toBe(t.id);
+  });
+
+  it('findCachedTask prefers one-cache then list buckets', () => {
+    const t = makeTask('t1');
+    const qc = makeClient();
+    expect(findCachedTask(qc, t.id)).toBeUndefined();
+    qc.setQueryData(['tasks', 'list', 'all'], [t]);
+    expect(findCachedTask(qc, t.id)?.id).toBe(t.id);
   });
 });
 

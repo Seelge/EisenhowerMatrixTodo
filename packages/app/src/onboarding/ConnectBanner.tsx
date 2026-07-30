@@ -1,7 +1,6 @@
 /**
- * `<ConnectBanner />` — dismissible suggestion to connect Google Tasks
- * or Microsoft To-Do for cross-device sync. Visibility persists across
- * reloads via a meta-store flag.
+ * `<ConnectBanner />` — dismissible hint pointing at Options → Backends.
+ * Visibility persists across reloads via a meta-store flag.
  *
  * State machine:
  *  - `loading`   : the dismissed-flag read is in flight; render nothing
@@ -11,15 +10,18 @@
  *  - `dismissed` : flag present (set on click, or already persisted) →
  *                  render nothing.
  *
- * The CTA is intentionally just "Dismiss" until view4 (Options /
- * Backends panel) lands in phase 9; at that point the banner can grow
- * a "Connect" button that navigates to that panel.
+ * "Open Backends" navigates to `/options/backends` (remote adapters are
+ * still placeholders; the panel is the honest destination).
  */
 import { Button } from '@emt/design-system';
 import { useEffect, useState, type ReactNode } from 'react';
 
 import { useT } from '../i18n/provider.js';
 import { getBackends } from '../state/backends.js';
+import { useViewStateStore } from '../state/view-state.js';
+import { optionsGroupPath } from '../views/options/options-routing.js';
+
+import './connect-banner.css';
 
 /** Meta key under which the banner-dismissed flag is persisted. */
 export const META_CONNECT_BANNER_DISMISSED_KEY = 'connectBannerDismissed';
@@ -50,12 +52,26 @@ export function ConnectBanner(): ReactNode {
     void getBackends().then(({ meta }) => meta.set(META_CONNECT_BANNER_DISMISSED_KEY, 'true'));
   };
 
+  const openBackends = (): void => {
+    useViewStateStore.getState().navigateRaw(optionsGroupPath('backends'));
+  };
+
   return (
-    <div role="region" data-banner="connect" aria-label={t('app.connect.banner.label')}>
-      <span>{t('app.connect.banner.message')}</span>
-      <Button variant="text" onClick={dismiss}>
-        {t('app.connect.banner.dismiss')}
-      </Button>
+    <div
+      role="region"
+      className="emt-connect-banner"
+      data-banner="connect"
+      aria-label={t('app.connect.banner.label')}
+    >
+      <span className="emt-connect-banner__message">{t('app.connect.banner.message')}</span>
+      <div className="emt-connect-banner__actions">
+        <Button variant="filled" data-action="connect-backends" onClick={openBackends}>
+          {t('app.connect.banner.connect')}
+        </Button>
+        <Button variant="text" data-action="connect-dismiss" onClick={dismiss}>
+          {t('app.connect.banner.dismiss')}
+        </Button>
+      </div>
     </div>
   );
 }

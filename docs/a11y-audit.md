@@ -105,12 +105,10 @@ violations on the as-is build — credit to the design-system
 primitives' built-in role/label discipline and the keyboard work in
 Phase 6.
 
-## Future improvements (out of scope for v1)
+## Follow-ups
 
-- Add a "skip to content" link for keyboard users who land on the
-  page without an obvious first focusable element.
-- Extend axe coverage to a high-contrast snapshot (Windows
-  high-contrast mode) once we have a non-dark theme to swap in
-  (currently locked to dark via `AppearancePanel`).
-- Add an `aria-live` region for the snackbar so the delete-undo
-  countdown announces as it expires.
+- ~~Skip to content~~ — Phase 26: `SkipLink` → `#emt-main` on matrix,
+  quadrant, and options.
+- Light theme axe: Appearance → Light exists (Phase 22); optional
+  e2e pass under light scheme still open.
+- Snackbar `aria-live` for delete-undo countdown still open.

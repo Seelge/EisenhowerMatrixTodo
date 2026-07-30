@@ -61,11 +61,12 @@ describe('<ConnectBanner />', () => {
     await waitFor(() => container.querySelector('[data-banner="connect"]') !== null);
 
     expect(container.textContent).toContain(strings['app.connect.banner.message']);
+    expect(container.querySelector('[data-action="connect-backends"]')).not.toBeNull();
 
-    const dismissBtn = Array.from(container.querySelectorAll('button')).find(
-      (b) => b.textContent === strings['app.connect.banner.dismiss'],
+    const dismissBtn = container.querySelector<HTMLButtonElement>(
+      '[data-action="connect-dismiss"]',
     );
-    expect(dismissBtn).toBeDefined();
+    expect(dismissBtn).not.toBeNull();
 
     await act(async () => {
       dismissBtn!.click();

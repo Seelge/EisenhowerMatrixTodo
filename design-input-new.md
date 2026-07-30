@@ -840,3 +840,27 @@ differ local vs GHA); Docker-matched baselines optional later.
 ## TODO 19 — Keyboard shortcuts in About ✅
 
 **Done (Phase 20).** About panel lists `n`, search, zoom, arrows, Space-drag.
+
+## TODO 20 — Optimistic status / move / priority ✅
+
+**Done (Phase 23).** `useUpdateTask` applies `applyOptimisticPatch` in
+`onMutate` (rollback on error). Completing a task with hide-completed
+on removes the card immediately; menu moves match DnD snappiness.
+
+## TODO 21 — Data panel safety + honest import ✅
+
+**Done (Phase 24).** Clear-local requires explicit confirm. Import
+summary includes fallback count + missing backend ids via
+`formatImportSummary`. (taskOrder still device-local — import mints
+new ids.)
+
+## TODO 22 — Composer due time + default priority ✅
+
+**Done (Phase 25).** QuickComposer more-options: due time (when date
+set). Options → Defaults: default priority; composer follows until the
+user overrides.
+
+## TODO 23 — Connect banner CTA + skip link ✅
+
+**Done (Phase 26).** Banner styled; "Open Backends" → `/options/backends`.
+`SkipLink` → `#emt-main` on matrix / quadrant / options.
