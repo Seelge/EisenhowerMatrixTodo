@@ -32,6 +32,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -46,13 +47,16 @@ import { useTasks, useUpdateTask } from '../../queries/tasks.js';
 import type { ViewState } from '../../routes/contract.js';
 import { useBusyStore } from '../../state/busy.js';
 import { useSortBy } from '../../state/defaults.js';
-import { type TaskOrderMap } from '../../state/task-order.js';
+import { taskOrderKey, type TaskOrderMap } from '../../state/task-order.js';
 import { useViewStateStore } from '../../state/view-state.js';
 import { createDragEndHandler } from '../matrix/dnd.js';
 import { QuickComposer } from '../matrix/QuickComposer.js';
+import { ReorderHint } from '../matrix/ReorderHint.js';
 import { sortTasks } from '../matrix/sort.js';
 import { TaskCard } from '../matrix/TaskCard.js';
 import { SettingsButton } from '../options/SettingsButton.js';
+import { SearchButton } from '../search/SearchButton.js';
+import { SyncStatusChip } from '../sync/SyncStatusChip.js';
 import { usePinchHighlightStore } from '../zoom/highlight.js';
 import { usePinchGesture } from '../zoom/usePinchGesture.js';
 import { quadrantLayoutId } from '../zoom/ZoomController.js';
@@ -68,12 +72,20 @@ import './quadrant.css';
  *   - `.emt-task-card` — dnd-kit owns drags that start on a card.
  *   - `.emt-quadrant__list` — vertical scrolling inside a populated
  *     quadrant easily clears the swipe distance threshold and would
- *     otherwise hijack scroll. The header / frame padding / strips
- *     give the user enough room to swipe outside the list. The strips
- *     themselves use `pointer-events: none`, so a swipe across one
- *     bubbles to the underlying frame and resolves correctly.
+ *     otherwise hijack scroll. When the list has no overflow (common
+ *     on short lists), the list is *not* excluded — see
+ *     `listIsScrollable` / design-input-new TODO 7 — so the user can
+ *     start a swipe anywhere in the frame instead of only on the 24 px
+ *     padding. The strips themselves use `pointer-events: none`, so a
+ *     swipe across one bubbles to the underlying frame and resolves.
  */
-const SWIPE_EXCLUDE_SELECTOR = '.emt-task-card, .emt-quadrant__list';
+const SWIPE_EXCLUDE_ALWAYS = '.emt-task-card';
+const SWIPE_EXCLUDE_LIST = '.emt-quadrant__list';
+
+/** True when the list element currently has vertical overflow. */
+function listIsScrollable(list: Element): boolean {
+  return list.scrollHeight > list.clientHeight + 1;
+}
 
 interface PendingGesture {
   pointerId: number;
@@ -83,6 +95,17 @@ interface PendingGesture {
 }
 
 const EMPTY_RANKS: TaskOrderMap = new Map();
+
+/** Last known task count per quadrant — drives skeleton strip length (TODO 12). */
+const lastTaskCountByQuadrant = new Map<Quadrant, number>();
+
+function rememberTaskCount(quadrant: Quadrant, count: number): void {
+  lastTaskCountByQuadrant.set(quadrant, Math.min(Math.max(count, 1), 8));
+}
+
+function skeletonCountFor(quadrant: Quadrant): number {
+  return lastTaskCountByQuadrant.get(quadrant) ?? 3;
+}
 
 const GLOW_COLOR: Record<Quadrant, GlowColor> = {
   Q1: 'q1',
@@ -112,6 +135,19 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
   const tasks = useMemo(
     () => (query.data ? sortTasks(query.data, ranks, sortBy) : undefined),
     [query.data, ranks, sortBy],
+  );
+
+  // Skeleton count tracks the last known task count so a refetch of a
+  // populated quadrant doesn't collapse from N cards → 3 placeholders
+  // (design-input-new TODO 12).
+  useEffect(() => {
+    if (tasks !== undefined) rememberTaskCount(quadrant, tasks.length);
+  }, [quadrant, tasks]);
+  const skeletonCount = skeletonCountFor(quadrant);
+
+  const hasManualRank = useMemo(
+    () => tasks?.some((task) => ranks.has(taskOrderKey(task.backendId, task.id))) ?? false,
+    [tasks, ranks],
   );
 
   const neighbors = NEIGHBORS[quadrant];
@@ -205,7 +241,19 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
       }
       if (!e.isPrimary) return;
       const target = e.target;
-      if (target instanceof Element && target.closest(SWIPE_EXCLUDE_SELECTOR) !== null) {
+      if (!(target instanceof Element)) {
+        pendingGesture.current = null;
+        return;
+      }
+      // Cards always win — dnd-kit owns those drags.
+      if (target.closest(SWIPE_EXCLUDE_ALWAYS) !== null) {
+        pendingGesture.current = null;
+        return;
+      }
+      // List only excludes when it can actually scroll (TODO 7). A
+      // non-overflowing list is free real-estate for swipe navigation.
+      const list = target.closest(SWIPE_EXCLUDE_LIST);
+      if (list !== null && listIsScrollable(list)) {
         pendingGesture.current = null;
         return;
       }
@@ -297,13 +345,10 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
               <h1 className="emt-quadrant__title">{label}</h1>
             </header>
             <div className="emt-quadrant__list" data-task-count={tasks?.length ?? 0}>
-              {query.isPending && (
-                <>
-                  <Skeleton className="emt-quadrant__skeleton" height={48} />
-                  <Skeleton className="emt-quadrant__skeleton" height={48} />
-                  <Skeleton className="emt-quadrant__skeleton" height={48} />
-                </>
-              )}
+              {query.isPending &&
+                Array.from({ length: skeletonCount }, (_, i) => (
+                  <Skeleton key={i} className="emt-quadrant__skeleton" height={48} />
+                ))}
               {query.isError && (
                 <ErrorBanner
                   message={query.error.message}
@@ -315,6 +360,9 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
               {tasks !== undefined && tasks.length === 0 && (
                 <EmptyNote className="emt-quadrant__empty">{t('app.quadrant.empty')}</EmptyNote>
               )}
+              <ReorderHint
+                visible={(tasks?.length ?? 0) > 1 && !hasManualRank && !query.isPending}
+              />
               {tasks?.map((task) => (
                 <TaskCard key={task.id} task={task} />
               ))}
@@ -330,6 +378,8 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
             <DiagonalCorner corner={diagonal.corner} diagonal={diagonal.quadrant} />
           </Glow>
         </motion.div>
+        <SyncStatusChip className="emt-quadrant__sync" />
+        <SearchButton className="emt-quadrant__search" />
         <SettingsButton className="emt-quadrant__settings" />
         <Fab
           className="emt-quadrant__fab"

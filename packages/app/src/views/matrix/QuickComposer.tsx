@@ -1,9 +1,15 @@
 /**
- * QuickComposer — view1 quick-add surface (Step 5.8).
+ * QuickComposer — view1/view2 quick-add surface (Step 5.8 + Phase 13).
  *
  * Wraps a title input + 2 × 2 quadrant picker inside the design
  * system's `<ResponsiveSurface>` so the composer renders as a Sheet on
  * narrow viewports and a SidePanel on wide ones (per Step 3.4).
+ *
+ * Phase 13 (design-input-new TODO 4) adds an opt-in "More options"
+ * disclosure that reveals DueDatePicker + a compact priority segmented
+ * control. The default path stays title-only so the FAB remains a
+ * one-tap-and-type affordance; expanded fields only write when the user
+ * actually changes them from the defaults (no due date, normal priority).
  *
  * Submit creates a task via `useCreateTask` against the registry's
  * default backend. The surface closes immediately on submit; the new
@@ -19,8 +25,8 @@
  * the desktop SidePanel intentionally has no scrim, mirroring the
  * "panel does not fully obscure the matrix" rule from `design-input.md`.
  */
-import type { BackendId, Quadrant, Task, TaskDraft, TaskId } from '@emt/backend-core';
-import { Button, QuadrantPicker, ResponsiveSurface } from '@emt/design-system';
+import type { BackendId, Priority, Quadrant, Task, TaskDraft, TaskId } from '@emt/backend-core';
+import { Button, DueDatePicker, QuadrantPicker, ResponsiveSurface } from '@emt/design-system';
 import type { Quadrant as DsQuadrant } from '@emt/design-system';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useId, useState, type FormEvent, type ReactNode } from 'react';
@@ -42,6 +48,8 @@ const PICKER_LABEL_KEY: Record<DsQuadrant, StringKey> = {
   q3: 'app.matrix.cell.q3.label',
   q4: 'app.matrix.cell.q4.label',
 };
+
+const PRIORITIES: readonly Priority[] = ['none', 'low', 'normal', 'high'];
 
 export interface QuickComposerProps {
   open: boolean;
@@ -70,6 +78,9 @@ export function QuickComposer({
 
   const [title, setTitle] = useState('');
   const [quadrant, setQuadrant] = useState<Quadrant>(defaultQuadrant);
+  const [expanded, setExpanded] = useState(false);
+  const [dueDate, setDueDate] = useState<string | null>(null);
+  const [priority, setPriority] = useState<Priority>('normal');
 
   // Step 10.3 — mark the user as composing while the surface is open
   // so an incoming sync conflict queues silently instead of opening
@@ -83,6 +94,14 @@ export function QuickComposer({
     }
     return undefined;
   }, [open]);
+
+  const resetForm = useCallback(() => {
+    setTitle('');
+    setQuadrant(defaultQuadrant);
+    setExpanded(false);
+    setDueDate(null);
+    setPriority('normal');
+  }, [defaultQuadrant]);
 
   const close = useCallback(() => {
     onClose();
@@ -109,11 +128,12 @@ export function QuickComposer({
       const draft: TaskDraft = {
         title: trimmed,
         notes: '',
-        priority: 'normal',
+        priority,
         quadrant: targetQuadrant,
         status: 'open',
         tags: [],
       };
+      if (dueDate !== null) draft.dueDate = dueDate;
       const rollback = applyOptimisticCreate(queryClient, draft, backendId);
       // Close before the adapter resolves so the surface feels snappy;
       // the optimistic insert keeps the new card visible in the cell.
@@ -122,14 +142,25 @@ export function QuickComposer({
       // surface unmounts on close, but QuickComposer itself stays
       // mounted and its useState hooks would otherwise hold the prior
       // input.
-      setTitle('');
-      setQuadrant(defaultQuadrant);
+      resetForm();
       createTask.mutate({ draft }, { onError: rollback });
     },
-    [title, quadrant, defaultQuadrant, showQuadrantPicker, queryClient, createTask, close],
+    [
+      title,
+      quadrant,
+      defaultQuadrant,
+      showQuadrantPicker,
+      priority,
+      dueDate,
+      queryClient,
+      createTask,
+      close,
+      resetForm,
+    ],
   );
 
   const titleId = useId();
+  const moreId = useId();
   const trimmed = title.trim();
   const submitDisabled = trimmed === '';
 
@@ -173,6 +204,51 @@ export function QuickComposer({
               }}
               aria-label={t('app.composer.quadrantLabel')}
             />
+          </div>
+        )}
+        <button
+          type="button"
+          className="emt-quick-composer__more-toggle"
+          aria-expanded={expanded}
+          aria-controls={moreId}
+          data-action="composer-more"
+          onClick={() => setExpanded((v) => !v)}
+        >
+          {expanded ? t('app.composer.moreHide') : t('app.composer.moreShow')}
+        </button>
+        {expanded && (
+          <div id={moreId} className="emt-quick-composer__more" data-expanded="true">
+            <div className="emt-quick-composer__field">
+              <span className="emt-quick-composer__label">{t('app.composer.dueLabel')}</span>
+              <DueDatePicker value={dueDate} onChange={setDueDate} />
+            </div>
+            <div
+              className="emt-quick-composer__field"
+              role="radiogroup"
+              aria-label={t('app.composer.priorityLabel')}
+            >
+              <span className="emt-quick-composer__label" aria-hidden>
+                {t('app.composer.priorityLabel')}
+              </span>
+              <div className="emt-quick-composer__priority">
+                {PRIORITIES.map((p) => {
+                  const checked = p === priority;
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      role="radio"
+                      aria-checked={checked}
+                      data-priority={p}
+                      className="emt-quick-composer__priority-option"
+                      onClick={() => setPriority(p)}
+                    >
+                      {t(`app.task.fields.priority.${p}`)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
         <footer className="emt-quick-composer__actions">

@@ -1,0 +1,171 @@
+/*
+ * Search overlay (TODO 6) — full-viewport dialog over the live matrix
+ * so matching cards stay highlighted underneath the scrim.
+ */
+
+.emt-search {
+  position: fixed;
+  inset: 0;
+  z-index: var(--layer-modal);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: max(var(--space-lg), env(safe-area-inset-top)) var(--space-md) var(--space-lg);
+  pointer-events: none;
+}
+
+.emt-search__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  pointer-events: auto;
+}
+
+.emt-search__panel {
+  position: relative;
+  pointer-events: auto;
+  width: min(560px, 100%);
+  max-height: min(80vh, 640px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-surface-elevated);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+  margin-top: var(--space-xl);
+}
+
+.emt-search__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.emt-search__title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.01em;
+}
+
+.emt-search__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.emt-search__input {
+  width: 100%;
+  min-height: 48px;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-surface-elevated);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  font: inherit;
+  font-size: var(--font-size-md);
+}
+
+.emt-search__input:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-color: transparent;
+}
+
+.emt-search__results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.emt-search__result {
+  appearance: none;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 48px;
+}
+
+.emt-search__result[data-active='true'],
+.emt-search__result:hover {
+  background: color-mix(in oklab, var(--color-accent) 18%, transparent);
+}
+
+.emt-search__result:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.emt-search__result-title {
+  color: var(--color-text-primary);
+  font-size: var(--font-size-md);
+}
+
+.emt-search__result-meta {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.emt-search__empty,
+.emt-search__hint {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  padding: var(--space-sm) var(--space-xs);
+  margin: 0;
+}
+
+/* Shell buttons — mirror settings scrim treatment. */
+.emt-matrix__search,
+.emt-quadrant__search {
+  position: absolute;
+  top: max(var(--space-sm), env(safe-area-inset-top));
+  right: calc(max(var(--space-sm), env(safe-area-inset-right)) + 52px);
+  z-index: 1;
+  color: var(--color-text-secondary);
+  background: color-mix(in oklab, var(--color-bg) 72%, transparent);
+  border-radius: var(--radius-pill);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.emt-matrix__search:hover:not(:disabled),
+.emt-matrix__search:focus-visible,
+.emt-quadrant__search:hover:not(:disabled),
+.emt-quadrant__search:focus-visible {
+  color: var(--color-text-primary);
+  background: color-mix(in oklab, var(--color-bg) 88%, transparent);
+}
+
+.emt-quadrant__search {
+  z-index: var(--layer-fab);
+}
+
+/* Card highlight while search is open and this task matches. */
+.emt-task-card[data-search-match='true'] {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-accent) 55%, transparent);
+}

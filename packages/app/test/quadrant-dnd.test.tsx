@@ -143,6 +143,8 @@ describe('Quadrant drop-on-edge wiring (Step 6.2)', () => {
     expect(corner.dataset['emtEdgeColor']).toBe('q4');
     expect(corner.dataset['dropActive']).toBe('false');
     expect(corner.getAttribute('aria-hidden')).toBe('true');
+    // TODO 8 — resting diagonal glyph points at the neighbour.
+    expect(corner.querySelector('.emt-quadrant__corner-glyph')?.textContent).toBe('↙');
   });
 
   it('createDragEndHandler routes a corner drop to the diagonal quadrant (Step 12.2)', async () => {

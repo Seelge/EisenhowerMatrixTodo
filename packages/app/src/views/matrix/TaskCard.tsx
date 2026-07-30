@@ -34,6 +34,7 @@ import { useCallback, useMemo, type ReactNode } from 'react';
 import { useT } from '../../i18n/provider.js';
 import type { StringKey } from '../../i18n/strings.en.js';
 import { useViewStateStore } from '../../state/view-state.js';
+import { useSearchStore } from '../search/search-store.js';
 import { taskLayoutId } from '../zoom/ZoomController.js';
 
 import type { DraggableTaskData, DroppableCardData } from './dnd.js';
@@ -89,6 +90,9 @@ export interface TaskCardProps {
 
 export function TaskCard({ task }: TaskCardProps): ReactNode {
   const t = useT();
+  // Highlight while search is open and this card matches (TODO 6).
+  // Selector keeps the re-render surface to open/match changes only.
+  const isSearchMatch = useSearchStore((s) => s.open && s.matchIds.has(task.id));
   const onOpen = useCallback(() => {
     // Read the latest view-state at click time rather than subscribing
     // to it — the card itself doesn't render anything that depends on
@@ -162,6 +166,7 @@ export function TaskCard({ task }: TaskCardProps): ReactNode {
       data-priority={task.priority}
       data-status={task.status}
       data-dragging={isDragging ? 'true' : 'false'}
+      data-search-match={isSearchMatch ? 'true' : 'false'}
       // Step 12.1 — the shared-layout `layoutId` (used for the view1↔view2
       // zoom morph) and dnd-kit's pointer `transform` both mutate this
       // node, and while dragging they fight: framer-motion keeps trying to

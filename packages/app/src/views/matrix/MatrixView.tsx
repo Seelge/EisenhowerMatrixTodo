@@ -31,6 +31,8 @@ import { useBusyStore } from '../../state/busy.js';
 import { useNewTaskQuadrant } from '../../state/defaults.js';
 import { useViewStateStore } from '../../state/view-state.js';
 import { SettingsButton } from '../options/SettingsButton.js';
+import { SearchButton } from '../search/SearchButton.js';
+import { SyncStatusChip } from '../sync/SyncStatusChip.js';
 import { quadrantAtPoint } from '../zoom/pinch.js';
 import { usePinchGesture } from '../zoom/usePinchGesture.js';
 
@@ -115,6 +117,8 @@ export function MatrixView(): ReactNode {
           <MatrixCell quadrant="Q4" />
           <MatrixCell quadrant="Q3" />
         </div>
+        <SyncStatusChip className="emt-matrix__sync" />
+        <SearchButton className="emt-matrix__search" />
         <SettingsButton className="emt-matrix__settings" />
         <Fab
           className="emt-matrix__fab"

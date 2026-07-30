@@ -12,6 +12,8 @@
 import type { ConflictRecord, ConflictResolver } from '@emt/backend-core';
 import { useCallback, useState } from 'react';
 
+import { useConflictStatusStore } from './conflict-status.js';
+
 interface Pending {
   readonly record: ConflictRecord;
   readonly resolve: (choice: 'local' | 'remote') => void;
@@ -26,13 +28,21 @@ export interface UseConflictResolverResult {
   readonly resolveCurrent: (choice: 'local' | 'remote') => void;
 }
 
+function publishCount(n: number): void {
+  useConflictStatusStore.getState().setPendingCount(n);
+}
+
 export function useConflictResolver(): UseConflictResolverResult {
   const [queue, setQueue] = useState<readonly Pending[]>([]);
 
   const resolver = useCallback<ConflictResolver>(
     (record) =>
       new Promise<'local' | 'remote'>((resolve) => {
-        setQueue((q) => [...q, { record, resolve }]);
+        setQueue((q) => {
+          const next = [...q, { record, resolve }];
+          publishCount(next.length);
+          return next;
+        });
       }),
     [],
   );
@@ -42,7 +52,9 @@ export function useConflictResolver(): UseConflictResolverResult {
       const head = q[0];
       if (head === undefined) return q;
       head.resolve(choice);
-      return q.slice(1);
+      const next = q.slice(1);
+      publishCount(next.length);
+      return next;
     });
   }, []);
 

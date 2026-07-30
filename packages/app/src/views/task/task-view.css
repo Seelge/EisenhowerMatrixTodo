@@ -13,6 +13,11 @@
   gap: var(--space-md);
   padding: var(--space-lg);
   min-height: 0;
+  /* Fill the sheet/panel so the body can scroll under a soft keyboard
+     (design-input-new TODO 9) without growing the surface past the
+     keyboard-aware max-height set by Sheet. */
+  max-height: 100%;
+  box-sizing: border-box;
 }
 
 .emt-task-view__header {
@@ -20,6 +25,7 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-sm);
+  flex-shrink: 0;
 }
 
 .emt-task-view__heading {
@@ -34,6 +40,13 @@
   flex-direction: column;
   gap: var(--space-md);
   min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Keep the focused field clear of the sticky header while scrolling. */
+  scroll-padding-top: var(--space-sm);
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-surface-elevated) transparent;
 }
 
 .emt-task-view__field {

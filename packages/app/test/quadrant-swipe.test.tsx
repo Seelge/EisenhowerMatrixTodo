@@ -248,7 +248,10 @@ describe('QuadrantView — Step 6.3 swipe integration', () => {
     expect(useViewStateStore.getState().state.focusedQuadrant).toBe('Q1');
   });
 
-  it('ignores gestures that start inside the scroll list (preserves scrolling)', async () => {
+  it('allows swipe from a non-scrollable list (TODO 7 — empty/short lists)', async () => {
+    // With no overflow the list is free real-estate for swipe nav; the
+    // previous blanket exclusion left only the 24 px frame padding as a
+    // swipe start target on phones.
     const { container, unmount } = await renderWithQueryClient(
       <I18nProvider>
         <QuadrantView quadrant="Q1" />
@@ -257,6 +260,29 @@ describe('QuadrantView — Step 6.3 swipe integration', () => {
     teardown = unmount;
     const list = container.querySelector<HTMLElement>('.emt-quadrant__list')!;
     const main = container.querySelector<HTMLElement>('[data-view="quadrant"]')!;
+
+    // happy-dom reports scrollHeight === clientHeight for empty lists.
+    expect(list.scrollHeight).toBeLessThanOrEqual(list.clientHeight + 1);
+
+    dispatchPointer(list, 'pointerdown', { clientX: 200, clientY: 200 });
+    dispatchPointer(main, 'pointerup', { clientX: 200, clientY: 280 });
+
+    expect(useViewStateStore.getState().state.focusedQuadrant).toBe('Q3');
+  });
+
+  it('ignores gestures that start inside a scrollable list (preserves scrolling)', async () => {
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <QuadrantView quadrant="Q1" />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+    const list = container.querySelector<HTMLElement>('.emt-quadrant__list')!;
+    const main = container.querySelector<HTMLElement>('[data-view="quadrant"]')!;
+
+    // Force overflow so the list exclusion kicks in.
+    Object.defineProperty(list, 'scrollHeight', { configurable: true, get: () => 800 });
+    Object.defineProperty(list, 'clientHeight', { configurable: true, get: () => 200 });
 
     dispatchPointer(list, 'pointerdown', { clientX: 200, clientY: 200 });
     dispatchPointer(main, 'pointerup', { clientX: 200, clientY: 280 });

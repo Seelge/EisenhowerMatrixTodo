@@ -256,6 +256,69 @@ describe('QuickComposer — Step 5.8', () => {
 
     expect(container.querySelector('.emt-quick-composer')).toBeNull();
   });
+
+  it('hides due/priority until "More options" is expanded (TODO 4)', async () => {
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <QuickComposer open={true} onClose={() => {}} />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+
+    expect(container.querySelector('.emt-due-date-picker')).toBeNull();
+    expect(container.querySelector('.emt-quick-composer__priority')).toBeNull();
+
+    const toggle = container.querySelector<HTMLButtonElement>('[data-action="composer-more"]')!;
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    await act(async () => {
+      toggle.click();
+    });
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(container.querySelector('.emt-due-date-picker')).not.toBeNull();
+    expect(container.querySelector('.emt-quick-composer__priority')).not.toBeNull();
+  });
+
+  it('submit with expanded due + priority writes those fields', async () => {
+    const { registry } = await getBackends();
+    const adapter = registry.list()[0]!;
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <QuickComposer open={true} onClose={() => {}} defaultQuadrant="Q1" />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+
+    const input = container.querySelector<HTMLInputElement>('.emt-quick-composer__input')!;
+    await act(async () => {
+      setInputValue(input, 'with meta');
+    });
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('[data-action="composer-more"]')!.click();
+    });
+    await act(async () => {
+      container
+        .querySelector<HTMLButtonElement>('.emt-due-date-picker [data-emt-preset="today"]')!
+        .click();
+    });
+    await act(async () => {
+      container
+        .querySelector<HTMLButtonElement>(
+          '.emt-quick-composer__priority-option[data-priority="high"]',
+        )!
+        .click();
+    });
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+    });
+
+    await waitFor(async () => {
+      const tasks = await adapter.list('Q1');
+      return tasks.some((t) => t.title === 'with meta' && t.priority === 'high' && t.dueDate);
+    });
+    const created = (await adapter.list('Q1')).find((t) => t.title === 'with meta')!;
+    expect(created.priority).toBe('high');
+    expect(created.dueDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
 });
 
 describe('MatrixView — Step 5.8 FAB integration', () => {

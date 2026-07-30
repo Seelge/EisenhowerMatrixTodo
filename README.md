@@ -14,9 +14,9 @@ The first release ships only the local (IndexedDB) backend. Google Tasks and Mic
 
 - **PWA**: Vite 8 + `vite-plugin-pwa` (workbox)
 - **UI**: React 18 + TypeScript (strict, with `noUncheckedIndexedAccess` and `verbatimModuleSyntax`)
-- **State**: Zustand + TanStack Query (planned)
-- **Drag & drop**: dnd-kit (planned)
-- **Animation**: Framer Motion (planned)
+- **State**: Zustand + TanStack Query
+- **Drag & drop**: dnd-kit
+- **Animation**: Framer Motion
 - **Tests**: Vitest (unit), Playwright (e2e)
 - **Monorepo**: pnpm workspaces with TypeScript project references
 - **CI**: GitHub Actions

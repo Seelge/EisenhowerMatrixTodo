@@ -27,7 +27,7 @@ import { useDroppable } from '@dnd-kit/core';
 import type { Quadrant } from '@emt/backend-core';
 import { ErrorBanner, Glow, Skeleton, type GlowColor } from '@emt/design-system';
 import { motion } from 'framer-motion';
-import { useCallback, useMemo, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, type ReactNode } from 'react';
 
 import { useT } from '../../i18n/provider.js';
 import type { StringKey } from '../../i18n/strings.en.js';
@@ -39,10 +39,22 @@ import { usePinchHighlight } from '../zoom/highlight.js';
 import { quadrantLayoutId } from '../zoom/ZoomController.js';
 
 import type { DroppableCellData } from './dnd.js';
+import { ReorderHint } from './ReorderHint.js';
 import { refsForReset, sortTasks } from './sort.js';
 import { TaskCard } from './TaskCard.js';
 
 const EMPTY_RANKS: TaskOrderMap = new Map();
+
+/** Last known task count per quadrant — drives skeleton strip length (TODO 12). */
+const lastTaskCountByQuadrant = new Map<Quadrant, number>();
+
+function rememberTaskCount(quadrant: Quadrant, count: number): void {
+  lastTaskCountByQuadrant.set(quadrant, Math.min(Math.max(count, 1), 6));
+}
+
+function skeletonCountFor(quadrant: Quadrant): number {
+  return lastTaskCountByQuadrant.get(quadrant) ?? 2;
+}
 
 const GLOW_COLOR: Record<Quadrant, GlowColor> = {
   Q1: 'q1',
@@ -75,6 +87,14 @@ export function MatrixCell({ quadrant }: MatrixCellProps): ReactNode {
     () => (query.data ? sortTasks(query.data, ranks, sortBy) : undefined),
     [query.data, ranks, sortBy],
   );
+
+  // Skeleton count tracks the last known task count so a refetch of a
+  // populated cell doesn't collapse from N cards → 2 placeholders → N
+  // cards (design-input-new TODO 12).
+  useEffect(() => {
+    if (tasks !== undefined) rememberTaskCount(quadrant, tasks.length);
+  }, [quadrant, tasks]);
+  const skeletonCount = skeletonCountFor(quadrant);
 
   // "Reset" is only meaningful when at least one task in the cell has
   // a manual rank — otherwise the cards already use the secondary order.
@@ -125,12 +145,10 @@ export function MatrixCell({ quadrant }: MatrixCellProps): ReactNode {
           )}
         </header>
         <div className="emt-matrix__cell-list" data-task-count={tasks?.length ?? 0}>
-          {query.isPending && (
-            <>
-              <Skeleton className="emt-matrix__cell-skeleton" height={44} />
-              <Skeleton className="emt-matrix__cell-skeleton" height={44} />
-            </>
-          )}
+          {query.isPending &&
+            Array.from({ length: skeletonCount }, (_, i) => (
+              <Skeleton key={i} className="emt-matrix__cell-skeleton" height={44} />
+            ))}
           {query.isError && (
             <ErrorBanner
               message={query.error.message}
@@ -139,6 +157,7 @@ export function MatrixCell({ quadrant }: MatrixCellProps): ReactNode {
               }}
             />
           )}
+          <ReorderHint visible={(tasks?.length ?? 0) > 1 && !hasManualRank && !query.isPending} />
           {tasks?.map((task) => (
             <TaskCard key={task.id} task={task} />
           ))}

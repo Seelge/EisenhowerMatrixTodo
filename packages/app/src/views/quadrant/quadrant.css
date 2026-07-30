@@ -222,35 +222,59 @@
  */
 .emt-quadrant__corner {
   position: absolute;
+  display: grid;
+  place-items: center;
   width: 24px;
   height: 24px;
   pointer-events: none;
-  opacity: 0.4;
+  /* Raised from 0.4 so the diagonal target is discoverable at rest
+     (design-input-new TODO 8). Drop-active still jumps to full opacity. */
+  opacity: 0.55;
   z-index: var(--layer-quadrant-edge);
   transition:
     opacity var(--motion-duration-short) var(--motion-easing-standard),
     filter var(--motion-duration-short) var(--motion-easing-standard);
 }
 
+/* Decorative arrow pointing at the diagonal neighbour. Clipped with the
+   triangle via the parent's clip-path; aria-hidden on the host. */
+.emt-quadrant__corner-glyph {
+  font-size: 11px;
+  line-height: 1;
+  color: var(--color-bg);
+  font-weight: var(--font-weight-medium);
+  opacity: 0.9;
+  /* Nudge the glyph toward the corner apex so it sits inside the triangle. */
+  transform: translate(var(--corner-glyph-x, 0), var(--corner-glyph-y, 0));
+}
+
 .emt-quadrant__corner[data-corner='top-left'] {
   top: 0;
   left: 0;
   clip-path: polygon(0 0, 100% 0, 0 100%);
+  --corner-glyph-x: -3px;
+  --corner-glyph-y: -3px;
 }
 .emt-quadrant__corner[data-corner='top-right'] {
   top: 0;
   right: 0;
   clip-path: polygon(0 0, 100% 0, 100% 100%);
+  --corner-glyph-x: 3px;
+  --corner-glyph-y: -3px;
 }
 .emt-quadrant__corner[data-corner='bottom-left'] {
   bottom: 0;
   left: 0;
   clip-path: polygon(0 0, 0 100%, 100% 100%);
+  --corner-glyph-x: -3px;
+  --corner-glyph-y: 3px;
 }
 .emt-quadrant__corner[data-corner='bottom-right'] {
   bottom: 0;
   right: 0;
   clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  --corner-glyph-x: 3px;
+  --corner-glyph-y: 3px;
 }
 
 .emt-quadrant__corner[data-drop-active='true'] {
@@ -311,8 +335,14 @@
   right: max(var(--space-sm), env(safe-area-inset-right));
   z-index: var(--layer-fab);
   color: var(--color-text-secondary);
+  /* Same scrim as `.emt-matrix__settings` (design-input-new TODO 2). */
+  background: color-mix(in oklab, var(--color-bg) 72%, transparent);
+  border-radius: var(--radius-pill);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 .emt-quadrant__settings:hover:not(:disabled),
 .emt-quadrant__settings:focus-visible {
   color: var(--color-text-primary);
+  background: color-mix(in oklab, var(--color-bg) 88%, transparent);
 }

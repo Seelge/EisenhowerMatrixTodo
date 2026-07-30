@@ -109,6 +109,69 @@
   border-radius: var(--radius-md);
 }
 
+/* TODO 13 — one-shot reorder discoverability nudge. */
+.emt-reorder-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  margin-bottom: var(--space-xs);
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--color-accent) 12%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-accent) 28%, transparent);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  animation: emt-reorder-hint-in var(--motion-duration-medium) var(--motion-easing-standard);
+}
+
+.emt-reorder-hint__text {
+  letter-spacing: 0.02em;
+}
+
+.emt-reorder-hint__dismiss {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--font-size-md);
+  line-height: 1;
+  cursor: pointer;
+  min-width: 28px;
+  min-height: 28px;
+  border-radius: var(--radius-pill);
+  opacity: 0.8;
+}
+
+.emt-reorder-hint__dismiss:hover,
+.emt-reorder-hint__dismiss:focus-visible {
+  opacity: 1;
+  color: var(--color-text-primary);
+}
+
+.emt-reorder-hint__dismiss:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+@keyframes emt-reorder-hint-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .emt-reorder-hint {
+    animation: none;
+  }
+}
+
 .emt-matrix__cell:focus {
   outline: none;
 }

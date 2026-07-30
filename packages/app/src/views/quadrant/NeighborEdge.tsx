@@ -167,6 +167,13 @@ export interface DiagonalCornerProps {
  * 24×24 corner square (dnd-kit collides on rects); `quadrant.css`
  * clips the *visual* to a corner triangle pointing at the diagonal.
  */
+const CORNER_GLYPH: Record<Corner, string> = {
+  'top-left': '↖',
+  'top-right': '↗',
+  'bottom-left': '↙',
+  'bottom-right': '↘',
+};
+
 export function DiagonalCorner({ corner, diagonal }: DiagonalCornerProps): ReactNode {
   const data: DroppableEdgeData = useMemo(() => ({ kind: 'edge', quadrant: diagonal }), [diagonal]);
   const { setNodeRef, isOver } = useDroppable({ id: `edge-${diagonal}`, data });
@@ -179,6 +186,8 @@ export function DiagonalCorner({ corner, diagonal }: DiagonalCornerProps): React
       data-emt-edge-color={NEIGHBOR_COLOR[diagonal]}
       data-drop-active={isOver ? 'true' : 'false'}
       aria-hidden="true"
-    />
+    >
+      <span className="emt-quadrant__corner-glyph">{CORNER_GLYPH[corner]}</span>
+    </div>
   );
 }

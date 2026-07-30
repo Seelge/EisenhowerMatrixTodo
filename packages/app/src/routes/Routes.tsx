@@ -18,6 +18,7 @@ import { MatrixView } from '../views/matrix/MatrixView.js';
 import { isOptionsPath } from '../views/options/options-routing.js';
 import { OptionsView } from '../views/options/OptionsView.js';
 import { QuadrantView } from '../views/quadrant/QuadrantView.js';
+import { SearchHotkeys, SearchOverlay } from '../views/search/SearchOverlay.js';
 import { TaskView } from '../views/task/TaskView.js';
 import { ZoomController } from '../views/zoom/ZoomController.js';
 
@@ -55,6 +56,8 @@ export function Routes(): ReactNode {
         )}
       </ZoomController>
       <TaskView />
+      <SearchHotkeys />
+      <SearchOverlay />
     </>
   );
 }

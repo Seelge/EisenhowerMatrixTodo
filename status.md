@@ -4,87 +4,59 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 ## Current activity
 
-**Phase:** Implementation.
+**Phase:** Phase 13 — post-Phase-12 UX polish (three improvement passes).
 
-**Next:** Phase 12 complete — all twelve post-deploy feedback items are landed (12.11 + 12.12 added mid-phase after the palette refresh exposed the missing Options entry point and a stale colour literal in the high-priority dot glow). The next session should pick up the remaining pre-release manual items (see "Pending external actions") and then close **Step 11.6** by tagging `v0.1.0`.
+**Next:** Remaining open TODOs in `design-input-new.md` (tags surface, light mode, visual regression, remote backends), then pre-release manual items and **Step 11.6** (`v0.1.0` tag).
 
-Quick index:
-- **12.1** — ✅ DnD correctness: delete is immediate, intra-quadrant reorder works, no card jitter during drag.
-- **12.2** — ✅ view2 neighbour-edge drop precedence (diagonal becomes reachable).
-- **12.3** — ✅ `TaskCardMenu` rendered as a portal popover so the kebab menu isn't clipped by the cell.
-- **12.4** — ✅ view3 dismisses on click-outside, not just Esc.
-- **12.5** — ✅ Card readability on narrow viewports (no 3-char truncation at 360 px).
-- **12.6** — ✅ Remove the "Important" / "Urgent" axis labels to reclaim space.
-- **12.7** — ✅ Quick-composer keyboard-aware layout on Android.
-- **12.8** — ✅ Pinch-zoom snap into view2 on mobile browsers (Android Firefox).
-- **12.9** — ✅ Ctrl+wheel zoom hijack prevention (suppress browser font-scale on desktop).
-- **12.10** — ✅ Brighter neon palette refresh.
-- **12.11** — ✅ Settings (gear) button in the matrix + quadrant shell — view4 is reachable without typing `/options`.
-- **12.12** — ✅ Drop the hardcoded high-priority dot glow literal — palette swaps and AppearancePanel overrides now flow through.
+### Phase 13 landed this session
 
-**In progress (frozen on user manual steps):** Step 11.6 — Release checklist & GitHub Pages live. Autonomous portion complete:
+**Pass 1 — polish**
 
-- Live URL: <https://seelge.github.io/EisenhowerMatrixTodo/> (the `Deploy` workflow publishes on every push to `main`).
-- Lighthouse against the live site (modern Lighthouse ≥ 12 has dropped the dedicated PWA category — installability now lives inside Best Practices): Performance 88, Accessibility 91, Best Practices 96, SEO 90. PWA installability also re-verified by `pwa.spec.ts` + `pwa-offline.spec.ts` in CI.
-- `RELEASE.md` scaffold landed with the checklist, scores, live URL, and the exact `git tag -s v0.1.0 …` invocation.
+| TODO | Change |
+|------|--------|
+| 2 | Settings gear pill scrim (legible over Q1) |
+| 4 | QuickComposer "More options…" → due + priority |
+| 7 | view2 swipe when list is not scrollable |
+| 8 | Diagonal corner glyph + higher resting opacity |
+| 9 | TaskView body scrolls under soft keyboard |
+| 12 | Skeleton count from last known task count |
 
-Phase 12 should probably land before v0.1.0 is tagged, since several items are real bugs (12.1, 12.5).
+**Pass 2 — search (TODO 6)**
 
-**Last completed:** Step 12.12 — drop the hardcoded high-priority dot glow literal. `views/matrix/task-card.css:105` pinned `rgba(255, 77, 109, 0.6)` (the pre-Step 12.10 Q1) for the `[data-priority='high']` dot's `box-shadow`, so on a task set to high priority the glow stayed pink-red after the neon palette refresh and ignored any per-quadrant AppearancePanel override. Routed it through the live `--color-q1` token via `color-mix(in oklab, var(--color-q1), transparent 40%)`, which preserves the original 60 % alpha (60 % colour + 40 % transparent) and stays palette-coherent. Grep confirms no other `#ff4d6d` / `rgba(255, 77, 109, …)` literals remain in the source tree (the only mention is a comment in the new rule pointing back at the historical literal). No tests were added — this is a CSS-only swap with no logic change; the visual confirmation is a high-priority task on the live deploy.
+- Search button + overlay (title/notes/tags)
+- `/` and Ctrl/Cmd+K hotkeys
+- Card highlight via `data-search-match` without zoom change
 
-**Earlier:** Step 12.11 — Settings button in the app shell. After Step 12.10 the user noticed that (a) the new neon palette didn't appear in their browser and (b) there was no way to reach view4 (Options) from the app — the only entry was typing `/options` into the URL bar. Root cause for (a) was an unrelated persistence quirk (per-quadrant `appearance:q{n}` overrides in IndexedDB shadow the new defaults — the user has to Reset them from the AppearancePanel). This step fixes (b) so the Reset is reachable in the first place. New `SettingsButton` (`packages/app/src/views/options/SettingsButton.tsx`) wraps the design-system `IconButton` (48×48, Material touch-target spec) with an inline Material gear SVG and a `useViewStateStore.navigateRaw(OPTIONS_INDEX_PATH)` click handler. Wired into `MatrixView` and `QuadrantView` with positioning classes (`.emt-matrix__settings` in `matrix/quick-composer.css`, `.emt-quadrant__settings` in `quadrant/quadrant.css`) that anchor it top-right with `safe-area-inset-top`/`-right`, mirroring the FAB convention so it stays clear of the notch on phones and doesn't compete with the bottom-right FAB. New i18n key `app.options.open` ("Settings"). Unit tests in `matrix-view.test.tsx` + `quadrant-view.test.tsx` assert button presence, aria-label, positioning class, and that clicking sets `window.location.pathname` to `/options`. New `e2e/options-entry.spec.ts` drives the real shell (matrix → click → `/options` heading visible → browser back returns to matrix; same for view2 via Tab+Enter into Q1). All 482 unit tests + the a11y / keyboard e2e specs stay green. The hardcoded `rgba(255, 77, 109, 0.6)` glow in `views/matrix/task-card.css:105` (a leftover from before Step 12.10) is the follow-up that became Step 12.12.
+**Pass 3 — shell status + discoverability**
 
-**Earlier still:** Step 12.10 — neon-brighter palette refresh. The four quadrant colours and the cyan accent were pushed toward higher saturation / luminance. New values: Q1 `#FF3370` (hotter neon pink-red), Q2 `#3DF1FF` (vivid neon cyan, also the new accent), Q3 `#FFB800` (neon amber), Q4 `#A7B4C4` (brighter muted grey — stays muted because Q4 = "Delete"). All four still pass AA against both `--color-bg` (#0a0e14) and `--color-surface` (#121821); Q4 ticks up to AAA in the bargain (9.18:1 vs bg). Q1 5.49:1, Q2 14.02:1, Q3 11.15:1, Q4 9.18:1, accent 14.02:1. Edits: `tokens.css` + `tokens.ts` (palette + matching `glow-*` rgba triplets, computed once from the new hexes); `tokens.test.ts` rewritten to derive the expected `rgba(r, g, b` prefix from `tokens.color.*` so future palette swaps don't need to touch the test pin; `docs/a11y-audit.md` table refreshed with new hexes + ratios and a note that Step 12.10 drove the refresh; `design-input.md` palette section annotated with the originals (`#FF4D6D`, `#7DF9FF`, …) for historical context. No app-side CSS touches needed — every consumer (cells, glow borders, AppearancePanel defaults, ThemeProvider) already flows through `var(--color-q*)` / `tokens.color.q*`. Side-by-side screenshot in `docs/release-screenshots/palette-before-after.png` is the optional asset called out in the plan and stays a TODO for the v0.1 release notes (the live URL after CI/Deploy is the easiest way to grab it).
+| TODO | Change |
+|------|--------|
+| 3 | `SyncStatusChip` top-left: Local / Offline / N conflicts |
+| 13 | One-shot "Drag cards to reorder" hint (sessionStorage) |
 
-**Earlier still:** Step 12.9 — Ctrl+wheel zoom hijack prevention. React's synthetic `onWheel` is registered as a *passive* listener, so the existing `e.preventDefault()` inside the handler was a no-op on desktop Chrome — the browser still ran its native Ctrl+wheel page-zoom (font scaling on `document.documentElement`). Fix in `views/zoom/ZoomController.tsx`: drop the `onWheel={...}` JSX prop and bind the listener ourselves via `useEffect` + `window.addEventListener('wheel', …, { passive: false })`. The handler is now `window`-scoped (catches events regardless of which descendant the cursor is over); the scene element is looked up via `document.querySelector('.emt-zoom__scene')` only to resolve the cursor → quadrant mapping. While there, fixed a latent cooldown bug exposed by the new e2e: `lastWheelAt` was initialised to `0`, so the first wheel within 300 ms of page load got swallowed — now `Number.NEGATIVE_INFINITY`. Tests: `zoom-wheel.test.tsx` gains a "non-passive on window" assertion via `vi.spyOn(window, 'addEventListener')` and a "wheel dispatched on window still drives zoom" case; new `e2e/ctrl-wheel-zoom.spec.ts` dispatches a real `WheelEvent` with `ctrlKey: true` via `page.evaluate`, asserts `defaultPrevented`, asserts the URL/view2 navigation, and asserts the document's inline `zoom` / computed root `fontSize` are untouched (proves the browser's own page-zoom did not fire). Touching the existing tests was unnecessary — they dispatch wheel events with `bubbles: true` on the scene, which bubble up to the window listener.
+Also: README stack no longer says Zustand/dnd-kit/Framer are "planned".
 
-**Earlier still:** Step 12.8 — pinch-zoom snap reliability. Two causes: (1) the gesture hosts let the browser claim two-finger gestures for native page-zoom, and (2) `usePinchGesture` only resolved on `pointerup`, which Android Chrome may never deliver cleanly (it can steal the stream for native zoom and emit `pointercancel`). Fix: `matrix.css` + `quadrant.css` set `touch-action: pan-y` on the gesture hosts and their scroll containers (`.emt-matrix`, `.emt-matrix__cell`, `.emt-matrix__cell-list`, `.emt-quadrant`, `.emt-quadrant__frame`, `.emt-quadrant__list`) — keeps vertical scroll, denies native pinch-zoom; cards already had `touch-action: none`. `usePinchGesture` now resolves the pinch on `pointermove` the instant the ratio crosses a threshold (via `tryResolveFromTracked`), with a `resolved` latch so the callback still fires at most once per gesture; `pointerup` stays as a fallback. New `matrix-pinch.test.tsx` case proves the snap fires from pointermoves alone, with no `pointerup` dispatched. **Manual device smoke (real Android Chrome) still owed** per the plan.
-
-**Earlier still:** Step 12.7 — keyboard-aware composer layout. The QuickComposer renders in the design-system `Sheet` (`position: fixed; bottom: 0`), so on a mobile browser whose keyboard overlays content the quadrant picker + actions sat behind the keyboard. Two-layer fix: **primary** — `index.html` viewport meta gains `interactive-widget=resizes-content` and `main.tsx` sets `navigator.virtualKeyboard.overlaysContent = false` (feature-detected), so conforming browsers shrink the layout viewport and `bottom: 0` already tracks the keyboard; **fallback** — new `design-system/visual-viewport.ts` exposes `keyboardAwareLayout` (pure) + `useKeyboardAwareLayout` (a `useSyncExternalStore` hook over the Visual Viewport API), and `Sheet` uses it to lift itself by `keyboardInset` and cap `maxHeight` to the visible area when a keyboard is detected (no-op when inset is 0). Tests: `visual-viewport.test.ts` covers the pure function (keyboard open/closed, sub-threshold jitter, `offsetTop`); `sheet.test.tsx` gains a case stubbing a shrunk `window.visualViewport` and asserting the sheet picks up `bottom`/`maxHeight`. `QuickComposer.tsx`/`quick-composer.css` needed no change — the fix lives entirely at the `Sheet` surface level. **Manual smoke still owed:** confirm on a real Android device (the plan asks for this; can't be done from CI).
-
-**Earlier still:** Step 12.6 — removed the "Important ↑" / "Urgent →" axis-label strips. The verb-labelled cells already imply the axes, and the strips ate space the cells needed on narrow viewports. `MatrixView.tsx` no longer renders the two `.emt-matrix__axis` spans; `matrix.css` dropped the `.emt-matrix__axis*` rules and the asymmetric axis-gutter padding (`.emt-matrix` is now uniform `--space-md`, `--space-sm` at the narrow breakpoint), so the 2×2 grid fills the surface. The `app.matrix.axis.important` / `…urgent` i18n keys are removed. `matrix-view.test.tsx`'s "renders both axis labels" test is replaced with one asserting no `.emt-matrix__axis*` element renders. Cell order / keyboard focus order unchanged. `design-input.md`'s view1 line annotated to note the Phase 12 removal.
-
-**Earlier still:** Step 12.5 — card readability on narrow viewports. CSS-only. `.emt-task-card__title` swapped its single-line `white-space: nowrap` clip for a two-line clamp (`-webkit-line-clamp: 2` + `overflow-wrap: anywhere`), so a title that was getting snipped after 2-3 chars on a 360 px portrait screen now wraps across two readable lines. A `@media (max-width: 540px)` block in `matrix.css` + `task-card.css` reclaims horizontal space at that breakpoint (matrix padding `md sm`, grid gap `sm`, cell padding `sm`, card open-button padding `sm` / column-gap `xs`). New e2e `card-readability.spec.ts` runs at 360×720 and asserts the Q1 seed title renders over two lines (`boundingBox().height > 28`). Note: `golden-path.spec.ts` showed a pre-existing flake (`boundingBox()` null right after `toBeVisible()` passed — framer-motion entry-animation timing, unrelated to this step's CSS); it passes on retry and CI runs with `retries: 2`. Step 12.6 removes the axis strips and reclaims the rest of the matrix padding.
-
-**Earlier still:** Step 12.4 — view3 dismiss on click-outside. The desktop side panel (`SidePanel`) has no scrim, so view3 was dismissable only by Escape. `useDialogBehavior` (design-system) gained an opt-in `DialogBehaviorOptions.closeOnOutsidePointer`: when set, a `document` `pointerdown` outside the dialog root routes through `onClose`. `SidePanel` opts in; `Sheet` doesn't (its scrim already handles it, so the narrow-viewport variant is unchanged). No `TaskView` logic change — its existing `onClose` already routes through `closeViewState`. Tests: `sheet.test.tsx` covers the SidePanel inside/outside pointerdown contract; `task-view.test.tsx` covers the full integration (click on the quadrant behind the panel closes view3 and preserves zoom; click inside the panel doesn't). **Note for future design-system changes:** the app imports `@emt/design-system` from its built `dist/`, so `tsc -b` (or `pnpm typecheck`) must run before `pnpm test` picks up design-system source edits — CI already orders typecheck before test.
-
-**Earlier still:** Step 12.3 — `TaskCardMenu` as a portal popover. The kebab menu used to render inline (`position: absolute` within the card), so in view1 cells it was clipped to the cell's `overflow` box — often only the first item showed. It now renders through `createPortal` to `document.body` with `position: fixed` at `--layer-tooltip`; a `useLayoutEffect` measures the trigger's bounding rect and writes `left`/`top`/`visibility` straight onto the node (DOM write, not React state — keeps the lint rule happy and lands before paint), flipping the popover above the trigger when a card near the viewport bottom would push it off-screen. The menu starts `visibility: hidden` in CSS so it never flashes unplaced. Dismissal: outside-click and Escape as before, plus a new `onBlur` focus-loss guard (microtask-deferred `document.activeElement` check so arrow-key navigation between items doesn't trip it), plus scroll/resize-while-open dismissal. Roving keyboard nav unchanged. Tests in `task-card-menu.test.tsx` updated to look the menu up via `document` (it's portalled now) with new cases for the portal-mount contract and the focus-loss guard. `MatrixCell.tsx` untouched.
-
-**Earlier still:** Step 12.2 — view2 neighbour drop-edge precedence. The focused quadrant's two orthogonal neighbour strips used to span the full edge and overlapped in a 24×24 corner square (non-deterministic drop) while the diagonal quadrant was unreachable. Fix in `views/quadrant/NeighborEdge.tsx` + `quadrant.css` + `QuadrantView.tsx`: a new `DIAGONALS` map gives each focused quadrant its diagonal neighbour + shared corner; `NeighborEdge` takes a `corner` prop and emits `data-inset` so each strip is pulled back 24 px at its corner-facing end; a new `DiagonalCorner` component renders a 24×24 corner drop zone (visual clipped to a triangle via `clip-path`, full-square hit area) reusing `DroppableEdgeData` so `createDragEndHandler` routes it with no handler change. Drops now resolve purely by region. Tests added in `quadrant-dnd.test.tsx`: `DiagonalCorner` structural contract, the `data-inset` attribute, a handler test routing a corner drop to the diagonal quadrant, and a `QuadrantView` assertion that exactly one corner zone renders.
-
-**Earlier still:** Step 12.1 — DnD correctness sweep: optimistic delete (`applyOptimisticDelete` in `views/matrix/dnd.ts`, removes the card synchronously, rolls back on undo), intra-quadrant reorder (each `TaskCard` is also a `kind: 'card'` droppable; `computeReorderRank` writes a fractional rank via `useSetTaskRank`), and no drag jitter (`TaskCard` drops its `layoutId` while `isDragging`).
-
-Earlier history (incl. Step 11.5 PWA offline e2e) lives in `git log --oneline` and the ✅ markers on `plan.md` step headings.
+**Tests:** 500 unit tests green. Typecheck + eslint clean.
 
 ## Environment notes
 
-- Node 24.15.0 installed via fnm (binary at `~/.local/bin/fnm`, manager dir `~/.local/share/fnm`). fnm init appended to `~/.zshrc` and `~/.bashrc` so future shells pick it up automatically.
-- pnpm 10.33.2 activated via Corepack and pinned in root `package.json` `packageManager`.
-- Repo pins Node major in `.node-version` (`24`).
+- Prefer `bun` when `pnpm` is not on `PATH` (`./node_modules/.bin/vitest`, `tsc -b`).
+- Repo still pins `packageManager: pnpm@10.33.2`.
 
 ## Pending external actions (user)
 
-The following items are required to close **Step 11.6** in `plan.md` (Release checklist & GitHub Pages live) and ship v0.1. Phase 12 fixes should land first — several are real bugs that would block a clean release.
+Unchanged from Step 11.6 — needed to ship v0.1.0:
 
-1. **Install the PWA on Android Chrome** and capture screenshots into `docs/release-screenshots/android-install.png` + `…/android-home.png`. The address-bar prompt should offer "Install"; the home-screen icon should use the 512×512 PNG from the manifest.
-2. **Install the PWA on Windows Chrome** and capture screenshots into `docs/release-screenshots/windows-install.png` + `…/windows-home.png`. The address-bar "Install" icon should produce a desktop shortcut + standalone window.
-3. **Tag v0.1.0 with your GPG key.** Exact invocation (also in `RELEASE.md`):
+1. Android + Windows PWA install screenshots → `docs/release-screenshots/`.
+2. Tag `v0.1.0` with GPG (see `RELEASE.md`).
+3. Real-device smoke: pinch-zoom (TODO 1) + QuickComposer keyboard.
 
-   ```sh
-   git tag -s v0.1.0 -m "v0.1.0 — first release"
-   git push origin v0.1.0
-   ```
+## Open TODOs still open
 
-   The release-notes outline (feature surface, shipped backends, deferred items) is in `RELEASE.md` under "Tag the release".
-
-4. **Post-release housekeeping** once the tag is pushed: bump `package.json` to `0.2.0-dev` and open a v0.2 milestone covering the deferred items (remote backends, recurring tasks, `dueDateTime`, custom themes). Outline in `RELEASE.md` § Post-release.
-
-## Open questions / blockers
-
-None.
+See `design-input-new.md`: TODO 1 (device smoke), 5 (tags surface), 10 (light mode), 11 (recurrence), 14 (field-level conflict), 15 (visual regression). Tag autocomplete half of TODO 4.
 
 ## How to resume
 
-1. Read `design-input.md`, `plan.md`, this file.
-2. Run `git log --oneline -20` and `git status`.
-3. Find the next un-checked step in `plan.md` (or whatever the most recent commit subject points at) and begin. If resuming inside Phase 12, pick any step that's still un-ticked — they're independent.
+1. Read `design-input-new.md`, this file.
+2. `git log --oneline -20` / `git status`.
+3. Next code work: tags filter/list, or ship 11.6 once manual checks land.
