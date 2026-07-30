@@ -38,11 +38,10 @@ contrast (icons, focus rings, etc.).
 > palette). All ratios above are AA or better against both `--color-bg`
 > and `--color-surface`. Q4 ticks up from AA → AAA at the same time.
 
-The quadrant colors are also load-bearing for the matrix glow
-borders. The glow effect overlays a faint colored ring on top of the
-surface — the ring is decorative and the visual contrast that
-matters for AA is the text/border contrast against the underlying
-surface, captured above.
+The quadrant colors are also load-bearing for the matrix neon
+borders (1 px solid frames via the `Glow` primitive). The border is
+decorative chrome; the visual contrast that matters for AA is the
+text/border colour against the underlying surface, captured above.
 
 ## Keyboard navigation
 

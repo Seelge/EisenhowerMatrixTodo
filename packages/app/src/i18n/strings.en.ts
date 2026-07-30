@@ -52,6 +52,7 @@ export const strings = {
   'app.task.due.tomorrow': 'Tomorrow',
   'app.task.due.weekend': 'This weekend',
   'app.task.due.nextWeek': 'Next week',
+  'app.task.due.overdue': 'Overdue',
   'app.task.fields.priority': 'Priority',
   'app.task.fields.priority.none': 'None',
   'app.task.fields.priority.low': 'Low',

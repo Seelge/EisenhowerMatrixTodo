@@ -54,7 +54,7 @@
   grid-template-areas:
     'q2 q1'
     'q4 q3';
-  gap: var(--space-md);
+  gap: var(--space-sm);
   width: 100%;
   flex: 1;
   min-height: 0;
@@ -303,7 +303,7 @@
     padding: var(--space-sm);
   }
   .emt-matrix__grid {
-    gap: var(--space-sm);
+    gap: var(--space-xs);
   }
   .emt-matrix__cell {
     padding: var(--space-sm);

@@ -27,7 +27,7 @@ Microsoft To-Do later.
 
 - **Minimal futuristic neon on near-black.** A focused, "command-deck" feel —
   the matrix is a workspace, not a checklist. Each quadrant has a single
-  load-bearing colour and a soft glow that reads as the only ornament on the
+  load-bearing colour drawn as a thin neon border — the only ornament on the
   surface.
 - **Touch-first, keyboard-complete.** Phone in portrait is the primary form
   factor; everything reachable by tap must also be reachable by Tab + arrow +
@@ -114,7 +114,7 @@ crosses a view boundary pushes history. The view-state store mirrors the URL
 ### Phone portrait (primary, ≤ 540 px wide)
 
 - 2 × 2 matrix fills the viewport edge-to-edge with `--space-sm` padding and
-  gap. Each cell is roughly `(viewport_w − 24px) / 2` on the short edge.
+  `--space-xs` gap. Each cell is roughly `(viewport_w − 20px) / 2` on the short edge.
 - view3 mounts as a Material 3 **bottom sheet** with a scrim. The matrix
   remains visible above the sheet, dimmed.
 - QuickComposer (FAB → +) mounts as a bottom sheet. The picker sits *above*
@@ -131,7 +131,7 @@ and side-panel breakpoint kicks in if width > 720 px.
 
 ### Tablet / desktop (≥ 720 px wide)
 
-- Matrix uses `--space-md` padding and gap; cells get larger and titles can
+- Matrix uses `--space-md` padding and `--space-sm` gap; cells get larger and titles can
   sit on one line.
 - view3 mounts as a **right side panel** (~480 px wide) without a scrim. The
   matrix or focused quadrant remains fully interactive in the area to the
@@ -168,20 +168,20 @@ the entire viewport.
 | `--color-q4` (Delete)     | `#A7B4C4` | Neither — intentionally muted              | 9.2 : 1 (AAA)            |
 | `--color-error`           | `#FF3370` | Destructive / failure (shares Q1 hue)      | 5.5 : 1 (AA)             |
 
-Quadrant colours double as glow tokens via `--glow-q{n}`, computed as
-`0 0 20px rgba(rgb, 0.6), inset 0 0 8px rgba(rgb, 0.25)`. The high-priority
-dot's glow flows through `color-mix(in oklab, var(--color-q1), transparent 40%)`
-so palette swaps and per-quadrant overrides cascade automatically (no hex
-literals duplicated in component CSS).
+Quadrant colours double as chrome tokens via `--glow-q{n}` (aliases of
+`--color-q{n}`). Phase 15 replaced soft outer/inset halos with **1 px solid
+neon borders** on the `Glow` frame, FAB, picker, neighbor edges, high-priority
+dot ring, and menus. Palette swaps and per-quadrant overrides still cascade
+through the token aliases (no hex literals duplicated in component CSS).
 
-### 4.2 Glow system
+### 4.2 Neon frame system
 
-Every quadrant cell wears its colour as an outer halo + a faint inset shadow.
-The same glow lights the drop-target on hover-while-dragging and the
+Every quadrant cell wears its colour as a **1 px neon border** (no soft halo).
+The same token lights the drop-target on hover-while-dragging and the
 "pinch-out from this quadrant" highlight that fades over 220 ms after
-returning to view1. The active **drop indicator** is the per-quadrant glow at
-full opacity + a 2 px primary-text-coloured outline so the receiving cell
-reads clearly against the underlying surface.
+returning to view1. The active **drop indicator** is the per-quadrant border
+colour at full strength plus a 2 px primary-text outline so the receiving
+cell reads clearly against the underlying surface.
 
 ### 4.3 Typography
 
@@ -236,13 +236,14 @@ modal at `modal`; the undo snackbar at `snackbar`.
 +----------+----------+
 ```
 
-- 2 × 2 CSS grid filling the viewport. `.emt-matrix` has `overflow: hidden`;
+- 2 × 2 CSS grid filling the viewport (gap `--space-sm` desktop /
+  `--space-xs` ≤540 px). `.emt-matrix` has `overflow: hidden`;
   each cell scrolls its own task list (`overflow-y: auto`) independently.
 - The **axis labels** ("Important ↑" / "Urgent →") that the original design
   reserved space for are **removed**. The verb-labelled cells (Do, Schedule,
   Delegate, Delete) already imply the axes, and the gutter the axis strips
   ate was unaffordable on a 360 px portrait screen.
-- Each cell wears its quadrant's glow border, with a header strip carrying
+- Each cell wears its quadrant's 1 px neon border, with a header strip carrying
   the quadrant name and (only when at least one card in the cell carries a
   manual rank) a small "Reset" pill.
 
@@ -256,20 +257,22 @@ modal at `modal`; the undo snackbar at `snackbar`.
 ```
 
 - 10 px priority dot at left (`none` empty-ring / `low` muted / `normal`
-  accent / `high` Q1 + soft glow).
+  accent / `high` Q1 + 1 px neon ring).
 - Title clamped to 2 lines via `-webkit-line-clamp: 2` + `overflow-wrap:
   anywhere`. No more 3-character truncation on narrow viewports.
-- Meta row: due-date pill + tag chips. Due dates use relative labels
-  ("Today", "Tomorrow", "This weekend", "Next week") when the date lands in a
-  named bucket, otherwise the locale-formatted absolute date.
+- Meta row: due-date + tag chips. Due dates use relative labels
+  ("Overdue", "Today", "Tomorrow", "This weekend", "Next week") when the
+  date lands in a named bucket (`data-due-bucket`), otherwise the
+  locale-formatted absolute date. Overdue uses `--color-error`; today uses
+  `--color-accent`. Done tasks keep muted meta regardless of bucket.
 - Tap target: the entire `.emt-task-card__open` (the card minus the kebab) is
   a real `<button>` and opens view3.
 - Kebab (`⋮`): a 32 px-wide column on the right of the card. Tapping it opens
   the **TaskCardMenu** as a popover **portalled to `document.body`** so it
   escapes the cell's overflow clip. The popover position is measured from
   the trigger's bounding rect and flips upward if it would otherwise fall
-  below the viewport. Items: "Move to Q1 / Q2 / Q3 / Q4" (excluding the
-  current quadrant) — this is the WCAG-required keyboard alternative to drag.
+  below the viewport. Items: Mark complete / Reopen, Delete (undo snackbar),
+  "Move to Q*" (excluding current) — keyboard alternative to drag.
 
 ### Drag-and-drop
 
@@ -282,8 +285,8 @@ modal at `modal`; the undo snackbar at `snackbar`.
   above this card" via the card's rect; the card's own `useDroppable` is
   disabled while it is the dragged item so dnd-kit never resolves a drop
   onto itself.
-- Drop indicator: the receiving cell's per-quadrant glow at full opacity + a
-  2 px white outline. The dragged card stays fully opaque at 0.85 alpha
+- Drop indicator: the receiving cell's per-quadrant neon border at full
+  strength + a 2 px white outline. The dragged card stays fully opaque at 0.85 alpha
   (`data-dragging='true'`) and gets `z-index: 1` so the cell's overflow box
   doesn't clip it mid-drag. `layoutId` is dropped from the dragged node while
   `isDragging` so framer-motion's shared-layout morph and dnd-kit's
@@ -730,7 +733,8 @@ priority segmented control. Tag autocomplete still open (see TODO 5).
 - QuickComposer more-options — comma-separated tags on create.
 - Options → Tags — inventory; tap applies filter and navigates home.
 
-Still open later: global rename/delete of a tag across all tasks.
+Still open later: tag autocomplete from inventory; global rename/delete
+of a tag across all tasks.
 
 ## TODO 6 — Search ✅
 
@@ -817,3 +821,12 @@ several palette / overflow bugs that would have been caught by a single
 golden-image diff. Cost: one cron CI run per PR; one approval step per
 visual change. Decide before v0.2 starts; cheaper to add once than to
 keep finding palette regressions by deploying.
+
+## TODO 16 — Matrix scannability (due urgency + shell) ✅
+
+**Done (Phase 17).**
+
+- Task cards: `data-due-bucket` + Overdue/Today styling; overdue label.
+- Matrix grid gap tightened (`sm` / `xs` on narrow).
+- `n` hotkey opens QuickComposer (ignored while typing / search / task sheet).
+- design-input §4.1–4.2 + audits aligned with thin neon borders.

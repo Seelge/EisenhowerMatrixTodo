@@ -22,7 +22,7 @@
 import { DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { Fab } from '@emt/design-system';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, type ReactNode } from 'react';
 
 import { useT } from '../../i18n/provider.js';
 import { useSetTaskRank } from '../../queries/task-order.js';
@@ -38,6 +38,7 @@ import { quadrantAtPoint } from '../zoom/pinch.js';
 import { usePinchGesture } from '../zoom/usePinchGesture.js';
 
 import './matrix.css';
+import { useComposerOpen, useComposerStore } from './composer-store.js';
 import { createDragEndHandler } from './dnd.js';
 import { MatrixCell } from './MatrixCell.js';
 import { QuickComposer } from './QuickComposer.js';
@@ -79,9 +80,9 @@ export function MatrixView(): ReactNode {
     useBusyStore.getState().setDragging(false);
   }, []);
 
-  const [composerOpen, setComposerOpen] = useState(false);
-  const openComposer = useCallback(() => setComposerOpen(true), []);
-  const closeComposer = useCallback(() => setComposerOpen(false), []);
+  const composerOpen = useComposerOpen();
+  const openComposer = useCallback(() => useComposerStore.getState().openComposer(), []);
+  const closeComposer = useCallback(() => useComposerStore.getState().closeComposer(), []);
   const newTaskQuadrant = useNewTaskQuadrant();
   // All tasks feed the filter bar so chips reflect the whole matrix,
   // not just one cell. Filtering itself still happens per-cell.

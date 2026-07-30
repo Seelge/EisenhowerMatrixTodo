@@ -9,6 +9,8 @@ import { SnackbarProvider } from '@emt/design-system';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
+import { useComposerStore } from '../src/views/matrix/composer-store.ts';
+
 import { renderToContainer, type RenderHandle } from './render.ts';
 
 export interface QueryRenderHandle extends RenderHandle {
@@ -25,6 +27,8 @@ export function createTestQueryClient(): QueryClient {
 }
 
 export async function renderWithQueryClient(node: ReactNode): Promise<QueryRenderHandle> {
+  // Shared zustand store — reset so parallel files don't leak open state.
+  useComposerStore.setState({ open: false });
   const client = createTestQueryClient();
   // SnackbarProvider is always present in App; TaskCardMenu (Phase 16)
   // needs it for delete+undo, so tests share the same shell.

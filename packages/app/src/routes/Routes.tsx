@@ -14,6 +14,7 @@ import type { ReactNode } from 'react';
 import { DebugPage } from '../debug/DebugPage.js';
 import { ConnectBanner } from '../onboarding/ConnectBanner.js';
 import { useInternalPath, useViewState } from '../state/view-state.js';
+import { ComposerHotkeys } from '../views/matrix/ComposerHotkeys.js';
 import { MatrixView } from '../views/matrix/MatrixView.js';
 import { isOptionsPath } from '../views/options/options-routing.js';
 import { OptionsView } from '../views/options/OptionsView.js';
@@ -58,6 +59,7 @@ export function Routes(): ReactNode {
       <TaskView />
       <SearchHotkeys />
       <SearchOverlay />
+      <ComposerHotkeys />
     </>
   );
 }

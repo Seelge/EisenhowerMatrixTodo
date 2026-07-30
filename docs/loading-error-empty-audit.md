@@ -16,7 +16,7 @@ is present.
 | View                            | Loading              | Error               | Empty                                | Notes |
 | ------------------------------- | -------------------- | ------------------- | ------------------------------------ | ----- |
 | `matrix/MatrixView.tsx`         | n/a (shell only)     | n/a                 | n/a                                  | Owns the 2×2 grid + FAB; each cell is responsible for its own state. |
-| `matrix/MatrixCell.tsx`         | `Skeleton` ×2        | `ErrorBanner` + retry | deliberate visual empty            | Matrix cells stay visually empty by design — putting a label in every cell would be noisy in the 2×2 grid. Empty state belongs to the **whole** matrix, which is bounded by Step 11.4's golden-path e2e. |
+| `matrix/MatrixCell.tsx`         | `Skeleton` (last count) | `ErrorBanner` + retry | `EmptyNote` when zero visible tasks | Phase 16: empty note when filter/hide-completed leaves the cell empty. Skeletons use last known count (clamped). |
 | `quadrant/QuadrantView.tsx`     | `Skeleton` ×3        | `ErrorBanner` + retry | `EmptyNote`                        | Full-screen view, needs all three. |
 | `task/TaskView.tsx`             | `Skeleton` ×4        | `ErrorBanner` + retry | `EmptyNote`                        | Patched in this step — previously rendered a bare `<p>` for the not-found case, which conflated loading and missing. |
 | `options/OptionsView.tsx`       | n/a (shell only)     | n/a                 | n/a                                  | Pure routing surface. |

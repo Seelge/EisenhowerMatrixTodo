@@ -73,29 +73,54 @@ describe('TaskCard', () => {
     expect(container.querySelector('.emt-task-card__due')).toBeNull();
   });
 
-  it('renders the full date for a date-only due', async () => {
+  it('renders the full date for a far-future date-only due', async () => {
     const { container, unmount } = await renderWithQueryClient(
-      <TaskCard task={makeTask({ dueDate: '2026-12-31' })} />,
+      <TaskCard task={makeTask({ dueDate: '2099-12-31' })} />,
     );
     teardown = unmount;
     const due = container.querySelector<HTMLTimeElement>('.emt-task-card__due');
     expect(due).not.toBeNull();
-    expect(due!.getAttribute('datetime')).toBe('2026-12-31');
+    expect(due!.getAttribute('datetime')).toBe('2099-12-31');
+    expect(due!.dataset['dueBucket']).toBe('future');
     // Format is locale-dependent; assert structural facts that hold
     // across locales rather than a specific string.
-    expect(due!.textContent).toMatch(/2026/);
+    expect(due!.textContent).toMatch(/2099/);
     expect(due!.textContent).not.toMatch(/·/);
   });
 
   it('appends the time to the due-date label when both are set', async () => {
     const { container, unmount } = await renderWithQueryClient(
-      <TaskCard task={makeTask({ dueDate: '2026-12-31', dueTime: '14:30' })} />,
+      <TaskCard task={makeTask({ dueDate: '2099-12-31', dueTime: '14:30' })} />,
     );
     teardown = unmount;
     const due = container.querySelector<HTMLTimeElement>('.emt-task-card__due');
     expect(due).not.toBeNull();
     expect(due!.textContent).toMatch(/·/);
-    expect(due!.textContent).toMatch(/2026/);
+    expect(due!.textContent).toMatch(/2099/);
+  });
+
+  it('labels overdue dues and sets data-due-bucket=past (Phase 17)', async () => {
+    const { container, unmount } = await renderWithQueryClient(
+      <TaskCard task={makeTask({ dueDate: '2000-01-01' })} />,
+    );
+    teardown = unmount;
+    const card = container.querySelector<HTMLElement>('.emt-task-card');
+    const due = container.querySelector<HTMLTimeElement>('.emt-task-card__due');
+    expect(card!.dataset['dueBucket']).toBe('past');
+    expect(due!.dataset['dueBucket']).toBe('past');
+    expect(due!.textContent).toBe('Overdue');
+  });
+
+  it('labels today dues with data-due-bucket=today (Phase 17)', async () => {
+    const today = new Date();
+    const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const { container, unmount } = await renderWithQueryClient(
+      <TaskCard task={makeTask({ dueDate: iso })} />,
+    );
+    teardown = unmount;
+    const due = container.querySelector<HTMLTimeElement>('.emt-task-card__due');
+    expect(due!.dataset['dueBucket']).toBe('today');
+    expect(due!.textContent).toBe('Today');
   });
 
   it('renders multiple tags as separate siblings', async () => {

@@ -56,14 +56,14 @@ const RELATIVE_KEY: Record<RelativeDateKey, StringKey | undefined> = {
   tomorrow: 'app.task.due.tomorrow',
   weekend: 'app.task.due.weekend',
   nextWeek: 'app.task.due.nextWeek',
-  past: undefined,
+  past: 'app.task.due.overdue',
   future: undefined,
 };
 
 /**
  * Format the due-date side of the card label. Returns a relative
- * label ("Today" / "Tomorrow" / "This weekend" / "Next week") when
- * the stored date falls into a named bucket relative to `now`,
+ * label ("Overdue" / "Today" / "Tomorrow" / "This weekend" / "Next week")
+ * when the stored date falls into a named bucket relative to `now`,
  * otherwise the localised absolute date. The relative bucketing is
  * driven by `relativeDateKey` so the comparison stays consistent
  * with the picker presets (see `packages/backend-core/src/time.md`).
@@ -79,6 +79,15 @@ function formatDuePart(
   if (key !== undefined) return t(key);
   const d = parseLocalDate(dueDate);
   return d ? dateFormatter.format(d) : dueDate;
+}
+
+function dueBucket(
+  dueDate: string | undefined,
+  now: Date,
+  locale: string,
+): RelativeDateKey | undefined {
+  if (dueDate === undefined) return undefined;
+  return relativeDateKey(dueDate, now, locale);
 }
 
 function formatTimePart(dueDate: string, dueTime: string): string | undefined {
@@ -108,17 +117,28 @@ export function TaskCard({ task, snackbarDuration }: TaskCardProps): ReactNode {
     });
   }, [task.id]);
 
-  const dueLabel = useMemo(() => {
-    if (task.dueDate === undefined) return undefined;
+  const dueMeta = useMemo(() => {
+    if (task.dueDate === undefined) {
+      return {
+        bucket: undefined as RelativeDateKey | undefined,
+        label: undefined as string | undefined,
+      };
+    }
     const locale =
       typeof navigator !== 'undefined' && typeof navigator.language === 'string'
         ? navigator.language
         : 'en-US';
-    const datePart = formatDuePart(task.dueDate, t, new Date(), locale);
-    if (task.dueTime === undefined) return datePart;
+    const now = new Date();
+    const bucket = dueBucket(task.dueDate, now, locale);
+    const datePart = formatDuePart(task.dueDate, t, now, locale);
+    if (task.dueTime === undefined) return { bucket, label: datePart };
     const timePart = formatTimePart(task.dueDate, task.dueTime);
-    return timePart === undefined ? datePart : `${datePart} · ${timePart}`;
+    return {
+      bucket,
+      label: timePart === undefined ? datePart : `${datePart} · ${timePart}`,
+    };
   }, [task.dueDate, task.dueTime, t]);
+  const { bucket, label: dueLabel } = dueMeta;
   const hasMeta = dueLabel !== undefined || task.tags.length > 0;
 
   const data: DraggableTaskData = useMemo(() => ({ kind: 'task', task }), [task]);
@@ -167,6 +187,7 @@ export function TaskCard({ task, snackbarDuration }: TaskCardProps): ReactNode {
       data-task-id={task.id}
       data-priority={task.priority}
       data-status={task.status}
+      data-due-bucket={bucket}
       data-dragging={isDragging ? 'true' : 'false'}
       data-search-match={isSearchMatch ? 'true' : 'false'}
       // Step 12.1 — the shared-layout `layoutId` (used for the view1↔view2
@@ -193,7 +214,7 @@ export function TaskCard({ task, snackbarDuration }: TaskCardProps): ReactNode {
         {hasMeta && (
           <span className="emt-task-card__meta">
             {dueLabel !== undefined && (
-              <time className="emt-task-card__due" dateTime={task.dueDate}>
+              <time className="emt-task-card__due" dateTime={task.dueDate} data-due-bucket={bucket}>
                 {dueLabel}
               </time>
             )}

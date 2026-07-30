@@ -35,7 +35,6 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
@@ -49,6 +48,7 @@ import { useBusyStore } from '../../state/busy.js';
 import { useHideCompleted, useSortBy } from '../../state/defaults.js';
 import { taskOrderKey, type TaskOrderMap } from '../../state/task-order.js';
 import { useViewStateStore } from '../../state/view-state.js';
+import { useComposerOpen, useComposerStore } from '../matrix/composer-store.js';
 import { createDragEndHandler } from '../matrix/dnd.js';
 import { QuickComposer } from '../matrix/QuickComposer.js';
 import { ReorderHint } from '../matrix/ReorderHint.js';
@@ -319,9 +319,9 @@ export function QuadrantView({ quadrant }: QuadrantViewProps): ReactNode {
   // there's no picker to fight the implied target. The FAB anchors to
   // the frame's bottom-right with the same safe-area-aware offset rule
   // as `.emt-matrix__fab`.
-  const [composerOpen, setComposerOpen] = useState(false);
-  const openComposer = useCallback(() => setComposerOpen(true), []);
-  const closeComposer = useCallback(() => setComposerOpen(false), []);
+  const composerOpen = useComposerOpen();
+  const openComposer = useCallback(() => useComposerStore.getState().openComposer(), []);
+  const closeComposer = useCallback(() => useComposerStore.getState().closeComposer(), []);
 
   return (
     <DndContext

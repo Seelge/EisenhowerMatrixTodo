@@ -141,6 +141,23 @@
   white-space: nowrap;
 }
 
+/* Phase 17 — matrix scannability: overdue / today stand out in the list. */
+.emt-task-card__due[data-due-bucket='past'] {
+  color: var(--color-error);
+  font-weight: 500;
+}
+
+.emt-task-card__due[data-due-bucket='today'] {
+  color: var(--color-accent);
+  font-weight: 500;
+}
+
+/* Done cards keep muted meta even when overdue (hide-completed may still show them). */
+.emt-task-card[data-status='done'] .emt-task-card__due {
+  color: var(--color-text-secondary);
+  font-weight: 400;
+}
+
 .emt-task-card__tags {
   display: flex;
   flex-wrap: wrap;
