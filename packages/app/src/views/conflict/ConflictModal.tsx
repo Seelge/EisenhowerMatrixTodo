@@ -1,27 +1,22 @@
 /**
- * ConflictModal — view5 conflict resolution surface (Step 10.1).
+ * ConflictModal — view5 conflict resolution surface (Step 10.1 / Phase 21).
  *
- * Displays the local and remote whole records side by side with the
- * differing fields highlighted; the user picks one side via two
- * primary actions. The choice is propagated through `onResolve`.
+ * Displays local and remote side by side with differing fields
+ * highlighted. The user can:
+ *  - Keep all local / Keep all remote (whole-record shortcuts)
+ *  - Click individual field values to pick a side, then Apply selection
  *
- * The conflict pipeline (Step 10.2) registers a resolver against the
- * app's sync-engine instance that opens the modal and awaits the
- * user's choice via this contract. We deliberately stay agnostic to
- * the resolver wiring at this step — the modal is a presentation
- * component with an `onResolve` callback.
- *
- * Surface choice: a centered dialog (not a Sheet / SidePanel) because
- * conflict resolution is a focused, mode-switching task — the user
- * cannot defer or background it. Keyboard:
- *  - Esc closes (treated as "cancel", no resolution; the resolver
- *    queue holds the conflict open for the next user idle).
- *  - The Keep-Local / Keep-Remote buttons each carry an aria-label
- *    so screen readers announce them with the full intent.
+ * Outcome is a {@link ConflictResolution} (`'local' | 'remote' | { merged }`).
  */
-import type { ConflictRecord, DifferingField, Task } from '@emt/backend-core';
+import {
+  resolutionFromFieldPicks,
+  type ConflictRecord,
+  type ConflictResolution,
+  type DifferingField,
+  type Task,
+} from '@emt/backend-core';
 import { Button } from '@emt/design-system';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { useT } from '../../i18n/provider.js';
 import type { StringKey } from '../../i18n/strings.en.js';
@@ -31,7 +26,7 @@ import './conflict-modal.css';
 export interface ConflictModalProps {
   open: boolean;
   record: ConflictRecord | undefined;
-  onResolve: (side: 'local' | 'remote') => void;
+  onResolve: (resolution: ConflictResolution) => void;
   onCancel?: () => void;
 }
 
@@ -66,29 +61,39 @@ function displayValue(task: Task, field: DifferingField): string {
   return String(v);
 }
 
-export function ConflictModal({
-  open,
+function defaultPicks(
+  fields: readonly DifferingField[],
+): Record<DifferingField, 'local' | 'remote'> {
+  const out = {} as Record<DifferingField, 'local' | 'remote'>;
+  for (const f of fields) out[f] = 'local';
+  return out;
+}
+
+function ConflictModalBody({
   record,
   onResolve,
   onCancel,
-}: ConflictModalProps): ReactNode {
+}: {
+  record: ConflictRecord;
+  onResolve: (resolution: ConflictResolution) => void;
+  onCancel?: (() => void) | undefined;
+}): ReactNode {
   const t = useT();
   const dialogRef = useRef<HTMLDivElement | null>(null);
+  const fields = useMemo(
+    () => FIELDS_IN_ORDER.filter((f) => record.differingFields.includes(f)),
+    [record.differingFields],
+  );
+  const [picks, setPicks] = useState(() => defaultPicks(fields));
 
-  // Focus the local-keep button on open so the user has a default
-  // action under the keyboard.
   useEffect(() => {
-    if (!open) return;
     const button = dialogRef.current?.querySelector<HTMLButtonElement>(
       '[data-action="keep-local"]',
     );
     button?.focus();
-  }, [open]);
+  }, []);
 
-  // Esc → cancel. The dialog owns its own listener (matches view3's
-  // ResponsiveSurface convention).
   useEffect(() => {
-    if (!open) return;
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') {
         e.preventDefault();
@@ -97,12 +102,15 @@ export function ConflictModal({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, onCancel]);
+  }, [onCancel]);
 
-  if (!open || record === undefined) return null;
+  const setPick = (field: DifferingField, side: 'local' | 'remote'): void => {
+    setPicks((prev) => ({ ...prev, [field]: side }));
+  };
 
-  const differing = new Set<DifferingField>(record.differingFields);
-  const rows = FIELDS_IN_ORDER.filter((f) => differing.has(f));
+  const onApplyMerge = (): void => {
+    onResolve(resolutionFromFieldPicks(record.local, record.remote, fields, picks));
+  };
 
   return (
     <div className="emt-conflict-modal" role="presentation" data-view="conflict">
@@ -125,13 +133,14 @@ export function ConflictModal({
             {t('app.conflict.heading')}
           </h2>
           <p className="emt-conflict-modal__subheading">{t('app.conflict.subheading')}</p>
+          <p className="emt-conflict-modal__hint">{t('app.conflict.fieldHint')}</p>
         </header>
         <div className="emt-conflict-modal__grid" data-list="diff-rows">
           <div className="emt-conflict-modal__col emt-conflict-modal__col--label">
             <span className="emt-conflict-modal__col-head" aria-hidden="true">
               {' '}
             </span>
-            {rows.map((f) => (
+            {fields.map((f) => (
               <span key={f} className="emt-conflict-modal__field" data-field={f}>
                 {t(FIELD_LABEL[f])}
               </span>
@@ -139,28 +148,38 @@ export function ConflictModal({
           </div>
           <div className="emt-conflict-modal__col" data-side="local">
             <span className="emt-conflict-modal__col-head">{t('app.conflict.local')}</span>
-            {rows.map((f) => (
-              <span
+            {fields.map((f) => (
+              <button
                 key={f}
+                type="button"
                 className="emt-conflict-modal__value emt-conflict-modal__value--diff"
                 data-side="local"
                 data-field={f}
+                data-selected={picks[f] === 'local' ? 'true' : 'false'}
+                aria-pressed={picks[f] === 'local'}
+                aria-label={`${t(FIELD_LABEL[f])}: ${t('app.conflict.local')}`}
+                onClick={() => setPick(f, 'local')}
               >
                 {displayValue(record.local, f)}
-              </span>
+              </button>
             ))}
           </div>
           <div className="emt-conflict-modal__col" data-side="remote">
             <span className="emt-conflict-modal__col-head">{t('app.conflict.remote')}</span>
-            {rows.map((f) => (
-              <span
+            {fields.map((f) => (
+              <button
                 key={f}
+                type="button"
                 className="emt-conflict-modal__value emt-conflict-modal__value--diff"
                 data-side="remote"
                 data-field={f}
+                data-selected={picks[f] === 'remote' ? 'true' : 'false'}
+                aria-pressed={picks[f] === 'remote'}
+                aria-label={`${t(FIELD_LABEL[f])}: ${t('app.conflict.remote')}`}
+                onClick={() => setPick(f, 'remote')}
               >
                 {displayValue(record.remote, f)}
-              </span>
+              </button>
             ))}
           </div>
         </div>
@@ -174,15 +193,35 @@ export function ConflictModal({
             {t('app.conflict.keepLocal')}
           </Button>
           <Button
-            variant="filled"
+            variant="tonal"
             data-action="keep-remote"
             aria-label={t('app.conflict.keepRemote')}
             onClick={() => onResolve('remote')}
           >
             {t('app.conflict.keepRemote')}
           </Button>
+          <Button
+            variant="filled"
+            data-action="apply-merge"
+            aria-label={t('app.conflict.applyMerge')}
+            onClick={onApplyMerge}
+          >
+            {t('app.conflict.applyMerge')}
+          </Button>
         </footer>
       </div>
     </div>
   );
+}
+
+export function ConflictModal({
+  open,
+  record,
+  onResolve,
+  onCancel,
+}: ConflictModalProps): ReactNode {
+  if (!open || record === undefined) return null;
+  // Remount when the conflict identity changes so field picks reset.
+  const key = `${record.local.id}:${record.local.updatedAt}:${record.remote.updatedAt}`;
+  return <ConflictModalBody key={key} record={record} onResolve={onResolve} onCancel={onCancel} />;
 }

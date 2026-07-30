@@ -805,22 +805,22 @@ quadrant has > 1 task and no manual ranks; dismiss writes
 `sessionStorage`. Disappears automatically once the user reorders
 (`hasManualRank`). Kebab "Reorder…" modal still open if needed.
 
-## TODO 14 — Conflict modal: field-level resolution
+## TODO 14 — Conflict modal: field-level resolution ✅
 
-The first release ships **whole-record** conflict resolution. After
-shipping, watch for users complaining that they had to choose between
-"my updated title and your unrelated tag change" vs. losing one. A
-field-level resolver — per-field "keep local / remote / both" — is the
-natural follow-up. Defer until we have one real-world conflict to point
-at, but earmark the conflict modal's component shape to be extensible.
+**Done (Phase 21).**
+
+- Per-field pick (tap local/remote value); Apply selection.
+- Whole-record Keep local / Keep remote remain.
+- `ConflictResolution` may be `{ merged: Task }`; sync engine writes
+  cache + updates outbox payload.
+- Pure `buildMergedTask` / `resolutionFromFieldPicks` in backend-core.
 
 ## TODO 15 — Tests: visual regression coverage ✅ (smoke)
 
-**Done (Phase 20, smoke).** Playwright `toHaveScreenshot` on the seeded
-matrix at a fixed phone viewport (`e2e/visual-smoke.spec.ts`). Baseline
-committed under `e2e/visual-smoke.spec.ts-snapshots/`. Broader surface
-coverage (options, view3, light mode) can expand later; Chromatic/Percy
-still optional.
+**Done (Phase 20, smoke).** CI-stable layout/chrome contract on the seeded
+matrix (`e2e/visual-smoke.spec.ts`): four cells, ≥phone geometry, 1px Q1
+neon border + dark palette tokens. Pixel goldens skipped (font metrics
+differ local vs GHA); Docker-matched baselines optional later.
 
 ## TODO 16 — Matrix scannability (due urgency + shell) ✅
 

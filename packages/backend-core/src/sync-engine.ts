@@ -355,6 +355,17 @@ export class DefaultSyncEngine implements SyncEngine {
         // Drop the now-superseded local pending entry.
         await this.outbox.delete(pending.seq);
         applied++;
+      } else if (typeof choice === 'object' && choice.merged !== undefined) {
+        // Field-level merge (Phase 21): write the blended task and make
+        // sure the pending outbox payload matches so flush pushes it.
+        // pending.op is create|update here (delete branch continued above).
+        const merged = choice.merged;
+        await cache.put(merged);
+        await this.outbox.update({
+          ...pending,
+          payload: merged,
+        });
+        applied++;
       } else {
         // Keep local. Cache already holds the local copy; the queued
         // outbox entry will push it to the backend on the next flush.

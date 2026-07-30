@@ -423,6 +423,37 @@ describe('DefaultSyncEngine', () => {
       expect(queued[0]?.taskId).toBe(localA.id);
     });
 
+    it('persists a field-level merge into cache and outbox payload', async () => {
+      const local = makeTask({
+        id: 'm' as TaskId,
+        title: 'local-title',
+        notes: 'local-notes',
+        quadrant: 'Q1',
+      });
+      const remote: Task = {
+        ...local,
+        title: 'remote-title',
+        notes: 'remote-notes',
+        quadrant: 'Q3',
+      };
+      await cache.put(local);
+      await pullEngine.enqueueWrite('update', local);
+      adapter.nextChanges = () => ({ upserts: [remote], deletes: [], cursor: 'c-merge' });
+      pullEngine.setConflictResolver(async () => ({
+        merged: { ...local, title: remote.title, notes: local.notes, quadrant: remote.quadrant },
+      }));
+
+      const result = await pullEngine.pull(REMOTE);
+      expect(result.conflicts).toBe(1);
+      const cached = await cache.get(REMOTE, local.id);
+      expect(cached?.title).toBe('remote-title');
+      expect(cached?.notes).toBe('local-notes');
+      expect(cached?.quadrant).toBe('Q3');
+      const queued = await outbox.list();
+      expect(queued).toHaveLength(1);
+      expect((queued[0]?.payload as Task).title).toBe('remote-title');
+    });
+
     it('skips remote upserts when no resolver is needed (identical remote)', async () => {
       const local = makeTask({ title: 'same' });
       await cache.put(local);

@@ -40,12 +40,16 @@ function task(overrides: Partial<Task>): Task {
 }
 
 interface FakeEngine {
-  setConflictResolver: (r: (rec: ConflictRecord) => Promise<'local' | 'remote'>) => void;
-  resolve: (rec: ConflictRecord) => Promise<'local' | 'remote'>;
+  setConflictResolver: (
+    r: (rec: ConflictRecord) => Promise<'local' | 'remote' | { merged: Task }>,
+  ) => void;
+  resolve: (rec: ConflictRecord) => Promise<'local' | 'remote' | { merged: Task }>;
 }
 
 function makeFakeEngine(): FakeEngine {
-  let resolver: ((rec: ConflictRecord) => Promise<'local' | 'remote'>) | undefined;
+  let resolver:
+    | ((rec: ConflictRecord) => Promise<'local' | 'remote' | { merged: Task }>)
+    | undefined;
   return {
     setConflictResolver(r) {
       resolver = r;

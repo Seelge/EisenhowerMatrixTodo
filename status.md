@@ -4,23 +4,23 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 ## Current activity
 
-**Phase:** Phase 20 — About shortcuts + visual smoke — **committing**. Next: Phase 21 field-level conflicts.
+**Phase:** Phase 21 — Field-level conflict + Phase 20 CI fix — **committing**.
 
 ### What landed
 
-**Phase 19** (`ad2f448`): global tag rename/delete.
-**Phase 20:** About keyboard cheat-sheet; Playwright matrix screenshot baseline (TODO 15 smoke).
+- **Phase 19** (`ad2f448`): global tag rename/delete.
+- **Phase 20** (`2ce4859`): About shortcuts; visual smoke (pixel golden failed CI → layout/chrome contract).
+- **Phase 21:** per-field conflict picks + `{ merged }` resolution in sync engine.
 
 ### Privacy / API
 
-- No network/telemetry. About still only links to the public GitHub source URL.
+- Conflict merge is local cache/outbox only. No network/telemetry.
 - `rewrite-email.sh` untracked.
 
 ### Next
 
-1. Phase 21 — field-level conflict resolution (TODO 14).
-2. Phase 22 — light mode (TODO 10).
-3. Document external: TODO 1 device smoke, TODO 11 recurrence.
+1. Phase 22 — light mode (TODO 10).
+2. Document external: TODO 1 device smoke, TODO 11 recurrence.
 
 ## Pending external actions (user)
 

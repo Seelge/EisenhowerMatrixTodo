@@ -15,7 +15,13 @@ export type {
   OutboxRecord,
   TaskRecord,
 } from './cache-schema.ts';
-export type { ConflictRecord, ConflictResolver, DifferingField } from './conflict.ts';
+export type {
+  ConflictRecord,
+  ConflictResolution,
+  ConflictResolver,
+  DifferingField,
+} from './conflict.ts';
+export { buildMergedTask, resolutionFromFieldPicks } from './conflict.js';
 export { runAdapterContract } from './contract-tests.js';
 export type { AdapterContractOptions, AdapterFactory, ContractSection } from './contract-tests.js';
 export { migrateTask } from './migrate.js';

@@ -4,13 +4,11 @@
  * When the sync engine pulls remote changes for a task that has also
  * been modified locally since the last sync, it surfaces the conflict
  * to the application via a `ConflictResolver` callback. The resolver
- * picks a side; the sync engine then writes the chosen record to both
- * ends so they reconverge.
+ * picks a side (or a field-level merge); the sync engine then writes
+ * the chosen record so both ends reconverge.
  *
- * Per `design-input.md`: resolution is whole-record (not field-merge).
- * The user picks "keep local" or "keep remote" via a side-by-side diff
- * modal in `view3` (Phase 10). For headless tests, supply a synchronous
- * implementation that returns a fixed choice.
+ * Phase 21 extends whole-record local/remote with an optional merged
+ * {@link Task} built from per-field picks in the conflict modal.
  */
 
 import type { Task } from './task.ts';
@@ -36,15 +34,100 @@ export interface ConflictRecord {
 }
 
 /**
- * Resolves a single conflict by returning the side to keep.
- *
- * Returning `'local'` instructs the sync engine to write the local
- * record over the remote; `'remote'` instructs the inverse. Either
- * way, after the engine completes its writes both sides hold the
- * chosen record.
- *
- * All choices are async to allow user prompting (e.g., the modal in
- * `view3`). Resolvers may also be implemented headlessly in tests
- * (return `Promise.resolve('local')`, etc.).
+ * Resolver outcome:
+ * - `'local'` / `'remote'` — keep that whole record
+ * - `{ merged }` — field-level blend; engine writes this task to cache
+ *   and updates the pending outbox payload so the next flush pushes it
  */
-export type ConflictResolver = (record: ConflictRecord) => Promise<'local' | 'remote'>;
+export type ConflictResolution = 'local' | 'remote' | { readonly merged: Task };
+
+/**
+ * Resolves a single conflict.
+ *
+ * All choices are async to allow user prompting. Resolvers may also be
+ * implemented headlessly in tests (`Promise.resolve('local')`, etc.).
+ */
+export type ConflictResolver = (record: ConflictRecord) => Promise<ConflictResolution>;
+
+function copyTask(source: Task): Task {
+  return {
+    id: source.id,
+    backendId: source.backendId,
+    title: source.title,
+    notes: source.notes,
+    priority: source.priority,
+    quadrant: source.quadrant,
+    status: source.status,
+    tags: [...source.tags],
+    createdAt: source.createdAt,
+    updatedAt: source.updatedAt,
+    ...(source.dueDate !== undefined ? { dueDate: source.dueDate } : {}),
+    ...(source.dueTime !== undefined ? { dueTime: source.dueTime } : {}),
+    ...(source.completedAt !== undefined ? { completedAt: source.completedAt } : {}),
+  };
+}
+
+function applyField(target: Task, source: Task, field: DifferingField): void {
+  switch (field) {
+    case 'title':
+      target.title = source.title;
+      break;
+    case 'notes':
+      target.notes = source.notes;
+      break;
+    case 'priority':
+      target.priority = source.priority;
+      break;
+    case 'quadrant':
+      target.quadrant = source.quadrant;
+      break;
+    case 'status':
+      target.status = source.status;
+      break;
+    case 'tags':
+      target.tags = [...source.tags];
+      break;
+    case 'dueDate':
+      if (source.dueDate === undefined) delete target.dueDate;
+      else target.dueDate = source.dueDate;
+      break;
+    case 'dueTime':
+      if (source.dueTime === undefined) delete target.dueTime;
+      else target.dueTime = source.dueTime;
+      break;
+    case 'completedAt':
+      if (source.completedAt === undefined) delete target.completedAt;
+      else target.completedAt = source.completedAt;
+      break;
+  }
+}
+
+/**
+ * Build a task from per-field side picks. Fields not listed in
+ * `choices` keep the local value (they should already match remote).
+ */
+export function buildMergedTask(
+  local: Task,
+  remote: Task,
+  choices: Readonly<Partial<Record<DifferingField, 'local' | 'remote'>>>,
+): Task {
+  const out = copyTask(local);
+  for (const [field, side] of Object.entries(choices) as [DifferingField, 'local' | 'remote'][]) {
+    applyField(out, side === 'local' ? local : remote, field);
+  }
+  return out;
+}
+
+/** Collapse uniform picks to a whole-record side when possible. */
+export function resolutionFromFieldPicks(
+  local: Task,
+  remote: Task,
+  differingFields: readonly DifferingField[],
+  picks: Readonly<Record<DifferingField, 'local' | 'remote'>>,
+): ConflictResolution {
+  if (differingFields.length === 0) return 'local';
+  const sides = differingFields.map((f) => picks[f]);
+  if (sides.every((s) => s === 'local')) return 'local';
+  if (sides.every((s) => s === 'remote')) return 'remote';
+  return { merged: buildMergedTask(local, remote, picks) };
+}

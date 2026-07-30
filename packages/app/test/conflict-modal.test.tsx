@@ -82,6 +82,48 @@ describe('ConflictModal — Step 10.1', () => {
     expect(onResolve).toHaveBeenCalledWith('remote');
   });
 
+  it('applies a field-level merge when sides are mixed', async () => {
+    const local = task({ title: 'Local title', quadrant: 'Q1', tags: ['a'] });
+    const remote = task({
+      id: local.id,
+      title: 'Remote title',
+      quadrant: 'Q3',
+      tags: ['b'],
+    });
+    const record: ConflictRecord = {
+      local,
+      remote,
+      differingFields: ['title', 'quadrant', 'tags'],
+    };
+    const onResolve = vi.fn();
+
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <ConflictModal open record={record} onResolve={onResolve} />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+
+    await act(async () => {
+      container
+        .querySelector<HTMLButtonElement>('[data-side="remote"][data-field="title"]')!
+        .click();
+    });
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('[data-action="apply-merge"]')!.click();
+    });
+
+    expect(onResolve).toHaveBeenCalledTimes(1);
+    const resolution = onResolve.mock.calls[0]![0] as {
+      merged?: { title: string; quadrant: string; tags: string[] };
+    };
+    expect(resolution.merged).toMatchObject({
+      title: 'Remote title',
+      quadrant: 'Q1',
+      tags: ['a'],
+    });
+  });
+
   it('does not render when open is false', async () => {
     const onResolve = vi.fn();
     const { container, unmount } = await renderWithQueryClient(
