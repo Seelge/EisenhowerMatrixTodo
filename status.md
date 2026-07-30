@@ -4,21 +4,19 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 ## Current activity
 
-**Phase:** Phases 23–26 — **done** (committing). Everyday UX polish after design TODOs 1–19.
+**Phase:** Phases 27–29 — **done** (committing).
 
 ### Session summary
 
 | Phase | Notes |
 |-------|--------|
-| 23 | Optimistic `useUpdateTask` patch (status/move/priority) |
-| 24 | Data clear confirm + honest import fallback message |
-| 25 | Composer due time + default priority preference |
-| 26 | Connect banner CTA/styles + skip-to-content link |
+| 27 | `applyTaskPatch` + `null` clear on optional fields |
+| 28 | Notes Edit/Preview Markdown (safe subset, no deps) |
+| 29 | Light-theme axe e2e on matrix |
 
 ### Privacy / API
 
-- Prefs stay in local meta IDB (`defaults:defaultPriority`, connect banner flag).
-- No network, telemetry, or external APIs.
+- No network/telemetry. MD preview is client-only HTML escape + subset.
 - `rewrite-email.sh` untracked.
 
 ### Remaining open (not implementable here)
@@ -26,9 +24,8 @@ Live handoff document for cross-session continuity. Updated at the start and end
 - **TODO 1** — real Android pinch smoke (human + device).
 - **TODO 11** — recurrence (design spike first).
 - **Step 11.6** — PWA screenshots + GPG release tag (user).
-- Light-theme axe e2e; snackbar aria-live countdown (optional a11y).
 
 ## How to resume
 
 1. Read this file + `design-input-new.md`.
-2. Next product work: recurrence design, or ship 11.6, or notes MD preview / TaskPatch clear / sync-cache wiring.
+2. Next: recurrence design, or ship 11.6.

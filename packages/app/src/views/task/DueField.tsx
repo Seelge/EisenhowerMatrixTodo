@@ -5,19 +5,10 @@
  * side and a native `<input type="time">` for the optional time. The
  * time input is always rendered (so users see what's available) but
  * stays disabled until a date is set — picking the "No date" preset
- * clears the date and the time together. Writes go straight through
- * `useUpdateTask`; both inputs are discrete (button presses / native
- * picker changes), so no debounce is needed here unlike `TitleField`
- * and `NotesField`.
- *
- * Note on the `TaskPatch` cast: under `exactOptionalPropertyTypes`,
- * a `TaskPatch` literal cannot carry `dueDate: undefined` — the
- * optional-field value type excludes `undefined`. Adapters merge via
- * `{ ...existing, ...patch }`, so `undefined` in the patch correctly
- * clears the field at runtime; the cast is a small local concession
- * to the contract's lack of an explicit "clear" mechanism. Widening
- * `TaskPatch` would push type changes through every adapter and is
- * out of scope for this step.
+ * clears the date and the time together via `null` on {@link TaskPatch}.
+ * Writes go straight through `useUpdateTask`; both inputs are discrete
+ * (button presses / native picker changes), so no debounce is needed
+ * here unlike `TitleField` and `NotesField`.
  */
 import type { Task, TaskPatch } from '@emt/backend-core';
 import { DueDatePicker } from '@emt/design-system';
@@ -39,20 +30,14 @@ export function DueField({ task }: DueFieldProps): ReactNode {
   const updateTask = useUpdateTask();
 
   const onDateChange = (next: string | null): void => {
-    const patch: Record<string, unknown> = {};
-    if (next === null) {
-      patch.dueDate = undefined;
-      patch.dueTime = undefined;
-    } else {
-      patch.dueDate = next;
-    }
-    updateTask.mutate({ backendId: task.backendId, id: task.id, patch: patch as TaskPatch });
+    const patch: TaskPatch = next === null ? { dueDate: null, dueTime: null } : { dueDate: next };
+    updateTask.mutate({ backendId: task.backendId, id: task.id, patch });
   };
 
   const onTimeChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const raw = e.currentTarget.value;
-    const patch: Record<string, unknown> = { dueTime: raw === '' ? undefined : raw };
-    updateTask.mutate({ backendId: task.backendId, id: task.id, patch: patch as TaskPatch });
+    const patch: TaskPatch = { dueTime: raw === '' ? null : raw };
+    updateTask.mutate({ backendId: task.backendId, id: task.id, patch });
   };
 
   const hasDate = task.dueDate !== undefined;

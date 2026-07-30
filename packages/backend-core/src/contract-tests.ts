@@ -144,6 +144,21 @@ export function runAdapterContract(
           adapter.update('does-not-exist' as Task['id'], { title: 'x' }),
         ).rejects.toThrow();
       });
+
+      it('clears optional fields when patch values are null', async () => {
+        const created = await adapter.create(
+          draft({ title: 'dated', dueDate: '2026-07-01', dueTime: '10:00' }),
+        );
+        const updated = await adapter.update(created.id, {
+          dueDate: null,
+          dueTime: null,
+        });
+        expect(updated.dueDate).toBeUndefined();
+        expect(updated.dueTime).toBeUndefined();
+        const fetched = await adapter.get(created.id);
+        expect(fetched?.dueDate).toBeUndefined();
+        expect(fetched?.dueTime).toBeUndefined();
+      });
     });
 
     describe('delete', () => {

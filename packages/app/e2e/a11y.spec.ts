@@ -72,3 +72,15 @@ test('view4 (options) — axe: no critical violations', async ({ page }) => {
   await expect(page.locator('[data-view="options"]')).toBeVisible();
   await runAxe(page, 'view4');
 });
+
+test('view1 light theme — axe: no critical violations', async ({ page }) => {
+  await page.goto('/options/appearance');
+  await expect(page.locator('[data-view="options"]')).toBeVisible();
+  await page.locator('[data-field="theme-light"]').click();
+  await page.goto('/');
+  await expect(page.locator('[data-view="matrix"]')).toBeVisible();
+  await expect(page.locator('[data-emt-theme="light"], html[data-emt-theme="light"]')).toHaveCount(
+    1,
+  );
+  await runAxe(page, 'view1-light');
+});

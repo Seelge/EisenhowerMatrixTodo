@@ -6,7 +6,7 @@
  *    "Today" and "No date" are the load-bearing two; the others share
  *    the same dispatch path);
  *  - clearing the date also clears the time (single patch carries
- *    `dueDate: undefined` and `dueTime: undefined`);
+ *    `dueDate: null` and `dueTime: null`);
  *  - the time input is disabled when the task has no date and enabled
  *    once a date is present;
  *  - typing into the time input writes `dueTime` via `useUpdateTask`.
@@ -139,14 +139,14 @@ describe('DueField — Step 8.3', () => {
 
     await waitForAsync(() => updateSpy.mock.calls.length > 0);
     expect(updateSpy).toHaveBeenCalledTimes(1);
-    const patch = updateSpy.mock.calls[0]?.[1] as { dueDate?: string; dueTime?: string };
-    expect('dueDate' in patch).toBe(true);
-    expect('dueTime' in patch).toBe(true);
-    expect(patch.dueDate).toBeUndefined();
-    expect(patch.dueTime).toBeUndefined();
+    const patch = updateSpy.mock.calls[0]?.[1] as {
+      dueDate?: string | null;
+      dueTime?: string | null;
+    };
+    expect(patch.dueDate).toBeNull();
+    expect(patch.dueTime).toBeNull();
 
-    // The adapter spreads the patch, so the stored record no longer
-    // carries either field — round-trip via `get`.
+    // applyTaskPatch drops null clearables — round-trip via `get`.
     const fresh = await adapter.get(task.id);
     expect(fresh?.dueDate).toBeUndefined();
     expect(fresh?.dueTime).toBeUndefined();
@@ -180,7 +180,7 @@ describe('DueField — Step 8.3', () => {
     expect('dueDate' in patch).toBe(false);
   });
 
-  it('clearing the time input writes dueTime: undefined and leaves dueDate intact', async () => {
+  it('clearing the time input writes dueTime: null and leaves dueDate intact', async () => {
     const task = await seedTask({ dueDate: '2026-06-01', dueTime: '14:30' });
     const { registry } = await getBackends();
     const adapter = registry.list()[0]!;
@@ -203,9 +203,11 @@ describe('DueField — Step 8.3', () => {
 
     await waitForAsync(() => updateSpy.mock.calls.length > 0);
     expect(updateSpy).toHaveBeenCalledTimes(1);
-    const patch = updateSpy.mock.calls[0]?.[1] as { dueDate?: string; dueTime?: string };
-    expect('dueTime' in patch).toBe(true);
-    expect(patch.dueTime).toBeUndefined();
+    const patch = updateSpy.mock.calls[0]?.[1] as {
+      dueDate?: string | null;
+      dueTime?: string | null;
+    };
+    expect(patch.dueTime).toBeNull();
     expect('dueDate' in patch).toBe(false);
 
     const fresh = await adapter.get(task.id);

@@ -8,18 +8,19 @@
  * Cursor format: a stringified non-negative integer; opaque to callers.
  */
 
-import type {
-  BackendAdapter,
-  BackendCapabilities,
-  BackendDescriptor,
-  BackendId,
-  ChangeSet,
-  Cursor,
-  Quadrant,
-  Task,
-  TaskDraft,
-  TaskId,
-  TaskPatch,
+import {
+  applyTaskPatch,
+  type BackendAdapter,
+  type BackendCapabilities,
+  type BackendDescriptor,
+  type BackendId,
+  type ChangeSet,
+  type Cursor,
+  type Quadrant,
+  type Task,
+  type TaskDraft,
+  type TaskId,
+  type TaskPatch,
 } from '@emt/backend-core';
 
 export interface InMemoryAdapterOptions {
@@ -90,10 +91,9 @@ export class InMemoryAdapter implements BackendAdapter {
     if (!existing) {
       throw new Error(`InMemoryAdapter: unknown task id ${String(id)}`);
     }
+    const merged = applyTaskPatch(existing, patch);
     const next: Task = {
-      ...existing,
-      ...patch,
-      tags: patch.tags ? [...patch.tags] : existing.tags,
+      ...merged,
       id: existing.id,
       backendId: existing.backendId,
       createdAt: existing.createdAt,

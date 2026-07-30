@@ -73,11 +73,64 @@ export interface BackendDescriptor {
 export type TaskDraft = Omit<Task, 'id' | 'backendId' | 'createdAt' | 'updatedAt'>;
 
 /**
+ * Optional Task fields that may be cleared. Pass `null` in a
+ * {@link TaskPatch} to remove them; omit the key to leave unchanged.
+ * (Plain `undefined` is not used for clear — under
+ * `exactOptionalPropertyTypes` it cannot appear on a partial literal.)
+ */
+export type ClearableTaskField = 'dueDate' | 'dueTime' | 'completedAt';
+
+type TaskPatchBase = Partial<
+  Omit<Task, 'id' | 'backendId' | 'createdAt' | 'updatedAt' | ClearableTaskField>
+>;
+
+/**
  * Input shape for {@link BackendAdapter.update}. Read-only identity and
  * timestamp fields cannot be patched: `id`, `backendId`, `createdAt` are
  * immutable; `updatedAt` is set by the adapter on every write.
+ *
+ * Clearable optionals (`dueDate`, `dueTime`, `completedAt`) accept `null`
+ * to delete the field. Apply patches with {@link applyTaskPatch} so
+ * adapters and optimistic UI stay consistent.
  */
-export type TaskPatch = Partial<Omit<Task, 'id' | 'backendId' | 'createdAt' | 'updatedAt'>>;
+export type TaskPatch = TaskPatchBase & {
+  dueDate?: Task['dueDate'] | null;
+  dueTime?: Task['dueTime'] | null;
+  completedAt?: Task['completedAt'] | null;
+};
+
+/**
+ * Merge a {@link TaskPatch} onto a task. `null` on a clearable field
+ * removes it; other keys overwrite. Does not touch identity timestamps
+ * (`id`, `backendId`, `createdAt`) or set `updatedAt` — callers do that.
+ */
+export function applyTaskPatch(task: Task, patch: TaskPatch): Task {
+  const next: Task = {
+    ...task,
+    tags: patch.tags !== undefined ? [...patch.tags] : [...task.tags],
+  };
+
+  if (patch.title !== undefined) next.title = patch.title;
+  if (patch.notes !== undefined) next.notes = patch.notes;
+  if (patch.priority !== undefined) next.priority = patch.priority;
+  if (patch.quadrant !== undefined) next.quadrant = patch.quadrant;
+  if (patch.status !== undefined) next.status = patch.status;
+
+  if ('dueDate' in patch) {
+    if (patch.dueDate === null || patch.dueDate === undefined) delete next.dueDate;
+    else next.dueDate = patch.dueDate;
+  }
+  if ('dueTime' in patch) {
+    if (patch.dueTime === null || patch.dueTime === undefined) delete next.dueTime;
+    else next.dueTime = patch.dueTime;
+  }
+  if ('completedAt' in patch) {
+    if (patch.completedAt === null || patch.completedAt === undefined) delete next.completedAt;
+    else next.completedAt = patch.completedAt;
+  }
+
+  return next;
+}
 
 /**
  * Storage adapter contract.

@@ -1,8 +1,10 @@
+export { applyTaskPatch } from './adapter.js';
 export type {
   BackendAdapter,
   BackendCapabilities,
   BackendDescriptor,
   ChangeSet,
+  ClearableTaskField,
   Cursor,
   TaskDraft,
   TaskPatch,

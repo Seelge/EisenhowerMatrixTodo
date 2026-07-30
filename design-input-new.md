@@ -864,3 +864,15 @@ user overrides.
 
 **Done (Phase 26).** Banner styled; "Open Backends" → `/options/backends`.
 `SkipLink` → `#emt-main` on matrix / quadrant / options.
+
+## TODO 24 — TaskPatch clear + notes MD preview ✅
+
+**Done (Phases 27–28).** `TaskPatch` accepts `null` on `dueDate` /
+`dueTime` / `completedAt`; `applyTaskPatch` shared by adapters +
+optimistic UI. Notes field: Edit/Preview toggle with safe subset
+Markdown renderer (no new deps).
+
+## TODO 25 — Light-theme axe ✅
+
+**Done (Phase 29).** e2e switches Appearance → Light and runs axe on
+view1.

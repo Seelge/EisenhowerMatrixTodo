@@ -12,17 +12,18 @@
  * (from the `deletions` store) above the given watermark.
  */
 
-import type {
-  BackendAdapter,
-  BackendDescriptor,
-  BackendId,
-  ChangeSet,
-  Cursor,
-  Quadrant,
-  Task,
-  TaskDraft,
-  TaskId,
-  TaskPatch,
+import {
+  applyTaskPatch,
+  type BackendAdapter,
+  type BackendDescriptor,
+  type BackendId,
+  type ChangeSet,
+  type Cursor,
+  type Quadrant,
+  type Task,
+  type TaskDraft,
+  type TaskId,
+  type TaskPatch,
 } from '@emt/backend-core';
 import type { IDBPObjectStore } from 'idb';
 
@@ -112,10 +113,9 @@ export class LocalIndexedDbAdapter implements BackendAdapter {
       throw new Error(`LocalIndexedDbAdapter: unknown task id ${String(id)}`);
     }
     const seq = await allocateSeq(tx.objectStore(META_STORE));
+    const merged = applyTaskPatch(stripSeq(existing), patch);
     const next: LocalTaskRecord = {
-      ...existing,
-      ...patch,
-      tags: patch.tags ? [...patch.tags] : existing.tags,
+      ...merged,
       id: existing.id,
       backendId: existing.backendId,
       createdAt: existing.createdAt,

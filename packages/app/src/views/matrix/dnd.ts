@@ -17,7 +17,14 @@
  *     re-fetches and replaces the optimistic state with reality.
  */
 import type { DragEndEvent } from '@dnd-kit/core';
-import type { BackendId, Quadrant, Task, TaskId, TaskPatch } from '@emt/backend-core';
+import {
+  applyTaskPatch,
+  type BackendId,
+  type Quadrant,
+  type Task,
+  type TaskId,
+  type TaskPatch,
+} from '@emt/backend-core';
 import type { QueryClient } from '@tanstack/react-query';
 
 import { taskOrderKey, type TaskOrderMap } from '../../state/task-order.js';
@@ -187,7 +194,7 @@ export function applyOptimisticPatch(
   task: Task,
   patch: TaskPatch,
 ): () => void {
-  const patched: Task = { ...task, ...patch };
+  const patched: Task = applyTaskPatch(task, patch);
   const fromQuadrant = task.quadrant;
   const toQuadrant = patched.quadrant;
   const snapshots = queryClient.getQueriesData<unknown>({ queryKey: ['tasks'] });

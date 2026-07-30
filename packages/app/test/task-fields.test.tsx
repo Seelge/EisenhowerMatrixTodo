@@ -157,6 +157,24 @@ describe('view3 field editors — Step 8.2', () => {
     expect(updateSpy.mock.calls[0]?.[1]).toEqual({ notes: 'Hello' });
   });
 
+  it('NotesField preview toggle renders markdown and hides the textarea', async () => {
+    const task = await seedTask({ notes: '**bold** note' });
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <NotesField task={task} />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+    expect(container.querySelector('[data-field="notes"]')).not.toBeNull();
+    const previewBtn = container.querySelector<HTMLButtonElement>('[data-action="notes-preview"]')!;
+    await act(async () => {
+      previewBtn.click();
+    });
+    expect(container.querySelector('[data-field="notes"]')).toBeNull();
+    const preview = container.querySelector('[data-field="notes-preview"]')!;
+    expect(preview.innerHTML).toContain('<strong>bold</strong>');
+  });
+
   it('NotesField blur flushes the pending value before the timer', async () => {
     const task = await seedTask({ notes: 'before' });
     const { registry } = await getBackends();
