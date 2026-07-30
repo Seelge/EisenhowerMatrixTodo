@@ -104,3 +104,66 @@ export function filterTasksByTag(
   const key = tagKey(activeTag);
   return tasks.filter((task) => task.tags.some((t) => tagKey(t) === key));
 }
+
+/**
+ * Ranked autocomplete candidates (Phase 18).
+ * Empty query → top inventory by count. Non-empty → prefix first, then
+ * substring; then count desc, then localeCompare. Excludes already-applied
+ * tags (case-insensitive).
+ */
+export function suggestTags(
+  inventory: readonly TagCount[],
+  query: string,
+  options?: {
+    readonly exclude?: readonly string[];
+    readonly limit?: number;
+  },
+): readonly string[] {
+  const limit = options?.limit ?? 8;
+  const exclude = new Set((options?.exclude ?? []).map(tagKey).filter((k) => k !== ''));
+  const candidates = inventory.filter((c) => !exclude.has(tagKey(c.tag)));
+  const q = normalizeTag(query).toLowerCase();
+
+  if (q === '') {
+    return [...candidates]
+      .sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count;
+        return a.tag.localeCompare(b.tag, undefined, { sensitivity: 'base' });
+      })
+      .slice(0, limit)
+      .map((c) => c.tag);
+  }
+
+  type Scored = { tag: string; count: number; prefix: boolean };
+  const scored: Scored[] = [];
+  for (const c of candidates) {
+    const key = tagKey(c.tag);
+    if (!key.includes(q)) continue;
+    scored.push({ tag: c.tag, count: c.count, prefix: key.startsWith(q) });
+  }
+  scored.sort((a, b) => {
+    if (a.prefix !== b.prefix) return a.prefix ? -1 : 1;
+    if (b.count !== a.count) return b.count - a.count;
+    return a.tag.localeCompare(b.tag, undefined, { sensitivity: 'base' });
+  });
+  return scored.slice(0, limit).map((s) => s.tag);
+}
+
+/** Text after the last comma — the in-progress token in a multi-tag input. */
+export function incompleteTagQuery(raw: string): string {
+  const i = raw.lastIndexOf(',');
+  return i === -1 ? raw : raw.slice(i + 1);
+}
+
+/** Fully committed tags in a comma input (everything before the last comma). */
+export function committedTagsFromInput(raw: string): readonly string[] {
+  const i = raw.lastIndexOf(',');
+  if (i === -1) return [];
+  return parseTagInput(raw.slice(0, i));
+}
+
+/** Replace the incomplete trailing token with a picked tag and leave room for another. */
+export function applySuggestedTag(raw: string, tag: string): string {
+  const prior = committedTagsFromInput(raw);
+  return `${mergeTags(prior, [tag]).join(', ')}, `;
+}

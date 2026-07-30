@@ -29,14 +29,30 @@ import type { BackendId, Priority, Quadrant, Task, TaskDraft, TaskId } from '@em
 import { Button, DueDatePicker, QuadrantPicker, ResponsiveSurface } from '@emt/design-system';
 import type { Quadrant as DsQuadrant } from '@emt/design-system';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useId, useState, type FormEvent, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from 'react';
 
 import { useT } from '../../i18n/provider.js';
 import type { StringKey } from '../../i18n/strings.en.js';
-import { useCreateTask } from '../../queries/tasks.js';
+import { useCreateTask, useTasks } from '../../queries/tasks.js';
 import { getBackends } from '../../state/backends.js';
 import { useBusyStore } from '../../state/busy.js';
-import { mergeTags, parseTagInput } from '../tags/tag-helpers.js';
+import {
+  applySuggestedTag,
+  collectTagCounts,
+  committedTagsFromInput,
+  incompleteTagQuery,
+  mergeTags,
+  parseTagInput,
+} from '../tags/tag-helpers.js';
+import { TagSuggestInput } from '../tags/TagSuggestInput.js';
 
 import './quick-composer.css';
 
@@ -83,6 +99,8 @@ export function QuickComposer({
   const [dueDate, setDueDate] = useState<string | null>(null);
   const [priority, setPriority] = useState<Priority>('normal');
   const [tagsInput, setTagsInput] = useState('');
+  const allTasks = useTasks();
+  const tagInventory = useMemo(() => collectTagCounts(allTasks.data ?? []), [allTasks.data]);
 
   // Step 10.3 — mark the user as composing while the surface is open
   // so an incoming sync conflict queues silently instead of opening
@@ -258,15 +276,20 @@ export function QuickComposer({
               <label htmlFor={`${moreId}-tags`} className="emt-quick-composer__label">
                 {t('app.composer.tagsLabel')}
               </label>
-              <input
+              <TagSuggestInput
                 id={`${moreId}-tags`}
                 className="emt-quick-composer__input"
-                type="text"
                 value={tagsInput}
-                onChange={(e) => setTagsInput(e.currentTarget.value)}
+                suggestQuery={incompleteTagQuery(tagsInput)}
+                inventory={tagInventory}
+                exclude={committedTagsFromInput(tagsInput)}
                 placeholder={t('app.composer.tagsPlaceholder')}
-                autoComplete="off"
                 data-field="composer-tags"
+                onChange={setTagsInput}
+                onCommitFreeText={() => {
+                  /* Enter without a pick leaves the comma string for submit. */
+                }}
+                onPick={(tag) => setTagsInput(applySuggestedTag(tagsInput, tag))}
               />
             </div>
           </div>

@@ -1,23 +1,23 @@
 /**
- * TagsField — view3 tag editor (Phase 14 / TODO 5).
+ * TagsField — view3 tag editor (Phase 14 / Phase 18 autocomplete).
  *
- * Chip row of current tags (each removable) plus a text input that
- * commits on Enter or comma. Writes go through `useUpdateTask` with a
- * full `tags` array replace — discrete, no debounce needed.
+ * Chip row of current tags (each removable) plus a combobox that
+ * suggests tags from the inventory. Writes go through `useUpdateTask`
+ * with a full `tags` array replace.
  */
 import type { Task } from '@emt/backend-core';
-import {
-  useCallback,
-  useId,
-  useState,
-  type FormEvent,
-  type KeyboardEvent,
-  type ReactNode,
-} from 'react';
+import { useCallback, useId, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 
 import { useT } from '../../i18n/provider.js';
-import { useUpdateTask } from '../../queries/tasks.js';
-import { MAX_TAGS_PER_TASK, mergeTags, parseTagInput, removeTag } from '../tags/tag-helpers.js';
+import { useTasks, useUpdateTask } from '../../queries/tasks.js';
+import {
+  collectTagCounts,
+  MAX_TAGS_PER_TASK,
+  mergeTags,
+  parseTagInput,
+  removeTag,
+} from '../tags/tag-helpers.js';
+import { TagSuggestInput } from '../tags/TagSuggestInput.js';
 import '../tags/tags.css';
 
 export interface TagsFieldProps {
@@ -28,7 +28,10 @@ export function TagsField({ task }: TagsFieldProps): ReactNode {
   const t = useT();
   const inputId = useId();
   const updateTask = useUpdateTask();
+  const allTasks = useTasks();
   const [draft, setDraft] = useState('');
+
+  const inventory = useMemo(() => collectTagCounts(allTasks.data ?? []), [allTasks.data]);
 
   const commitTags = useCallback(
     (next: readonly string[]) => {
@@ -52,13 +55,6 @@ export function TagsField({ task }: TagsFieldProps): ReactNode {
   const onSubmit = (e: FormEvent): void => {
     e.preventDefault();
     addFromDraft();
-  };
-
-  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>): void => {
-    if (e.key === 'Backspace' && draft === '' && task.tags.length > 0) {
-      const last = task.tags[task.tags.length - 1];
-      if (last !== undefined) commitTags(removeTag(task.tags, last));
-    }
   };
 
   const atCap = task.tags.length >= MAX_TAGS_PER_TASK;
@@ -86,20 +82,30 @@ export function TagsField({ task }: TagsFieldProps): ReactNode {
           ))}
         </ul>
         <form className="emt-tags-field__form" onSubmit={onSubmit}>
-          <input
+          <TagSuggestInput
             id={inputId}
             className="emt-task-view__input emt-tags-field__input"
-            type="text"
             value={draft}
-            onChange={(e) => setDraft(e.currentTarget.value)}
-            onKeyDown={onKeyDown}
-            onBlur={addFromDraft}
+            suggestQuery={draft}
+            inventory={inventory}
+            exclude={task.tags}
+            disabled={atCap}
             placeholder={
               atCap ? t('app.task.fields.tags.cap') : t('app.task.fields.tagsPlaceholder')
             }
-            disabled={atCap}
-            autoComplete="off"
             data-field="tags"
+            onChange={setDraft}
+            onCommitFreeText={addFromDraft}
+            onPick={(tag) => {
+              commitTags(mergeTags(task.tags, [tag]));
+              setDraft('');
+            }}
+            onBackspaceEmpty={() => {
+              if (task.tags.length === 0) return;
+              const last = task.tags[task.tags.length - 1];
+              if (last !== undefined) commitTags(removeTag(task.tags, last));
+            }}
+            onBlurCommit={addFromDraft}
           />
         </form>
       </div>

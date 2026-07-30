@@ -99,6 +99,69 @@ describe('TagsField — Phase 14', () => {
     });
   });
 
+  it('suggests inventory tags and applies on option click (Phase 18)', async () => {
+    const { registry } = await getBackends();
+    const adapter = registry.list()[0]!;
+    await adapter.create({ ...DRAFT, title: 'seed', tags: ['work'], quadrant: 'Q2' });
+    const created = await adapter.create({ ...DRAFT, tags: [], title: 'blank' });
+
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <TagsField task={created} />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+
+    const input = container.querySelector<HTMLInputElement>('[data-field="tags"]')!;
+    await act(async () => {
+      input.focus();
+      setInputValue(input, 'wo');
+    });
+
+    await waitFor(() => container.querySelector('[data-tag-suggest="work"]') !== null);
+
+    await act(async () => {
+      container
+        .querySelector<HTMLButtonElement>('[data-tag-suggest="work"]')!
+        .dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    });
+
+    await waitFor(async () => {
+      const fresh = await adapter.get(created.id);
+      return fresh?.tags.includes('work') === true;
+    });
+    expect(input.value).toBe('');
+  });
+
+  it('Escape closes suggestions without removing focus (Phase 18)', async () => {
+    const { registry } = await getBackends();
+    const adapter = registry.list()[0]!;
+    await adapter.create({ ...DRAFT, title: 'seed', tags: ['work'], quadrant: 'Q2' });
+    const created = await adapter.create({ ...DRAFT, tags: [], title: 'blank2' });
+
+    const { container, unmount } = await renderWithQueryClient(
+      <I18nProvider>
+        <TagsField task={created} />
+      </I18nProvider>,
+    );
+    teardown = unmount;
+
+    const input = container.querySelector<HTMLInputElement>('[data-field="tags"]')!;
+    await act(async () => {
+      input.focus();
+      setInputValue(input, 'w');
+    });
+    await waitFor(() => container.querySelector('.emt-tag-suggest__list') !== null);
+
+    await act(async () => {
+      input.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+      );
+    });
+    expect(container.querySelector('.emt-tag-suggest__list')).toBeNull();
+    expect(document.activeElement).toBe(input);
+  });
+
   it('filter bar on matrix hides non-matching cards', async () => {
     const { registry } = await getBackends();
     const adapter = registry.list()[0]!;

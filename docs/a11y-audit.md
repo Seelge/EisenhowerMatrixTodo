@@ -57,6 +57,9 @@ Verified in the e2e suite (`keyboard.spec.ts`):
   selection + focus, Home/End jump to the ends, Esc closes.
 - The PriorityField is a 4-option radio group with the same roving
   semantics as the QuadrantPicker.
+- TagSuggestInput (Phase 18) is a combobox + listbox: ArrowUp/Down,
+  Enter to pick, Escape closes the list only (does not dismiss the
+  parent sheet).
 
 ## Surfaces & dialogs
 

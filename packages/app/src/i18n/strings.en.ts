@@ -103,6 +103,7 @@ export const strings = {
   'app.tags.filter.label': 'Filter by tag',
   'app.tags.filter.heading': 'Tags',
   'app.tags.filter.clear': 'Clear',
+  'app.tags.suggest.label': 'Suggested tags',
   'app.options.group.data': 'Data',
   'app.options.group.data.summary': 'Export, import, and clear local cache.',
   'app.options.group.about': 'About',

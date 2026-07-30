@@ -4,38 +4,35 @@ Live handoff document for cross-session continuity. Updated at the start and end
 
 ## Current activity
 
-**Phase:** Phase 17 — Matrix scannability (due urgency + shell polish) — **done**.
+**Phase:** Phase 18 — Tag autocomplete from inventory — **done**.
 
 ### What landed this session
 
-**Phase 17:**
-1. Task cards: `data-due-bucket` from `relativeDateKey`; **Overdue** (`--color-error`) + **Today** (`--color-accent`); done tasks stay muted.
-2. Matrix grid gap: `--space-sm` desktop / `--space-xs` ≤540 px.
-3. Shared `useComposerStore` + `ComposerHotkeys`: **`n`** opens QuickComposer (not while typing, search open, task focused, or on Options).
-4. Docs: design-input neon frames (§4.1–4.2, ethos, cards); a11y + loading/empty audits; TODO 16 marked done.
-
-Earlier this branch tip also carried Phase 16 e2e/prettier follow-ups (`af398b8`, `06b9c10`).
+**Phase 18:**
+1. `suggestTags` / comma-token helpers (`incompleteTagQuery`, `committedTagsFromInput`, `applySuggestedTag`).
+2. Shared `TagSuggestInput` combobox (listbox, arrows, Enter pick, Escape closes list only).
+3. Wired into view3 `TagsField` + QuickComposer more-options tags.
+4. Tests + a11y note; TODO 5/17 docs; rename/delete still open.
 
 ### Privacy / API
 
-- No new network. Due labels and composer hotkey are local UI only.
+- Suggestions from local `useTasks()` / IndexedDB only. No network.
 - No telemetry, no external APIs.
 - `rewrite-email.sh` remains untracked.
 
 ### Done when
 
-- [x] Overdue/today readable on cards
-- [x] Gap tighten committed with Phase 17
-- [x] `n` opens composer; ignored in inputs
-- [x] design-input §4.2 matches neon implementation
+- [x] view3 + composer suggest existing tags
+- [x] Exclude already-applied / committed tags
+- [x] Escape does not dismiss sheet
 - [x] Unit tests + privacy audit → commit + push
 
 ## Earlier
 
-- Phase 16: hide completed + card complete/delete — `d2e3082` (+ e2e `06b9c10`)
+- Phase 17: due urgency + gap + `n` — `7a12062`
+- Phase 16: hide completed + card actions — `d2e3082`
 - Phase 15: neon borders — `e66b1f3`
-- Phase 14: tags — `2a3f48c`
-- Phase 13: search/sync/composer/swipe — `8379f06`
+- Phase 14: tags MVP — `2a3f48c`
 
 ## Pending external actions (user)
 
@@ -43,9 +40,9 @@ Step 11.6 / v0.1.0 still needs real-device PWA screenshots + signed tag.
 
 ## Open TODOs
 
-`design-input-new.md`: TODO 1 (device smoke), 10 (light mode), 11 (recurrence), 14 (field-level conflict), 15 (visual regression). Tag autocomplete / global rename-delete (TODO 5 remainder).
+`design-input-new.md`: TODO 1 (device smoke), 10 (light mode), 11 (recurrence), 14 (field-level conflict), 15 (visual regression). Tag **global rename/delete** (TODO 5 remainder).
 
 ## How to resume
 
 1. Read this file + `design-input-new.md`.
-2. Next candidates: tag autocomplete (± Options rename/delete), visual regression smoke, or ship 11.6.
+2. Next candidates: Options tag rename/delete, keyboard shortcuts in About, visual regression smoke, or ship 11.6.

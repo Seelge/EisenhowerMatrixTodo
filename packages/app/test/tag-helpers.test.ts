@@ -5,12 +5,16 @@ import type { BackendId, Task, TaskId } from '@emt/backend-core';
 import { describe, expect, it } from 'vitest';
 
 import {
+  applySuggestedTag,
   collectTagCounts,
+  committedTagsFromInput,
   filterTasksByTag,
+  incompleteTagQuery,
   mergeTags,
   normalizeTag,
   parseTagInput,
   removeTag,
+  suggestTags,
   taskHasTag,
 } from '../src/views/tags/tag-helpers.ts';
 
@@ -71,5 +75,26 @@ describe('tag-helpers', () => {
     ];
     expect(filterTasksByTag(tasks, 'work').map((t) => t.id)).toEqual(['a']);
     expect(filterTasksByTag(tasks, undefined)).toHaveLength(2);
+  });
+
+  it('suggestTags ranks prefix over substring and excludes applied tags', () => {
+    const inventory = [
+      { tag: 'work', count: 3 },
+      { tag: 'homework', count: 5 },
+      { tag: 'home', count: 2 },
+      { tag: 'errand', count: 1 },
+    ];
+    expect(suggestTags(inventory, 'ho')).toEqual(['homework', 'home']);
+    expect(suggestTags(inventory, 'wor')).toEqual(['work', 'homework']);
+    expect(suggestTags(inventory, 'ho', { exclude: ['Home'] })).toEqual(['homework']);
+    expect(suggestTags(inventory, '', { limit: 2 })).toEqual(['homework', 'work']);
+  });
+
+  it('incompleteTagQuery / committedTagsFromInput / applySuggestedTag', () => {
+    expect(incompleteTagQuery('work, ho')).toBe(' ho');
+    expect(committedTagsFromInput('work, ho')).toEqual(['work']);
+    expect(committedTagsFromInput('work')).toEqual([]);
+    expect(applySuggestedTag('work, ho', 'home')).toBe('work, home, ');
+    expect(applySuggestedTag('', 'work')).toBe('work, ');
   });
 });

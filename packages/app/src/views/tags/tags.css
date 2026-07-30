@@ -142,6 +142,52 @@
   width: 100%;
 }
 
+/* Phase 18 — autocomplete listbox */
+.emt-tag-suggest {
+  position: relative;
+  width: 100%;
+}
+
+.emt-tag-suggest__list {
+  list-style: none;
+  margin: var(--space-xs) 0 0;
+  padding: var(--space-xs) 0;
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: var(--layer-tooltip);
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--glow-accent);
+  border-radius: var(--radius-md);
+  box-shadow: none;
+}
+
+.emt-tag-suggest__option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  color: var(--color-text-primary);
+  border: 0;
+  padding: var(--space-sm) var(--space-md);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.emt-tag-suggest__option[data-active='true'],
+.emt-tag-suggest__option:hover {
+  background: var(--color-surface);
+  color: var(--color-accent);
+}
+
+.emt-tag-suggest__option:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
 /* Options → Tags panel */
 .emt-tags-panel {
   display: flex;

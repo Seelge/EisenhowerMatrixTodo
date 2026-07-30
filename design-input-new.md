@@ -720,21 +720,21 @@ adapters; the chip's `data-sync-status` discriminator is ready for them.
 ## TODO 4 — Quick composer is title-only ✅ (partial)
 
 **Done (Phase 13):** "More options…" disclosure reveals DueDatePicker +
-priority segmented control. Tag autocomplete still open (see TODO 5).
+priority segmented control. Tag autocomplete landed in Phase 18 (TODO 5).
 
-## TODO 5 — Tags have no first-class surface ✅ (MVP)
+## TODO 5 — Tags have no first-class surface ✅ (MVP + autocomplete)
 
-**Done (Phase 14).**
+**Done (Phase 14 + Phase 18).**
 
 - view3 `TagsField` — add/remove chips; Enter/comma commit; backspace on
-  empty input removes last chip.
+  empty input removes last chip; **Phase 18** combobox suggests inventory.
 - Matrix + quadrant `TagFilterBar` — chips with counts; toggle filter
   client-side (`useTagFilterStore`).
-- QuickComposer more-options — comma-separated tags on create.
+- QuickComposer more-options — comma-separated tags on create with the
+  same autocomplete (token-aware last segment).
 - Options → Tags — inventory; tap applies filter and navigates home.
 
-Still open later: tag autocomplete from inventory; global rename/delete
-of a tag across all tasks.
+Still open later: global rename/delete of a tag across all tasks.
 
 ## TODO 6 — Search ✅
 
@@ -830,3 +830,12 @@ keep finding palette regressions by deploying.
 - Matrix grid gap tightened (`sm` / `xs` on narrow).
 - `n` hotkey opens QuickComposer (ignored while typing / search / task sheet).
 - design-input §4.1–4.2 + audits aligned with thin neon borders.
+
+## TODO 17 — Tag autocomplete from inventory ✅
+
+**Done (Phase 18).**
+
+- Pure `suggestTags` (+ comma-token helpers) over `collectTagCounts`.
+- Shared `TagSuggestInput` combobox on view3 TagsField + QuickComposer.
+- Escape closes listbox only; free-text path unchanged.
+- Options global rename/delete still deferred.
